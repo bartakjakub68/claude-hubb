@@ -324,6 +324,9 @@ def init_db():
 def hash_password(pwd):
     return hashlib.sha256(pwd.encode()).hexdigest()
 
+# Initialize DB at module load (works with gunicorn)
+init_db()
+
 # ─── CORS helper ─────────────────────────────────────────────────────────────
 
 def cors(response):
