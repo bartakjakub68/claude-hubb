@@ -17,6 +17,9 @@ from flask import Flask, request, jsonify, send_from_directory, send_file
 app = Flask(__name__, static_folder='public')
 
 DB_PATH = os.environ.get('DB_PATH', 'auth.db')
+_db_dir = os.path.dirname(DB_PATH)
+if _db_dir:
+    os.makedirs(_db_dir, exist_ok=True)
 
 _db_initialized = False
 
