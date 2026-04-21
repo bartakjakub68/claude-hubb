@@ -317,6 +317,22 @@ def init_db():
     else:
         c.execute("UPDATE apps SET url='/metodika/' WHERE nazev='Metodika'")
 
+    # Pojistná kalkulačka
+    pk_exists = c.execute("SELECT id FROM apps WHERE nazev='Pojistná kalkulačka'").fetchone()
+    if not pk_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Pojistná kalkulačka', '/pojistna-kalkulator-v20.html', '🛡️', 'Kalkulačka pojistných částek', 4)
+        )
+
+    # Kalkulačka úvěrů
+    ku_exists = c.execute("SELECT id FROM apps WHERE nazev='Kalkulačka úvěrů'").fetchone()
+    if not ku_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Kalkulačka úvěrů', '/kalkulacka-4.html', '🏦', 'Kalkulačka úvěrů', 5)
+        )
+
     # Výchozí admin účet
     existing = c.execute("SELECT id FROM users WHERE role='admin'").fetchone()
     if not existing:
