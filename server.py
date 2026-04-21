@@ -17,6 +17,15 @@ from flask import Flask, request, jsonify, send_from_directory, send_file
 app = Flask(__name__, static_folder='public')
 
 DB_PATH = os.environ.get('DB_PATH', 'auth.db')
+
+_db_initialized = False
+
+@app.before_request
+def ensure_db_initialized():
+    global _db_initialized
+    if not _db_initialized:
+        init_db()
+        _db_initialized = True
 JWT_SECRET = os.environ.get('JWT_SECRET', 'change-this-secret-in-production-2024')
 JWT_EXPIRY = 8 * 60 * 60  # 8 hodin
 
@@ -323,9 +332,6 @@ def init_db():
 
 def hash_password(pwd):
     return hashlib.sha256(pwd.encode()).hexdigest()
-
-# Initialize DB at module load (works with gunicorn)
-init_db()
 
 # ─── CORS helper ─────────────────────────────────────────────────────────────
 
