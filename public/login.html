@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Přihlášení — Portál</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --red:#CC0000; --red-dark:#A80000; --red-light:#F9EDED;
+  --black:#1A1A1A; --white:#FFFFFF; --paper:#F6F5F3;
+  --border:#E2E0DC; --muted:#8F8C87; --text:#1A1A1A;
+}
+body {
+  font-family:'IBM Plex Sans',sans-serif;
+  min-height:100vh; display:grid; grid-template-columns:1fr 1fr;
+  -webkit-font-smoothing:antialiased;
+}
+.panel-left {
+  background:var(--black); display:flex; flex-direction:column;
+  justify-content:space-between; padding:48px; position:relative; overflow:hidden;
+}
+.panel-left::after {
+  content:''; position:absolute; bottom:-80px; right:-80px;
+  width:320px; height:320px; border:60px solid rgba(204,0,0,0.1);
+  border-radius:50%; pointer-events:none;
+}
+.panel-left::before {
+  content:''; position:absolute; top:-40px; left:-40px;
+  width:200px; height:200px; border:40px solid rgba(255,255,255,0.03);
+  border-radius:50%; pointer-events:none;
+}
+.left-logo { display:flex; align-items:center; gap:12px; }
+.logo-mark { width:36px; height:36px; position:relative; }
+.logo-mark::before {
+  content:''; position:absolute; inset:0;
+  background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.18);
+}
+.logo-mark::after {
+  content:''; position:absolute; left:0; right:0; bottom:0;
+  height:45%; background:var(--red);
+}
+.logo-name {
+  font-family:'IBM Plex Mono',monospace; font-size:0.875rem;
+  font-weight:500; color:var(--white); letter-spacing:0.16em; text-transform:uppercase;
+}
+.left-content { flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px 0; }
+.left-headline {
+  font-size:2.25rem; font-weight:600; color:var(--white);
+  line-height:1.2; letter-spacing:-0.02em; margin-bottom:16px;
+}
+.left-headline span { color:var(--red); }
+.left-sub { font-size:0.9375rem; color:rgba(255,255,255,0.4); font-weight:300; line-height:1.6; max-width:300px; }
+.left-features { margin-top:36px; display:flex; flex-direction:column; gap:14px; }
+.feature { display:flex; align-items:center; gap:12px; font-size:0.8125rem; color:rgba(255,255,255,0.45); font-weight:300; }
+.feature::before { content:''; width:20px; height:1px; background:var(--red); flex-shrink:0; }
+.left-footer { font-size:0.68rem; color:rgba(255,255,255,0.18); letter-spacing:0.06em; font-family:'IBM Plex Mono',monospace; }
+.panel-right {
+  background:var(--red); display:flex; align-items:center;
+  justify-content:center; padding:48px; position:relative;
+}
+.panel-right::before {
+  content:''; position:absolute; top:0; left:0;
+  width:1px; height:100%; background:rgba(0,0,0,0.12);
+}
+.login-card {
+  background:var(--white); padding:44px 40px; width:100%; max-width:400px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.22); animation:cardIn 0.38s ease both;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+.card-title { font-size:1.375rem; font-weight:600; color:var(--text); letter-spacing:-0.01em; margin-bottom:4px; }
+.card-sub { font-size:0.8125rem; color:var(--muted); font-weight:300; margin-bottom:32px; }
+.field { margin-bottom:18px; }
+.field label {
+  display:block; font-size:0.68rem; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:6px;
+}
+.field input {
+  width:100%; padding:11px 14px; border:1px solid var(--border);
+  background:var(--paper); font-family:'IBM Plex Sans',sans-serif;
+  font-size:0.9rem; color:var(--text); outline:none;
+  transition:border-color 0.18s,box-shadow 0.18s,background 0.18s;
+}
+.field input:focus { border-color:var(--black); background:var(--white); box-shadow:0 0 0 3px rgba(26,26,26,0.07); }
+.field input::placeholder { color:var(--muted); font-weight:300; }
+.alert-error {
+  background:var(--red-light); border-left:3px solid var(--red);
+  color:var(--red-dark); padding:10px 14px; font-size:0.8125rem;
+  margin-bottom:18px; display:none;
+}
+.btn-login {
+  width:100%; padding:12px; background:var(--black); color:var(--white);
+  border:none; font-family:'IBM Plex Sans',sans-serif; font-size:0.875rem;
+  font-weight:600; cursor:pointer; transition:background 0.18s;
+  letter-spacing:0.03em; margin-top:8px; position:relative; overflow:hidden;
+}
+.btn-login::after {
+  content:''; position:absolute; bottom:0; left:0;
+  width:0; height:2px; background:var(--red); transition:width 0.28s ease;
+}
+.btn-login:hover { background:#000; }
+.btn-login:hover::after { width:100%; }
+.btn-login:disabled { background:var(--muted); cursor:not-allowed; }
+.divider { height:1px; background:var(--border); margin:28px 0 20px; }
+.card-note { font-size:0.75rem; color:var(--muted); text-align:center; font-weight:300; line-height:1.6; }
+@media(max-width:768px) {
+  body { grid-template-columns:1fr; }
+  .panel-left { display:none; }
+  .panel-right { background:var(--black); }
+}
+</style>
+</head>
+<body>
+
+<div class="panel-left">
+  <div class="left-logo">
+    <div class="logo-mark"></div>
+    <span class="logo-name">Portál</span>
+  </div>
+  <div class="left-content">
+    <h1 class="left-headline">Interní<br><span>aplikační</span><br>portál</h1>
+    <p class="left-sub">Jednotné přihlášení do všech interních aplikací a nástrojů.</p>
+    <div class="left-features">
+      <div class="feature">Správa uživatelů a rolí</div>
+      <div class="feature">Centrální přidělování přístupů</div>
+      <div class="feature">Přehled všech aplikací na jednom místě</div>
+    </div>
+  </div>
+  <div class="left-footer">INTERNÍ SYSTÉM &nbsp;·&nbsp; PŘÍSTUP POUZE PRO OPRÁVNĚNÉ</div>
+</div>
+
+<div class="panel-right">
+  <div class="login-card">
+    <h2 class="card-title">Přihlášení</h2>
+    <p class="card-sub">Zadejte své přihlašovací údaje</p>
+    <div class="alert-error" id="err"></div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="email" placeholder="vas@email.cz" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Heslo</label>
+      <input type="password" id="heslo" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn" onclick="login()">Přihlásit se</button>
+    <div class="divider"></div>
+    <p class="card-note">Přístup pouze pro oprávněné uživatele.<br>Problémy s přihlášením? Kontaktujte správce systému.</p>
+  </div>
+</div>
+
+<script>
+  if (localStorage.getItem('auth_token')) window.location.href = '/dashboard.html';
+
+  document.getElementById('heslo').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  async function login() {
+    const email = document.getElementById('email').value.trim();
+    const heslo = document.getElementById('heslo').value;
+    const btn   = document.getElementById('btn');
+    const err   = document.getElementById('err');
+    err.style.display = 'none';
+    if (!email || !heslo) { showErr('Vyplňte e-mail a heslo.'); return; }
+    btn.disabled = true; btn.textContent = 'Přihlašuji…';
+    try {
+      const res  = await fetch('/api/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, heslo })
+      });
+      const data = await res.json();
+      if (!res.ok) { showErr(data.error || 'Chyba přihlášení'); return; }
+      localStorage.setItem('auth_token', data.token);
+      window.location.href = '/dashboard.html';
+    } catch { showErr('Nelze se připojit k serveru.'); }
+    finally { btn.disabled = false; btn.textContent = 'Přihlásit se'; }
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('err');
+    el.textContent = msg; el.style.display = 'block';
+  }
+</script>
+</body>
+</html>

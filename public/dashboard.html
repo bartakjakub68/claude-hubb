@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Portál</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/base.css">
+<style>
+.topbar__right-inner { display:flex; align-items:center; gap:16px; }
+
+/* ── Tabs ── */
+.page-tabs {
+  display:flex; border-bottom:2px solid var(--border);
+  margin-bottom:32px; gap:0;
+}
+.page-tab {
+  padding:10px 20px; font-size:0.8375rem; font-weight:500;
+  color:var(--muted); cursor:pointer; border:none; background:none;
+  font-family:'IBM Plex Sans',sans-serif; position:relative;
+  transition:color 0.18s; text-decoration:none; display:none;
+}
+.page-tab:hover { color:var(--text); }
+.page-tab.active { color:var(--text); }
+.page-tab.active::after {
+  content:''; position:absolute; bottom:-2px; left:0; right:0;
+  height:2px; background:var(--red);
+}
+.page-tab.visible { display:inline-flex; align-items:center; }
+
+/* ── Tab sections ── */
+.tab-section { display:none; }
+.tab-section.active { display:block; }
+
+/* ── Quick actions bar (admin) ── */
+.quick-actions {
+  display:flex; gap:10px; margin-bottom:24px;
+  padding:16px; background:var(--white); border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+}
+
+/* ── User form modal specifics ── */
+#manazer-group { display:none; }
+</style>
+</head>
+<body>
+<script src="/auth-check.js"></script>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar__left">
+    <a class="logo" href="/dashboard.html">
+      <div class="logo-mark"></div>
+      <span class="logo-text">PORTÁL</span>
+    </a>
+    <nav class="nav-tabs" id="nav-tabs">
+      <a class="nav-tab visible active" onclick="showTab('apps')" href="#">Dashboard</a>
+      <a class="nav-tab" id="tab-btn-users" onclick="showTab('users')" href="#">Uživatelé</a>
+      <a class="nav-tab" id="tab-btn-appmanage" onclick="showTab('appmanage')" href="#">Správa aplikací</a>
+    </nav>
+  </div>
+  <div class="topbar__right">
+    <div class="topbar__user">
+      <span class="topbar__user-name" id="user-name"></span>
+      <span class="topbar__user-role" id="user-role"></span>
+    </div>
+    <button class="btn-logout" onclick="AuthUser.logout()">Odhlásit se</button>
+  </div>
+</header>
+
+<div class="page-wrap">
+  <div class="container">
+
+    <!-- Page title -->
+    <div class="page-title-block fade-up">
+      <h1 id="greeting">Dobrý den</h1>
+      <p id="page-sub"></p>
+    </div>
+
+    <!-- Tabs (admin/manazer) -->
+    <div class="page-tabs" id="page-tabs" style="display:none">
+      <button class="page-tab visible active" onclick="showTab('apps',this)">Aplikace</button>
+      <button class="page-tab visible" id="ptab-users" onclick="showTab('users',this)">Uživatelé</button>
+      <button class="page-tab" id="ptab-costs" onclick="showTab('costs',this);loadCosts()">Náklady API</button>
+      <button class="page-tab" id="ptab-billing" onclick="showTab('billing',this);loadBilling()">Fakturace</button>
+      <button class="page-tab" id="ptab-appmanage" onclick="showTab('appmanage',this)">Správa aplikací</button>
+    </div>
+
+    <!-- ── TAB: Aplikace ───────────────────────────────── -->
+    <div class="tab-section active" id="section-apps">
+
+      <!-- Stats (admin/manazer only) -->
+      <div class="stats-row fade-up fade-up-1" id="stats-row" style="display:none">
+        <div class="stat-card">
+          <div class="stat-card__bar" style="background:var(--red)"></div>
+          <div class="stat-card__val" id="stat-apps">—</div>
+          <div class="stat-card__label">Aplikací</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__bar" style="background:#1B4332"></div>
+          <div class="stat-card__val" id="stat-manazers">—</div>
+          <div class="stat-card__label">Manažerů</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__bar" style="background:#1A3A5C"></div>
+          <div class="stat-card__val" id="stat-poradci">—</div>
+          <div class="stat-card__label">Poradců</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__bar" style="background:var(--black)"></div>
+          <div class="stat-card__val" id="stat-total">—</div>
+          <div class="stat-card__label">Uživatelů celkem</div>
+        </div>
+      </div>
+
+      <div class="apps-grid fade-up fade-up-2" id="apps-grid">
+        <div class="empty-state"><p>Načítám aplikace…</p></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: Uživatelé ─────────────────────────────── -->
+    <div class="tab-section" id="section-users">
+      <div class="section-header">
+        <div>
+          <div class="section-title" id="users-title">Uživatelé</div>
+          <div class="section-sub" id="users-sub"></div>
+        </div>
+        <button class="btn btn-primary" onclick="openUserModal()">+ Nový uživatel</button>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="user-search" placeholder="Hledat jméno nebo e-mail…" oninput="filterUsers()">
+        <div class="filter-pills" id="role-pills">
+          <button class="pill active" onclick="filterRole('', this)">Všichni</button>
+          <button class="pill" onclick="filterRole('manazer', this)">Manažeři</button>
+          <button class="pill" onclick="filterRole('poradce', this)">Poradci</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Jméno</th>
+              <th>E-mail</th>
+              <th>Role</th>
+              <th id="th-manazer">Manažeři</th>
+              <th>Stav</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TAB: Náklady API ──────────────────────────── -->
+    <div class="tab-section" id="section-costs">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Náklady API</div>
+        </div>
+      </div>
+
+      <!-- Nastavení marže (jen admin) -->
+      <div id="costs-marze-bar" style="display:none;margin-bottom:20px;padding:14px 16px;background:var(--white);border:1px solid var(--border);align-items:center;gap:12px">
+        <span style="font-size:0.8375rem;font-weight:500">Marže na API náklady:</span>
+        <input type="number" id="marze-input" min="0" max="500" step="1" style="width:80px;padding:6px 10px;font-size:0.875rem;border:1px solid var(--border);font-family:inherit" placeholder="0">
+        <span style="font-size:0.8375rem;color:var(--muted)">%</span>
+        <button class="btn btn-black" onclick="saveMarze()" style="padding:6px 14px;font-size:0.8rem">Uložit</button>
+        <span id="marze-saved" style="font-size:0.8rem;color:#1B4332;display:none">✓ Uloženo</span>
+        <span style="font-size:0.78rem;color:var(--muted);margin-left:8px">Fakturovaná cena = náklady Claude API × (1 + marže)</span>
+      </div>
+
+      <!-- Celkový součet -->
+      <div class="stats-row fade-up" id="costs-summary" style="display:none;margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-card__bar" style="background:var(--red)"></div>
+          <div class="stat-card__val" id="cost-total-usd">—</div>
+          <div class="stat-card__label">Celkové náklady (USD)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__bar" style="background:#1B4332"></div>
+          <div class="stat-card__val" id="cost-total-in">—</div>
+          <div class="stat-card__label">Vstupní tokeny</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__bar" style="background:#1A3A5C"></div>
+          <div class="stat-card__val" id="cost-total-out">—</div>
+          <div class="stat-card__label">Výstupní tokeny</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__bar" style="background:var(--black)"></div>
+          <div class="stat-card__val" id="cost-total-calls">—</div>
+          <div class="stat-card__label">Celkem volání</div>
+        </div>
+      </div>
+
+      <!-- Tabulka manažerů (admin view) -->
+      <div id="costs-managers-wrap" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Manažer</th>
+                <th>Poradci v týmu</th>
+                <th>Vstupní tokeny</th>
+                <th>Výstupní tokeny</th>
+                <th>Volání</th>
+                <th>Naposledy</th>
+                <th style="text-align:right">Náklady API</th>
+                <th style="text-align:right">Fakturováno</th>
+              </tr>
+            </thead>
+            <tbody id="costs-managers-tbody"></tbody>
+          </table>
+        </div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:10px">
+          Ceny dle ceníku Claude Opus 4.6: $5 / 1M vstupních tokenů, $25 / 1M výstupních tokenů.
+        </div>
+      </div>
+
+      <!-- Breakdown týmu (manažer view) -->
+      <div id="costs-breakdown-wrap" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Uživatel</th>
+                <th>Role</th>
+                <th>Vstupní tokeny</th>
+                <th>Výstupní tokeny</th>
+                <th>Volání</th>
+                <th style="text-align:right">Náklady (USD)</th>
+              </tr>
+            </thead>
+            <tbody id="costs-breakdown-tbody"></tbody>
+          </table>
+        </div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:10px">
+          Ceny dle ceníku Claude Opus 4.6: $5 / 1M vstupních tokenů, $25 / 1M výstupních tokenů.
+        </div>
+      </div>
+
+      <div id="costs-empty" style="display:none;padding:48px;text-align:center;color:var(--muted);font-style:italic">
+        Zatím žádná API volání.
+      </div>
+      <div id="costs-loading" style="padding:48px;text-align:center;color:var(--muted)">Načítám…</div>
+    </div>
+
+    <!-- ── TAB: Fakturace ───────────────────────────────── -->
+    <div class="tab-section" id="section-billing">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Fakturace</div>
+          <div class="section-sub">Měsíční uzávěrky — po uzavření nelze měnit</div>
+        </div>
+        <button class="btn btn-primary" onclick="openCloseMonth()">Uzavřít měsíc</button>
+      </div>
+
+      <div id="billing-loading" style="padding:48px;text-align:center;color:var(--muted)">Načítám…</div>
+      <div id="billing-empty" style="display:none;padding:48px;text-align:center;color:var(--muted);font-style:italic">Žádné uzávěrky zatím.</div>
+
+      <div id="billing-table-wrap" style="display:none">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Období</th>
+                <th>Manažer</th>
+                <th>Vstupní tok.</th>
+                <th>Výstupní tok.</th>
+                <th>Náklady API</th>
+                <th>Marže</th>
+                <th style="text-align:right">K fakturaci</th>
+                <th>Uzavřeno</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="billing-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: Správa aplikací ───────────────────────── -->
+    <div class="tab-section" id="section-appmanage">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Správa aplikací</div>
+          <div class="section-sub">Přidávejte a upravujte aplikace dostupné v portálu</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAppModal()">+ Nová aplikace</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:48px">Ikona</th>
+              <th>Název</th>
+              <th>URL</th>
+              <th>Popis</th>
+              <th style="width:60px">Pořadí</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+          <tbody id="apps-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal: Nový / Upravit uživatel ─────────────────── -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <div class="modal__header">
+      <span class="modal__title" id="modal-user-title">Nový uživatel</span>
+      <button class="modal__close" onclick="closeModal('modal-user')">×</button>
+    </div>
+    <div class="modal__body">
+      <input type="hidden" id="edit-user-id">
+      <div class="alert-error" id="user-err"></div>
+      <div class="field">
+        <label>Jméno a příjmení</label>
+        <input type="text" id="u-jmeno" placeholder="Jana Nováková">
+      </div>
+      <div class="field">
+        <label>E-mail</label>
+        <input type="email" id="u-email" placeholder="jana@firma.cz">
+      </div>
+      <div class="field">
+        <label id="heslo-label">Heslo</label>
+        <input type="password" id="u-heslo" placeholder="Min. 6 znaků">
+      </div>
+      <div class="field" id="role-group">
+        <label>Role</label>
+        <select id="u-role" onchange="onRoleChange()">
+          <option value="manazer">Manažer</option>
+          <option value="poradce">Poradce</option>
+        </select>
+      </div>
+      <div id="manazer-group">
+        <div class="field">
+          <label>Manažer 1</label>
+          <select id="u-manazer"></select>
+        </div>
+        <div class="field" id="manazer2-group" style="display:none">
+          <label>Manažer 2 (volitelný)</label>
+          <select id="u-manazer2"><option value="">— žádný —</option></select>
+        </div>
+        <div class="field" id="billing-group" style="display:none">
+          <label>Billing manažer (kdo dostane fakturu)</label>
+          <div style="display:flex;gap:16px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+              <input type="radio" name="billing-radio" id="billing-1" value="1" checked> <span id="billing-label-1">Manažer 1</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+              <input type="radio" name="billing-radio" id="billing-2" value="2"> <span id="billing-label-2">Manažer 2</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Zrušit</button>
+      <button class="btn btn-black" onclick="saveUser()">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Oprávnění poradce ───────────────────────── -->
+<div class="modal-overlay" id="modal-perms">
+  <div class="modal">
+    <div class="modal__header">
+      <span class="modal__title">Oprávnění: <span id="perms-name"></span></span>
+      <button class="modal__close" onclick="closeModal('modal-perms')">×</button>
+    </div>
+    <div class="modal__body">
+      <input type="hidden" id="perms-user-id">
+      <p style="font-size:0.8125rem;color:var(--muted);font-weight:300;margin-bottom:14px">
+        Zaškrtněte aplikace, ke kterým bude mít poradce přístup.
+      </p>
+      <div class="checkbox-grid" id="perms-grid"></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-perms')">Zrušit</button>
+      <button class="btn btn-black" onclick="savePerms()">Uložit oprávnění</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Uzavřít měsíc ──────────────────────────── -->
+<div class="modal-overlay" id="modal-close-month">
+  <div class="modal">
+    <div class="modal__header">
+      <span class="modal__title">Uzavřít měsíc</span>
+      <button class="modal__close" onclick="closeModal('modal-close-month')">×</button>
+    </div>
+    <div class="modal__body">
+      <div class="alert-error" id="close-month-err"></div>
+      <p style="font-size:0.8125rem;color:var(--muted);margin-bottom:16px;line-height:1.6">
+        Uzávěrka zachytí tokeny za zvolené období s <strong>aktuální marží</strong>. Po uzavření <strong>nelze zpětně měnit</strong>.
+      </p>
+      <div class="field">
+        <label>Období (YYYY-MM)</label>
+        <input type="month" id="close-month-val" style="padding:8px 10px;font-size:0.875rem;border:1px solid var(--border);font-family:inherit;width:100%">
+      </div>
+      <div id="close-month-preview" style="display:none;padding:12px;background:var(--paper,#F6F5F3);border:1px solid var(--border);font-size:0.8rem;line-height:1.8;margin-top:4px">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-close-month')">Zrušit</button>
+      <button class="btn btn-black" id="close-month-btn" onclick="confirmCloseMonth()">Uzavřít</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Nová / Upravit aplikace ────────────────── -->
+<div class="modal-overlay" id="modal-app">
+  <div class="modal">
+    <div class="modal__header">
+      <span class="modal__title" id="modal-app-title">Nová aplikace</span>
+      <button class="modal__close" onclick="closeModal('modal-app')">×</button>
+    </div>
+    <div class="modal__body">
+      <input type="hidden" id="edit-app-id">
+      <div class="alert-error" id="app-err"></div>
+      <div class="field">
+        <label>Název aplikace</label>
+        <input type="text" id="a-nazev" placeholder="Moje aplikace">
+      </div>
+      <div class="field">
+        <label>URL adresa</label>
+        <input type="text" id="a-url" placeholder="https://app.firma.cz">
+      </div>
+      <div class="field">
+        <label>Ikona (emoji)</label>
+        <input type="text" id="a-ikona" placeholder="📊" maxlength="4" style="font-size:1.2rem">
+      </div>
+      <div class="field">
+        <label>Krátký popis</label>
+        <input type="text" id="a-popis" placeholder="Popis aplikace…">
+      </div>
+      <div class="field">
+        <label>Pořadí zobrazení</label>
+        <input type="number" id="a-poradi" value="0" min="0">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-app')">Zrušit</button>
+      <button class="btn btn-black" onclick="saveApp()">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Manažeři poradce ───────────────────────── -->
+<div class="modal-overlay" id="modal-managers">
+  <div class="modal">
+    <div class="modal__header">
+      <span class="modal__title">Manažeři: <span id="managers-modal-name"></span></span>
+      <button class="modal__close" onclick="closeModal('modal-managers')">×</button>
+    </div>
+    <div class="modal__body">
+      <input type="hidden" id="managers-user-id">
+      <div class="alert-error" id="managers-err"></div>
+      <p style="font-size:0.8125rem;color:var(--muted);margin-bottom:16px">Max 2 manažeři. Billing manažer dostane fakturu za API náklady.</p>
+      <div class="field">
+        <label>Manažer 1</label>
+        <select id="mgr-m1"></select>
+      </div>
+      <div class="field">
+        <label>Manažer 2 (volitelný)</label>
+        <select id="mgr-m2"><option value="">— žádný —</option></select>
+      </div>
+      <div class="field" id="mgr-billing-group">
+        <label>Billing manažer</label>
+        <div style="display:flex;gap:16px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+            <input type="radio" name="mgr-billing" id="mgr-b1" value="1" checked> <span id="mgr-b1-label">M1</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+            <input type="radio" name="mgr-billing" id="mgr-b2" value="2"> <span id="mgr-b2-label">M2</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-managers')">Zrušit</button>
+      <button class="btn btn-black" onclick="saveManagers()">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const role    = AuthUser.role;
+const headers = AuthUser.authHeader();
+const roleLabels = { admin:'Administrátor', manazer:'Manažer', poradce:'Poradce' };
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('user-name').textContent = AuthUser.jmeno;
+document.getElementById('user-role').textContent = roleLabels[role] || role;
+document.getElementById('greeting').textContent  = `Dobrý den, ${AuthUser.jmeno}`;
+document.getElementById('page-sub').textContent  = roleLabels[role] || role;
+
+if (role !== 'poradce') {
+  document.getElementById('page-tabs').style.display = 'flex';
+  document.getElementById('ptab-users').classList.add('visible');
+  document.getElementById('ptab-costs').classList.add('visible');
+  if (role === 'admin') {
+    document.getElementById('ptab-appmanage').classList.add('visible');
+    document.getElementById('ptab-billing').classList.add('visible');
+    document.getElementById('stats-row').style.display = 'grid';
+  }
+  if (role === 'manazer') {
+    document.getElementById('th-manazer').style.display = 'none';
+  }
+  loadUsers();
+}
+
+if (role === 'admin') loadAppsTable();
+loadApps();
+
+// ── Tab switching ──────────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  return false;
+}
+
+// ── Aplikace (dashboard grid) ──────────────────────────────────────────────────
+async function loadApps() {
+  const res  = await fetch('/api/apps', { headers });
+  const apps = await res.json();
+  const grid = document.getElementById('apps-grid');
+
+  if (!apps.length) {
+    grid.innerHTML = '<div class="empty-state"><p>Žádné aplikace k dispozici</p></div>';
+    return;
+  }
+
+  // Stats
+  if (role !== 'poradce') {
+    document.getElementById('stat-apps').textContent = apps.length;
+  }
+
+  grid.innerHTML = apps.map((a, i) => `
+    <a class="app-card fade-up" style="animation-delay:${i * 0.04}s" href="${escHtml(a.url)}" target="_blank" rel="noopener">
+      <div class="app-card__icon">${escHtml(a.ikona)}</div>
+      <div class="app-card__name">${escHtml(a.nazev)}</div>
+      ${a.popis ? `<div class="app-card__desc">${escHtml(a.popis)}</div>` : ''}
+      <div class="app-card__arrow">→</div>
+    </a>
+  `).join('');
+}
+
+// ── Uživatelé ──────────────────────────────────────────────────────────────────
+let allUsers = [];
+let activeRoleFilter = '';
+
+async function loadUsers() {
+  const res = await fetch('/api/users', { headers });
+  if (!res.ok) {
+    console.error('loadUsers chyba:', res.status, await res.text());
+    return;
+  }
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    console.error('loadUsers: očekáváno pole, dostáno:', data);
+    return;
+  }
+  allUsers = data;
+
+  // Stats
+  if (role === 'admin') {
+    const manazers = allUsers.filter(u => u.role === 'manazer' && u.aktivni);
+    const poradci  = allUsers.filter(u => u.role === 'poradce' && u.aktivni);
+    document.getElementById('stat-manazers').textContent = manazers.length;
+    document.getElementById('stat-poradci').textContent  = poradci.length;
+    document.getElementById('stat-total').textContent    = allUsers.filter(u => u.aktivni).length;
+  }
+
+  renderUsers();
+}
+
+function filterUsers() { renderUsers(); }
+
+function filterRole(r, btn) {
+  activeRoleFilter = r;
+  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderUsers();
+}
+
+function renderUsers() {
+  const search = (document.getElementById('user-search').value || '').toLowerCase();
+  const tbody  = document.getElementById('users-tbody');
+
+  const filtered = allUsers.filter(u => {
+    const matchRole   = !activeRoleFilter || u.role === activeRoleFilter;
+    const matchSearch = !search || u.jmeno.toLowerCase().includes(search) || u.email.toLowerCase().includes(search);
+    return matchRole && matchSearch;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);font-style:italic">Žádní uživatelé nenalezeni</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(u => {
+    const manageriHtml = (u.manageri || []).map(m =>
+      `${escHtml(m.jmeno)}${m.je_billing ? ' <span title="billing" style="color:#92550A;font-size:0.72rem">₿</span>' : ''}`
+    ).join(', ') || '—';
+    return `
+    <tr>
+      <td>${escHtml(u.jmeno)}</td>
+      <td style="color:var(--muted)">${escHtml(u.email)}</td>
+      <td><span class="badge badge-${u.role}">${u.role}</span></td>
+      ${role === 'admin' ? `<td style="color:var(--muted);font-size:0.82rem">${manageriHtml}</td>` : ''}
+      <td><span class="status ${u.aktivni ? 'status-on' : 'status-off'}">${u.aktivni ? 'Aktivní' : 'Neaktivní'}</span></td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick='openUserModal(${JSON.stringify(u)})'>Upravit</button>
+          ${(u.role === 'poradce' || u.role === 'manazer') ? `<button class="btn btn-outline btn-sm" onclick="openPermsModal(${u.id},'${escHtml(u.jmeno)}')">Oprávnění</button>` : ''}
+          ${u.role === 'poradce' && role === 'admin' ? `<button class="btn btn-outline btn-sm" onclick="openManagersModal(${u.id},'${escHtml(u.jmeno)}',${JSON.stringify(u.manageri||[])})">Manažeři</button>` : ''}
+          <button class="btn btn-danger-ghost" onclick="toggleUser(${u.id},${u.aktivni})">${u.aktivni ? 'Deaktivovat' : 'Aktivovat'}</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Správa aplikací (tabulka) ─────────────────────────────────────────────────
+async function loadAppsTable() {
+  const res  = await fetch('/api/apps?all=1', { headers });
+  const apps = await res.json();
+  const tbody = document.getElementById('apps-tbody');
+
+  if (!apps.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);font-style:italic">Žádné aplikace</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = apps.map(a => `
+    <tr style="${a.aktivni ? '' : 'opacity:0.5'}">
+      <td style="font-size:1.3rem;text-align:center">${escHtml(a.ikona)}</td>
+      <td>
+        ${escHtml(a.nazev)}
+        ${a.aktivni ? '' : '<span style="font-size:0.72rem;color:var(--muted);margin-left:6px;font-style:italic">neaktivní</span>'}
+      </td>
+      <td style="color:var(--muted);font-size:0.8rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        <a href="${escHtml(a.url)}" target="_blank" style="color:var(--muted);text-decoration:none" title="${escHtml(a.url)}">${escHtml(a.url)}</a>
+      </td>
+      <td style="color:var(--muted);font-size:0.8rem">${escHtml(a.popis || '—')}</td>
+      <td style="text-align:center;color:var(--muted)">${a.poradi}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick='openAppModal(${JSON.stringify(a)})'>Upravit</button>
+          <button class="btn btn-${a.aktivni ? 'danger-ghost' : 'outline'} btn-sm" onclick="toggleApp(${a.id}, ${a.aktivni})">
+            ${a.aktivni ? 'Deaktivovat' : 'Aktivovat'}
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── Modal: Uživatel ───────────────────────────────────────────────────────────
+function openUserModal(user) {
+  const isEdit = !!user;
+  document.getElementById('modal-user-title').textContent = isEdit ? 'Upravit uživatele' : 'Nový uživatel';
+  document.getElementById('edit-user-id').value  = user ? user.id : '';
+  document.getElementById('u-jmeno').value        = user ? user.jmeno : '';
+  document.getElementById('u-email').value        = user ? user.email : '';
+  document.getElementById('u-heslo').value        = '';
+  document.getElementById('heslo-label').textContent = isEdit ? 'Nové heslo (ponechte prázdné pro zachování)' : 'Heslo';
+  document.getElementById('u-heslo').placeholder  = isEdit ? 'Ponechte prázdné…' : 'Min. 6 znaků';
+  document.getElementById('user-err').style.display = 'none';
+
+  const roleGroup = document.getElementById('role-group');
+  const roleSelect = document.getElementById('u-role');
+
+  if (role === 'admin') {
+    roleGroup.style.display = 'block';
+    roleSelect.innerHTML = `<option value="manazer">Manažer</option><option value="poradce">Poradce</option>`;
+    if (user) roleSelect.value = user.role;
+    onRoleChange();
+  } else {
+    // Manažer vždy zakládá poradce
+    roleGroup.style.display = 'none';
+    document.getElementById('manazer-group').style.display = 'none';
+  }
+
+  openModal('modal-user');
+}
+
+function onRoleChange() {
+  const r  = document.getElementById('u-role').value;
+  const mg = document.getElementById('manazer-group');
+  if (r === 'poradce') {
+    mg.style.display = 'block';
+    const manazers = allUsers.filter(u => u.role === 'manazer' && u.aktivni);
+    const opts = manazers.map(m => `<option value="${m.id}">${escHtml(m.jmeno)}</option>`).join('');
+    document.getElementById('u-manazer').innerHTML = opts;
+    document.getElementById('u-manazer2').innerHTML = '<option value="">— žádný —</option>' + opts;
+    if (role === 'admin') {
+      document.getElementById('manazer2-group').style.display = 'block';
+      document.getElementById('u-manazer2').onchange = updateBillingGroup;
+      document.getElementById('u-manazer').onchange = updateBillingGroup;
+      updateBillingGroup();
+    }
+  } else {
+    mg.style.display = 'none';
+  }
+}
+
+function updateBillingGroup() {
+  const m1 = document.getElementById('u-manazer');
+  const m2 = document.getElementById('u-manazer2');
+  const bg = document.getElementById('billing-group');
+  if (m2.value) {
+    bg.style.display = 'block';
+    document.getElementById('billing-label-1').textContent = m1.options[m1.selectedIndex]?.text || 'Manažer 1';
+    document.getElementById('billing-label-2').textContent = m2.options[m2.selectedIndex]?.text || 'Manažer 2';
+  } else {
+    bg.style.display = 'none';
+  }
+}
+
+async function saveUser() {
+  const id   = document.getElementById('edit-user-id').value;
+  const body = {
+    jmeno: document.getElementById('u-jmeno').value.trim(),
+    email: document.getElementById('u-email').value.trim(),
+    heslo: document.getElementById('u-heslo').value,
+    role:  role === 'manazer' ? 'poradce' : document.getElementById('u-role').value,
+  };
+  if (body.role === 'poradce') {
+    const m1 = parseInt(document.getElementById('u-manazer').value);
+    const m2val = document.getElementById('u-manazer2')?.value;
+    const m2 = m2val ? parseInt(m2val) : null;
+    body.manazer_ids = m2 ? [m1, m2] : [m1];
+    if (m2) {
+      const billingRadio = document.querySelector('input[name="billing-radio"]:checked');
+      body.billing_manazer_id = billingRadio?.value === '2' ? m2 : m1;
+    } else {
+      body.billing_manazer_id = m1;
+    }
+  }
+  const errEl = document.getElementById('user-err');
+  errEl.style.display = 'none';
+
+  const url    = id ? `/api/users/${id}` : '/api/users';
+  const method = id ? 'PUT' : 'POST';
+  const res    = await fetch(url, { method, headers, body: JSON.stringify(body) });
+  const data   = await res.json();
+
+  if (!res.ok) {
+    errEl.textContent = data.error || 'Chyba při ukládání';
+    errEl.style.display = 'block';
+    return;
+  }
+  closeModal('modal-user');
+  // Reset filtru na "Všichni" aby byl nový uživatel viditelný
+  activeRoleFilter = '';
+  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('.filter-pills .pill').classList.add('active');
+  loadUsers();
+}
+
+async function toggleUser(id, aktivni) {
+  const text = aktivni ? 'Deaktivovat tohoto uživatele?' : 'Aktivovat tohoto uživatele?';
+  if (!confirm(text)) return;
+  await fetch(`/api/users/${id}`, { method:'PUT', headers, body: JSON.stringify({ aktivni: aktivni ? 0 : 1 }) });
+  loadUsers();
+}
+
+function openManagersModal(userId, jmeno, currentManageri) {
+  document.getElementById('managers-user-id').value = userId;
+  document.getElementById('managers-modal-name').textContent = jmeno;
+  document.getElementById('managers-err').style.display = 'none';
+
+  const manazers = allUsers.filter(u => u.role === 'manazer' && u.aktivni);
+  const opts = manazers.map(m => `<option value="${m.id}">${escHtml(m.jmeno)}</option>`).join('');
+  document.getElementById('mgr-m1').innerHTML = opts;
+  document.getElementById('mgr-m2').innerHTML = '<option value="">— žádný —</option>' + opts;
+
+  // Předvyplnit aktuální hodnoty
+  const m1 = currentManageri[0];
+  const m2 = currentManageri[1];
+  if (m1) document.getElementById('mgr-m1').value = m1.manazer_id;
+  if (m2) {
+    document.getElementById('mgr-m2').value = m2.manazer_id;
+    document.getElementById('mgr-billing-group').style.display = 'block';
+    const billingId = currentManageri.find(m => m.je_billing)?.manazer_id;
+    if (billingId === m2.manazer_id) document.getElementById('mgr-b2').checked = true;
+    else document.getElementById('mgr-b1').checked = true;
+    document.getElementById('mgr-b1-label').textContent = m1 ? allUsers.find(u => u.id === m1.manazer_id)?.jmeno || 'M1' : 'M1';
+    document.getElementById('mgr-b2-label').textContent = allUsers.find(u => u.id === m2.manazer_id)?.jmeno || 'M2';
+  } else {
+    document.getElementById('mgr-billing-group').style.display = 'none';
+  }
+
+  document.getElementById('mgr-m2').onchange = () => {
+    const has2 = !!document.getElementById('mgr-m2').value;
+    document.getElementById('mgr-billing-group').style.display = has2 ? 'block' : 'none';
+    if (has2) {
+      const sel1 = document.getElementById('mgr-m1');
+      const sel2 = document.getElementById('mgr-m2');
+      document.getElementById('mgr-b1-label').textContent = sel1.options[sel1.selectedIndex]?.text || 'M1';
+      document.getElementById('mgr-b2-label').textContent = sel2.options[sel2.selectedIndex]?.text || 'M2';
+    }
+  };
+
+  openModal('modal-managers');
+}
+
+async function saveManagers() {
+  const userId = document.getElementById('managers-user-id').value;
+  const m1id   = parseInt(document.getElementById('mgr-m1').value);
+  const m2val  = document.getElementById('mgr-m2').value;
+  const m2id   = m2val ? parseInt(m2val) : null;
+  const errEl  = document.getElementById('managers-err');
+  errEl.style.display = 'none';
+
+  if (!m1id) { errEl.textContent = 'Vyberte manažera 1'; errEl.style.display = 'block'; return; }
+  if (m2id && m1id === m2id) { errEl.textContent = 'Oba manažeři musí být různí'; errEl.style.display = 'block'; return; }
+
+  let billingId = m1id;
+  if (m2id) {
+    const radio = document.querySelector('input[name="mgr-billing"]:checked');
+    billingId = radio?.value === '2' ? m2id : m1id;
+  }
+
+  const managers = [{ manazer_id: m1id, je_billing: m1id === billingId ? 1 : 0 }];
+  if (m2id) managers.push({ manazer_id: m2id, je_billing: m2id === billingId ? 1 : 0 });
+
+  const res  = await fetch(`/api/users/${userId}/managers`, { method: 'PUT', headers, body: JSON.stringify({ managers }) });
+  const data = await res.json();
+  if (!res.ok) { errEl.textContent = data.error || 'Chyba'; errEl.style.display = 'block'; return; }
+  closeModal('modal-managers');
+  loadUsers();
+}
+
+// ── Modal: Oprávnění ──────────────────────────────────────────────────────────
+async function openPermsModal(userId, jmeno) {
+  document.getElementById('perms-name').textContent  = jmeno;
+  document.getElementById('perms-user-id').value     = userId;
+
+  const [appsRes, permsRes] = await Promise.all([
+    fetch('/api/apps', { headers }),
+    fetch(`/api/users/${userId}/permissions`, { headers })
+  ]);
+  const apps  = await appsRes.json();
+  const perms = await permsRes.json();
+
+  document.getElementById('perms-grid').innerHTML = apps.map(a => `
+    <label class="checkbox-item">
+      <input type="checkbox" value="${a.id}" ${perms.includes(a.id) ? 'checked' : ''}>
+      <span>${escHtml(a.ikona)} ${escHtml(a.nazev)}</span>
+    </label>
+  `).join('');
+
+  openModal('modal-perms');
+}
+
+async function savePerms() {
+  const userId  = document.getElementById('perms-user-id').value;
+  const checked = [...document.querySelectorAll('#perms-grid input:checked')].map(i => parseInt(i.value));
+  await fetch(`/api/users/${userId}/permissions`, {
+    method:'PUT', headers, body: JSON.stringify({ app_ids: checked })
+  });
+  closeModal('modal-perms');
+}
+
+// ── Modal: Aplikace ───────────────────────────────────────────────────────────
+function openAppModal(app) {
+  document.getElementById('modal-app-title').textContent = app ? 'Upravit aplikaci' : 'Nová aplikace';
+  document.getElementById('edit-app-id').value  = app ? app.id : '';
+  document.getElementById('a-nazev').value       = app ? app.nazev : '';
+  document.getElementById('a-url').value         = app ? app.url : '';
+  document.getElementById('a-ikona').value       = app ? app.ikona : '📦';
+  document.getElementById('a-popis').value       = app ? app.popis : '';
+  document.getElementById('a-poradi').value      = app ? app.poradi : 0;
+  document.getElementById('app-err').style.display = 'none';
+  openModal('modal-app');
+}
+
+async function saveApp() {
+  const id   = document.getElementById('edit-app-id').value;
+  const body = {
+    nazev:  document.getElementById('a-nazev').value.trim(),
+    url:    document.getElementById('a-url').value.trim(),
+    ikona:  document.getElementById('a-ikona').value || '📦',
+    popis:  document.getElementById('a-popis').value.trim(),
+    poradi: parseInt(document.getElementById('a-poradi').value) || 0,
+    aktivni: 1
+  };
+  const errEl = document.getElementById('app-err');
+  errEl.style.display = 'none';
+
+  const url    = id ? `/api/apps/${id}` : '/api/apps';
+  const method = id ? 'PUT' : 'POST';
+  const res    = await fetch(url, { method, headers, body: JSON.stringify(body) });
+  if (!res.ok) {
+    errEl.textContent = 'Chyba při ukládání aplikace';
+    errEl.style.display = 'block';
+    return;
+  }
+  closeModal('modal-app');
+  loadApps();
+  loadAppsTable();
+}
+
+async function toggleApp(id, aktualniStav) {
+  const akce = aktualniStav ? 'deaktivovat' : 'aktivovat';
+  if (!confirm(`Opravdu ${akce} tuto aplikaci?`)) return;
+  await fetch(`/api/apps/${id}/toggle`, { method:'POST', headers });
+  loadApps();
+  loadAppsTable();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+// ── Náklady API ───────────────────────────────────────────────────────────────
+let costsLoaded = false;
+
+function fakturuj(cost_usd, marze) {
+  return (cost_usd * (1 + marze / 100)).toFixed(4);
+}
+
+async function saveMarze() {
+  const val = parseFloat(document.getElementById('marze-input').value) || 0;
+  await fetch('/api/hub/settings', { method: 'PUT', headers, body: JSON.stringify({ api_marze_procent: val }) });
+  const saved = document.getElementById('marze-saved');
+  saved.style.display = 'inline';
+  setTimeout(() => saved.style.display = 'none', 2000);
+  // Překreslit tabulku s novou marží
+  costsLoaded = false;
+  document.getElementById('costs-managers-tbody').innerHTML = '';
+  document.getElementById('costs-breakdown-tbody').innerHTML = '';
+  document.getElementById('costs-summary').style.display = 'none';
+  document.getElementById('costs-loading').style.display = 'block';
+  loadCosts();
+}
+
+async function loadCosts() {
+  if (costsLoaded) return;
+  costsLoaded = true;
+
+  const res  = await fetch('/api/hub/costs', { headers });
+  const data = await res.json();
+
+  document.getElementById('costs-loading').style.display = 'none';
+
+  const managers  = data.managers  || [];
+  const breakdown = data.breakdown || [];
+  const marze     = parseFloat(data.marze_procent) || 0;
+  const hasData   = managers.some(m => m.volani > 0) || breakdown.some(b => b.volani > 0);
+
+  if (role === 'admin') {
+    document.getElementById('costs-marze-bar').style.display = 'flex';
+    document.getElementById('marze-input').value = marze;
+  }
+
+  if (!hasData) {
+    document.getElementById('costs-empty').style.display = 'block';
+    return;
+  }
+
+  // Celkový součet
+  const totIn      = managers.reduce((a, m) => a + m.vstupni_tokeny, 0);
+  const totOut     = managers.reduce((a, m) => a + m.vystupni_tokeny, 0);
+  const totCalls   = managers.reduce((a, m) => a + m.volani, 0);
+  const totCost    = managers.reduce((a, m) => a + m.cost_usd, 0);
+  const totFaktura = totCost * (1 + marze / 100);
+
+  const displayCost = role === 'manazer' ? totFaktura : totCost;
+  document.getElementById('cost-total-usd').textContent = '$' + displayCost.toFixed(4);
+  document.getElementById('cost-total-usd').title = '';
+  document.getElementById('cost-total-in').textContent    = totIn.toLocaleString('cs-CZ');
+  document.getElementById('cost-total-out').textContent   = totOut.toLocaleString('cs-CZ');
+  document.getElementById('cost-total-calls').textContent = totCalls.toLocaleString('cs-CZ');
+  document.getElementById('costs-summary').style.display  = 'grid';
+
+  if (role === 'admin' && managers.length > 0) {
+    document.getElementById('costs-managers-wrap').style.display = 'block';
+    document.getElementById('costs-managers-tbody').innerHTML = managers.map(m => {
+      const faktura = fakturuj(m.cost_usd, marze);
+      const jeRozdil = marze > 0;
+      return `
+      <tr>
+        <td style="font-weight:500">${escHtml(m.manazer_jmeno)}</td>
+        <td style="color:var(--muted)">${m.team_size}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem">${m.vstupni_tokeny.toLocaleString('cs-CZ')}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem">${m.vystupni_tokeny.toLocaleString('cs-CZ')}</td>
+        <td style="color:var(--muted)">${m.volani}</td>
+        <td style="color:var(--muted)">${m.posledni ? m.posledni.slice(0,10) : '—'}</td>
+        <td style="text-align:right;color:var(--muted);font-size:0.82rem">$${m.cost_usd.toFixed(4)}</td>
+        <td style="text-align:right;font-weight:600;color:var(--red)">$${faktura}${jeRozdil ? `<span style="font-size:0.72rem;color:var(--muted);font-weight:400;display:block">+${marze}% marže</span>` : ''}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  if (role === 'manazer' && breakdown.length > 0) {
+    document.getElementById('costs-breakdown-wrap').style.display = 'block';
+    document.getElementById('costs-breakdown-tbody').innerHTML = breakdown.map(b => {
+      const cena = (b.cost_usd * (1 + marze / 100)).toFixed(4);
+      return `
+      <tr>
+        <td style="font-weight:500">${escHtml(b.jmeno)}</td>
+        <td style="color:var(--muted)">${b.role === 'manazer' ? 'Manažer (já)' : 'Poradce'}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem">${b.vstup.toLocaleString('cs-CZ')}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem">${b.vystup.toLocaleString('cs-CZ')}</td>
+        <td style="color:var(--muted)">${b.volani}</td>
+        <td style="text-align:right;font-weight:600;color:var(--red)" colspan="2">$${cena}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ── Fakturace (admin only) ────────────────────────────────────────────────────
+let billingLoaded = false;
+
+async function loadBilling() {
+  if (billingLoaded) return;
+  billingLoaded = true;
+
+  const res  = await fetch('/api/hub/billing', { headers });
+  const rows = await res.json();
+
+  document.getElementById('billing-loading').style.display = 'none';
+
+  if (!rows.length) {
+    document.getElementById('billing-empty').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('billing-table-wrap').style.display = 'block';
+
+  // Seskup po měsících pro souhrnné řádky
+  const mesice = [...new Set(rows.map(r => r.mesic))].sort().reverse();
+  let html = '';
+  for (const m of mesice) {
+    const radky = rows.filter(r => r.mesic === m);
+    const totApi     = radky.reduce((a, r) => a + r.cost_api, 0);
+    const totFaktura = radky.reduce((a, r) => a + r.cost_faktura, 0);
+    const marze      = radky[0].marze_procent;
+    html += `
+      <tr style="background:var(--paper,#F6F5F3)">
+        <td colspan="6" style="font-weight:600;padding:10px 12px">${m}
+          <span style="font-weight:400;color:var(--muted);font-size:0.78rem;margin-left:8px">marže ${marze.toFixed(0)} % · celkem API $${totApi.toFixed(4)} · celkem faktura $${totFaktura.toFixed(4)}</span>
+        </td>
+        <td style="text-align:right;font-weight:700;color:var(--red);padding:10px 12px">$${totFaktura.toFixed(4)}</td>
+        <td style="padding:10px 12px;color:var(--muted);font-size:0.78rem">${radky[0].uzavreno_at.slice(0,10)}</td>
+        <td style="padding:10px 12px">
+          <a href="/api/hub/billing/${m}/invoice" target="_blank" class="btn btn-ghost" style="font-size:0.78rem;padding:4px 10px;text-decoration:none">🖨 PDF</a>
+        </td>
+      </tr>`;
+    for (const r of radky) {
+      html += `
+      <tr>
+        <td style="padding-left:24px;color:var(--muted)">${m}</td>
+        <td style="font-weight:500">${escHtml(r.manazer_jmeno)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem">${r.vstupni_tokeny.toLocaleString('cs-CZ')}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem">${r.vystupni_tokeny.toLocaleString('cs-CZ')}</td>
+        <td style="font-size:0.82rem;color:var(--muted)">$${r.cost_api.toFixed(4)}</td>
+        <td style="font-size:0.82rem;color:var(--muted)">${r.marze_procent.toFixed(0)} %</td>
+        <td style="text-align:right;font-weight:600;color:var(--red)">$${r.cost_faktura.toFixed(4)}</td>
+        <td style="color:var(--muted);font-size:0.78rem">${r.uzavreno_at.slice(0,10)}</td>
+        <td></td>
+      </tr>`;
+    }
+  }
+  document.getElementById('billing-tbody').innerHTML = html;
+}
+
+function openCloseMonth() {
+  const now  = new Date();
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const val  = prev.toISOString().slice(0, 7);
+  document.getElementById('close-month-val').value = val;
+  document.getElementById('close-month-err').style.display = 'none';
+  document.getElementById('close-month-preview').style.display = 'none';
+  openModal('modal-close-month');
+}
+
+async function confirmCloseMonth() {
+  const mesic  = document.getElementById('close-month-val').value;
+  const errEl  = document.getElementById('close-month-err');
+  const btn    = document.getElementById('close-month-btn');
+  errEl.style.display = 'none';
+  if (!mesic) { errEl.textContent = 'Vyberte měsíc'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Uzavírám…';
+
+  const res  = await fetch('/api/hub/billing/close', { method: 'POST', headers, body: JSON.stringify({ mesic }) });
+  const data = await res.json();
+
+  btn.disabled = false;
+  btn.textContent = 'Uzavřít';
+
+  if (!res.ok) {
+    errEl.textContent = data.error || 'Chyba';
+    errEl.style.display = 'block';
+    return;
+  }
+  closeModal('modal-close-month');
+  // Přenačti billing tabulku
+  billingLoaded = false;
+  document.getElementById('billing-loading').style.display = 'block';
+  document.getElementById('billing-table-wrap').style.display = 'none';
+  document.getElementById('billing-empty').style.display = 'none';
+  loadBilling();
+  // Otevři billing tab
+  showTab('billing', document.getElementById('ptab-billing'));
+}
+</script>
+</body>
+</html>

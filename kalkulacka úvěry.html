@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulačka úvěrů</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#f7f5f0;--white:#fff;--ink:#141210;--ink2:#2e2a25;--ink3:#6b6560;--ink4:#a09a94;
+  --gold:#b8922a;--gold-light:#d4aa4a;--gold-pale:#f5edd8;--gold-border:#e8d5a8;
+  --border:#e5dfd6;--border2:#d0c8bc;
+  --kb:#c0392b;--kb-light:#e74c3c;--kb-pale:#fdf0ee;--kb-border:#f0c0ba;
+  --mp:#1e4a8a;--mp-light:#2a5fa8;--mp-pale:#e8eef7;--mp-border:#b8cce8;
+  --green:#1a6644;--green-pale:#e8f4ee;
+  --sh-sm:0 1px 3px rgba(20,18,16,.05);
+  --sh:0 4px 20px rgba(20,18,16,.07);
+  --sh-lg:0 16px 48px rgba(20,18,16,.1);
+  --r:20px;--rs:12px;--rx:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.5}
+body::before{content:'';position:fixed;top:0;right:0;bottom:0;left:0;background:radial-gradient(ellipse 80% 50% at 85% 5%,rgba(192,57,43,.04)0%,transparent 50%),radial-gradient(ellipse 60% 60% at 5% 90%,rgba(30,74,138,.04)0%,transparent 50%),radial-gradient(ellipse 40% 40% at 50% 50%,rgba(184,146,42,.03)0%,transparent 50%);pointer-events:none;z-index:0}
+
+.header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(229,223,214,.6);padding:0 24px}
+.header-inner{max-width:920px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo-group{display:flex;align-items:center;gap:14px}
+.logo-mark{width:38px;height:38px;background:var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.logo-mark::after{content:'';position:absolute;top:-2px;right:-2px;width:15px;height:15px;background:var(--gold);border-radius:0 10px 0 10px}
+.logo-mark span{font-family:'DM Serif Display',serif;font-size:18px;color:white;position:relative;z-index:1}
+.logo-text{line-height:1.15}
+.logo-text strong{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.logo-text small{font-size:11px;color:var(--ink4);display:block;font-weight:400}
+.header-actions{display:flex;align-items:center;gap:10px}
+.header-badge{font-size:10px;font-weight:600;color:var(--ink3);background:var(--cream);border:1px solid var(--border);border-radius:20px;padding:5px 14px;letter-spacing:.05em;text-transform:uppercase}
+.cmp-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--gold);background:var(--gold-pale);border:1.5px solid var(--gold-border);border-radius:20px;padding:5px 14px;cursor:pointer;transition:all .2s}
+.cmp-toggle:hover{background:var(--gold-border)}
+.cmp-toggle.active{background:var(--gold);color:white;border-color:var(--gold)}
+
+.main{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:28px 20px 100px}
+
+/* Product selector */
+.product-selector{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px}
+@media(max-width:700px){.product-selector{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:400px){.product-selector{grid-template-columns:repeat(2,1fr)}}
+.prod-btn{background:var(--white);border:1.5px solid var(--border);border-radius:var(--rs);padding:14px 8px 12px;cursor:pointer;text-align:center;transition:all .25s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.prod-btn::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--gold);transform:scaleX(0);transform-origin:center;transition:transform .25s}
+.prod-btn:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--sh)}
+.prod-btn:hover::before{transform:scaleX(.5)}
+.prod-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.prod-btn.active{box-shadow:var(--sh)}
+.prod-btn.active::before{transform:scaleX(1)}
+.prod-btn.kb::before{background:var(--kb)}
+.prod-btn.kb.active{border-color:var(--kb-border);background:linear-gradient(170deg,var(--white) 60%,var(--kb-pale));box-shadow:0 8px 32px rgba(192,57,43,.15)}
+.prod-btn.mp::before{background:var(--mp)}
+.prod-btn.mp.active{border-color:var(--mp-border);background:linear-gradient(170deg,var(--white) 60%,var(--mp-pale));box-shadow:0 8px 32px rgba(30,74,138,.15)}
+.prod-btn .cmp-chk{display:none;position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border2);background:var(--white);align-items:center;justify-content:center;font-size:10px;color:white;transition:all .2s}
+.compare-mode .prod-btn .cmp-chk{display:flex}
+.prod-btn .cmp-chk.checked{background:var(--gold);border-color:var(--gold)}
+.prod-btn .cmp-chk.checked::after{content:'✓'}
+.prod-icon{font-size:22px;margin-bottom:6px;display:block}
+.prod-name{font-size:12px;font-weight:700;color:var(--ink);line-height:1.2}
+.prod-sub{font-size:10px;color:var(--ink4);margin-top:3px;font-weight:500}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:640px){.layout{grid-template-columns:1fr}}
+.full-width{grid-column:1/-1}
+.hidden{display:none !important}
+
+/* Card */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--sh-sm);transition:box-shadow .3s}
+.card:hover{box-shadow:var(--sh)}
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:22px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.card-icon{width:36px;height:36px;background:var(--gold-pale);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.card-title{font-size:14px;font-weight:700;color:var(--ink2);letter-spacing:-.2px}
+.card-subtitle{font-size:11px;color:var(--ink4);margin-top:2px}
+
+/* Fields */
+.field{margin-bottom:22px}.field:last-child{margin-bottom:0}
+.field-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.field-label span{font-size:13px;color:var(--ink3);font-weight:500}
+.field-label strong{font-size:16px;font-weight:700;color:var(--ink);font-family:'DM Serif Display',serif;letter-spacing:-.3px}
+.yh{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:500;color:var(--ink4);margin-left:6px}
+.slider-wrap{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--white);border:2.5px solid var(--gold);box-shadow:0 2px 8px rgba(184,146,42,.25);cursor:pointer;transition:all .2s}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 3px 12px rgba(184,146,42,.35);transform:scale(1.15)}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(184,146,42,.2)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--white);border:2.5px solid var(--gold);cursor:pointer}
+.panel-kb input[type=range]::-webkit-slider-thumb{border-color:var(--kb);box-shadow:0 2px 8px rgba(192,57,43,.25)}
+.panel-mp input[type=range]::-webkit-slider-thumb{border-color:var(--mp);box-shadow:0 2px 8px rgba(30,74,138,.25)}
+.num-input{width:120px;flex-shrink:0;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:8px 10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;text-align:right;outline:none;transition:all .2s;-moz-appearance:textfield}
+.num-input::-webkit-inner-spin-button,.num-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.num-input:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(184,146,42,.1)}
+.panel-kb .num-input:focus{border-color:var(--kb);box-shadow:0 0 0 3px rgba(192,57,43,.08)}
+.panel-mp .num-input:focus{border-color:var(--mp);box-shadow:0 0 0 3px rgba(30,74,138,.08)}
+
+/* Selects */
+.select-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.select-group label{display:block;font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:6px}
+select{width:100%;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:9px 32px 9px 12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b6560' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color .2s}
+select:focus{border-color:var(--gold)}
+.panel-kb select:focus{border-color:var(--kb)}
+.panel-mp select:focus{border-color:var(--mp)}
+
+/* Insurance */
+.insurance-section{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.insurance-title{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.poj-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rx);cursor:pointer;transition:background .15s;margin-bottom:4px}
+.poj-item:last-child{margin-bottom:0}
+.poj-item:hover{background:var(--cream)}
+.poj-item input[type=checkbox]{position:absolute;opacity:0;width:0;height:0}
+.poj-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:var(--white);flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.poj-item input:checked+.poj-check{background:var(--gold);border-color:var(--gold)}
+.panel-kb .poj-item input:checked+.poj-check{background:var(--kb);border-color:var(--kb)}
+.panel-mp .poj-item input:checked+.poj-check{background:var(--mp);border-color:var(--mp)}
+.poj-item input:checked+.poj-check::after{content:'✓';font-size:11px;color:white;font-weight:700}
+.poj-item input:focus-visible+.poj-check{box-shadow:0 0 0 3px rgba(184,146,42,.2)}
+.poj-text{flex:1}
+.poj-text strong{font-size:13px;font-weight:500;color:var(--ink2);display:block}
+.poj-text em{font-style:normal;font-size:11px;color:var(--ink4)}
+
+/* Prepayment section */
+.prepay-section{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.prepay-fields{display:none;margin-top:14px;display:none;gap:8px}
+.prepay-fields.open{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prepay-field label{display:block;font-size:11px;color:var(--ink3);font-weight:600;margin-bottom:4px}
+.prepay-field input{width:100%;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:8px 10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;text-align:right;outline:none;transition:all .2s;-moz-appearance:textfield}
+.prepay-field input:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(184,146,42,.1)}
+.panel-kb .prepay-field input:focus{border-color:var(--kb);box-shadow:0 0 0 3px rgba(192,57,43,.08)}
+.panel-mp .prepay-field input:focus{border-color:var(--mp);box-shadow:0 0 0 3px rgba(30,74,138,.08)}
+.prepay-result{display:none;margin-top:12px;padding:12px 14px;border-radius:var(--rx);background:var(--green-pale);border:1.5px solid rgba(26,102,68,.15);font-size:12px;color:var(--green);line-height:1.6}
+.prepay-result.visible{display:block}
+.prepay-result .pr-row{display:flex;justify-content:space-between;align-items:center}
+.prepay-result .pr-val{font-weight:700;font-size:13px}
+
+/* Result card */
+.result-card{background:var(--ink);border-radius:var(--r);padding:28px 24px 24px;box-shadow:var(--sh-lg);position:relative;overflow:hidden}
+.result-card::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:radial-gradient(circle,rgba(184,146,42,.12)0%,transparent 70%);pointer-events:none}
+.result-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(184,146,42,.4),transparent)}
+.result-card.kb{background:linear-gradient(145deg,#2a0c08,#180604);box-shadow:0 8px 32px rgba(192,57,43,.15)}
+.result-card.kb::before{background:radial-gradient(circle,rgba(192,57,43,.18)0%,transparent 70%)}
+.result-card.kb::after{background:linear-gradient(90deg,transparent,rgba(231,76,60,.45),transparent)}
+.result-card.kb .m-val.accent{color:#f08070}
+.result-card.mp{background:linear-gradient(145deg,#0c1a30,#060e1c);box-shadow:0 8px 32px rgba(30,74,138,.15)}
+.result-card.mp::before{background:radial-gradient(circle,rgba(30,74,138,.22)0%,transparent 70%)}
+.result-card.mp::after{background:linear-gradient(90deg,transparent,rgba(42,95,168,.45),transparent)}
+.result-card.mp .m-val.accent{color:#7aabf0}
+.result-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.result-amount{display:flex;align-items:baseline;gap:6px;margin-bottom:22px}
+.result-amount .num{font-family:'DM Serif Display',serif;font-size:48px;line-height:1;color:white;letter-spacing:-1px}
+.result-amount .cur{font-size:18px;color:rgba(255,255,255,.45);font-weight:300;padding-bottom:3px}
+.result-amount .per{font-size:12px;color:rgba(255,255,255,.3);padding-bottom:5px}
+.result-divider{height:1px;background:rgba(255,255,255,.07);margin-bottom:18px}
+.result-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:640px){.result-metrics{grid-template-columns:repeat(2,1fr);gap:12px}.result-amount .num{font-size:38px}}
+.metric .m-val{font-size:14px;font-weight:700;color:white;margin-bottom:2px;white-space:nowrap}
+.metric .m-val.accent{color:var(--gold-light)}
+.metric .m-val.overp{color:rgba(255,255,255,.55);font-size:13px}
+.metric .m-lbl{font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;line-height:1.3}
+
+/* Detail card */
+.detail-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh-sm)}
+.detail-section{padding:16px 20px}
+.detail-section+.detail-section{border-top:1px solid var(--border)}
+.phase-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.phase-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.04em}
+.phase-badge.pku{background:rgba(184,146,42,.1);color:var(--gold)}
+.phase-badge.pdu{background:var(--green-pale);color:var(--green)}
+.phase-badge .ph-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.phase-months{font-size:12px;color:var(--ink4)}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px}
+.detail-row .dr-lbl{color:var(--ink3)}
+.detail-row .dr-val{font-weight:600;color:var(--ink2)}
+.detail-row.sub .dr-lbl{color:var(--ink4);font-size:12px;padding-left:12px}
+.detail-row.sub .dr-val{color:var(--ink4);font-size:12px;font-weight:500}
+.detail-fee{padding:10px 20px;background:var(--cream);display:flex;justify-content:space-between;font-size:12px;color:var(--ink4);border-top:1px solid var(--border)}
+
+/* Rate pill */
+.rate-pill{display:inline-flex;align-items:center;gap:8px;background:var(--white);border:1.5px solid var(--gold-border);border-radius:20px;padding:5px 14px 5px 10px;font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px;box-shadow:var(--sh-sm)}
+.rate-pill-dot{width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.rate-pill.kb{border-color:var(--kb-border);color:var(--kb)}.rate-pill.kb .rate-pill-dot{background:var(--kb)}
+.rate-pill.mp{border-color:var(--mp-border);color:var(--mp)}.rate-pill.mp .rate-pill-dot{background:var(--mp)}
+
+/* Compare competitor row */
+.cmp-table .rival-input{background:var(--cream);border:1.5px solid var(--border);border-radius:6px;padding:6px 8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink);width:100%;outline:none;transition:border-color .2s;text-align:right}
+.cmp-table .rival-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(184,146,42,.1)}
+.cmp-table .rival-input::placeholder{color:var(--ink4);font-weight:400}
+.cmp-table tr.rival-row{background:rgba(184,146,42,.04)}
+.cmp-table tr.rival-row td{border-bottom:none}
+.rival-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--gold);background:var(--gold-pale);border-radius:12px;padding:2px 10px;letter-spacing:.02em}
+
+/* Compare */
+.cmp-panel{display:none;margin-bottom:28px}
+.cmp-panel.visible{display:block}
+.cmp-table{width:100%;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.cmp-table table{width:100%;border-collapse:collapse;font-size:13px}
+.cmp-table th{background:var(--cream);font-weight:700;padding:14px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);border-bottom:1px solid var(--border)}
+.cmp-table td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--ink2)}
+.cmp-table tr:last-child td{border-bottom:none}
+.cmp-table .pl{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.cmp-table .pd{width:8px;height:8px;border-radius:50%}
+.cmp-table .pd.kb{background:var(--kb)}.cmp-table .pd.mp{background:var(--mp)}
+.cmp-table .vh{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink)}
+.cmp-table .es{padding:32px;text-align:center;color:var(--ink4);font-size:13px}
+.cmp-rm{background:none;border:none;color:var(--ink4);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:all .15s}
+.cmp-rm:hover{background:var(--cream);color:var(--kb)}
+
+/* Panel theming */
+.panel-kb .card-icon{background:var(--kb-pale)}
+.panel-mp .card-icon{background:var(--mp-pale)}
+
+/* Invest section */
+.invest-section{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.invest-fields{display:none;margin-top:14px;flex-direction:column;gap:10px}
+.invest-fields.open{display:flex}
+.inv-tab{background:var(--cream);border:1.5px solid var(--border);border-radius:20px;padding:5px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;color:var(--ink3);cursor:pointer;transition:all .2s}
+.inv-tab:hover{border-color:var(--border2);color:var(--ink2)}
+.inv-tab.active{background:var(--kb);border-color:var(--kb);color:white}
+.invest-chart{margin-top:16px;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);padding:14px;display:none}
+.invest-chart.visible{display:block}
+.invest-chart canvas{width:100%;height:180px;display:block}
+.invest-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+@media(max-width:640px){.invest-stats{grid-template-columns:repeat(2,1fr)}}
+.invest-stat{text-align:center}
+.invest-stat .is-val{font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink);letter-spacing:-.3px}
+.invest-stat .is-val.green{color:var(--green)}
+.invest-stat .is-lbl{font-size:9px;color:var(--ink4);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+
+/* Konsolidace section in compare */
+.kons-section{margin-top:16px;padding:16px;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh-sm)}
+.kons-title{font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kons-title .kt-icon{font-size:16px}
+.kons-loan{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end;margin-bottom:8px}
+.kons-loan label{display:block;font-size:10px;color:var(--ink4);font-weight:600;margin-bottom:3px}
+.kons-loan input{background:var(--cream);border:1.5px solid var(--border);border-radius:6px;padding:6px 8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink);text-align:right;outline:none;width:100%}
+.kons-loan input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(184,146,42,.1)}
+.kons-add{background:none;border:1.5px dashed var(--border2);border-radius:6px;padding:8px;font-size:12px;color:var(--ink3);cursor:pointer;transition:all .15s;width:100%;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600}
+.kons-add:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale)}
+.kons-rm{background:none;border:none;color:var(--ink4);cursor:pointer;font-size:16px;padding:4px 8px;border-radius:4px;transition:all .15s;align-self:end;margin-bottom:2px}
+.kons-rm:hover{color:var(--kb);background:var(--kb-pale)}
+.kons-total{margin-top:10px;padding:10px 12px;background:var(--cream);border-radius:var(--rx);display:flex;justify-content:space-between;font-size:12px;color:var(--ink3)}
+.kons-total .kt-val{font-weight:700;color:var(--ink)}
+.kons-saving-row{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.kons-saving-row .ks-val{font-weight:700;font-size:14px}
+.kons-saving-row .ks-val.green{color:var(--green)}
+.kons-saving-header{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.panel-visible>*{animation:fadeUp .35s cubic-bezier(.4,0,.2,1) both}
+.panel-visible>*:nth-child(2){animation-delay:.06s}
+.panel-visible>*:nth-child(3){animation-delay:.12s}
+.panel-visible>*:nth-child(4){animation-delay:.18s}
+.panel-visible>*:nth-child(5){animation-delay:.24s}
+</style>
+</head>
+<body>
+<header class="header"><div class="header-inner">
+  <div class="logo-group">
+    <div class="logo-mark"><span>K</span></div>
+    <div class="logo-text"><strong>Kalkulačka úvěrů</strong><small>KB · Modrá pyramida</small></div>
+  </div>
+  <div class="header-actions">
+    <button class="cmp-toggle" onclick="toggleCmp()" id="cmp-btn" aria-label="Režim srovnání" role="switch" aria-checked="false">⇔ Srovnat</button>
+    <div class="header-badge">Interní nástroj</div>
+  </div>
+</div></header>
+
+<div class="main" id="mc">
+  <div class="cmp-panel" id="cmp-panel"><div class="cmp-table" id="cmp-tbl"><div class="es">Zapněte srovnání a klikněte na produkty</div></div>
+    <div class="kons-section" id="kons-section" style="display:none">
+      <div class="kons-title"><span class="kt-icon">🔄</span> Konsolidace — stávající úvěry klienta</div>
+      <div id="kons-loans"></div>
+      <button class="kons-add" onclick="addKonsLoan()">+ Přidat další úvěr</button>
+      <div class="kons-total" id="kons-total"></div>
+      <div class="kons-total" id="kons-saving" style="display:none;margin-top:8px;flex-direction:column;gap:6px"></div>
+    </div>
+  </div>
+
+  <div class="product-selector" id="ps">
+    <button class="prod-btn kb active" onclick="hpc('spotreb',this)" role="tab" aria-selected="true" aria-label="Spotřebitelský úvěr"><span class="cmp-chk" data-p="spotreb"></span><span class="prod-icon">💳</span><span class="prod-name" style="display:block">Spotřebitelský</span><span class="prod-sub" style="display:block">AR1–RC8</span></button>
+    <button class="prod-btn kb" onclick="hpc('hypo',this)" role="tab" aria-selected="false" aria-label="Hypotéka"><span class="cmp-chk" data-p="hypo"></span><span class="prod-icon">🏦</span><span class="prod-name" style="display:block">Hypotéka</span><span class="prod-sub" style="display:block">4,79 %</span></button>
+    <button class="prod-btn mp" onclick="hpc('mp',this)" role="tab" aria-selected="false" aria-label="Půjčka na bydlení"><span class="cmp-chk" data-p="mp"></span><span class="prod-icon">🏠</span><span class="prod-name" style="display:block">Půjčka na bydlení</span><span class="prod-sub" style="display:block">4,99 – 5,59 %</span></button>
+    <button class="prod-btn kb" onclick="hpc('amhypo',this)" role="tab" aria-selected="false" aria-label="Americká hypotéka"><span class="cmp-chk" data-p="amhypo"></span><span class="prod-icon">🏡</span><span class="prod-name" style="display:block">Americká hypo</span><span class="prod-sub" style="display:block">5,19 %</span></button>
+    <button class="prod-btn mp" onclick="hpc('pdu',this)" role="tab" aria-selected="false" aria-label="Přidělený úvěr SS"><span class="cmp-chk" data-p="pdu"></span><span class="prod-icon">🏗️</span><span class="prod-name" style="display:block">Přidělený úvěr</span><span class="prod-sub" style="display:block">3,49 % · 0,9 %</span></button>
+  </div>
+
+  <!-- SPOTŘEBITELSKÝ -->
+  <div id="panel-spotreb" class="layout panel-kb panel-visible">
+    <div class="card">
+      <div class="card-header"><div class="card-icon">💳</div><div><div class="card-title">Parametry úvěru</div><div class="card-subtitle">Spotřebitelský úvěr · 4 cenová schémata</div></div></div>
+      <div class="select-grid">
+        <div class="select-group"><label for="sp-schema">Cenové schéma</label><select id="sp-schema" onchange="updateSpSchema()"><option value="zakladni">Základní</option><option value="konsolidace">Konsolidace</option><option value="novy">Nový klient</option><option value="retence">Retence</option></select></div>
+        <div class="select-group"><label for="sp-rating">Rating klienta</label><select id="sp-rating" onchange="calcSp()"><option>AR1</option><option>AR2</option><option>AR3</option><option>AR4</option><option>AR5</option><option>AR6</option><option>AR7</option><option>AR8</option><option>RC1</option><option>RC2</option><option>RC3</option><option>RC4</option><option>RC5</option><option>RC6</option><option>RC7</option><option>RC8</option></select></div>
+      </div>
+      <div class="field"><div class="field-label"><span>Výše úvěru</span><strong id="sp-cc-val">200 000 Kč</strong></div><div class="slider-wrap"><input type="range" id="sp-cc" min="10000" max="2500000" step="5000" value="200000" aria-label="Výše úvěru" oninput="sS('sp-cc','sp-cc-num','sp-cc-val',1);calcSp()"><input type="text" class="num-input" id="sp-cc-num" value="200 000" aria-label="Výše úvěru Kč" onchange="sI('sp-cc-num','sp-cc','sp-cc-val',1);calcSp()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="field"><div class="field-label"><span>Splatnost</span><strong id="sp-n-val">60 měs.<span class="yh">(5 let)</span></strong></div><div class="slider-wrap"><input type="range" id="sp-n" min="12" max="96" step="1" value="60" aria-label="Splatnost" oninput="sS('sp-n','sp-n-num','sp-n-val',0);calcSp()"><input type="text" class="num-input" id="sp-n-num" value="60" aria-label="Splatnost měs." onchange="sI('sp-n-num','sp-n','sp-n-val',0);calcSp()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="insurance-section"><div class="insurance-title">Pojištění</div><label class="poj-item"><input type="checkbox" id="sp-poj" onchange="calcSp()"><span class="poj-check"></span><div class="poj-text"><strong>Pojištění schopnosti splácet</strong><em>0,17 % z původní jistiny měsíčně</em></div></label></div>
+      <div class="prepay-section"><div class="insurance-title">Mimořádná splátka</div><label class="poj-item"><input type="checkbox" id="sp-ms-on" onchange="toggleMs('sp')"><span class="poj-check"></span><div class="poj-text"><strong>Chci zadat mimořádnou splátku</strong><em>Jednorázové splacení části jistiny</em></div></label><div class="prepay-fields" id="sp-ms-fields"><div class="prepay-field"><label>Částka mimořádné splátky</label><input type="text" id="sp-ms-amt" placeholder="např. 50 000" onchange="calcMs('sp')" onkeydown="if(event.key==='Enter')this.blur()"></div><div class="prepay-field"><label>V kterém měsíci od počátku</label><input type="text" id="sp-ms-month" placeholder="např. 24" onchange="calcMs('sp')" onkeydown="if(event.key==='Enter')this.blur()"></div></div><div class="prepay-result" id="sp-ms-result"></div></div>
+    </div>
+    <div><div class="rate-pill kb"><span class="rate-pill-dot"></span><span id="sp-rate-val">—</span></div><div id="sp-result" class="result-card kb"></div></div>
+
+  </div>
+
+  <!-- HYPOTÉKA -->
+  <div id="panel-hypo" class="layout panel-kb hidden">
+    <div class="card">
+      <div class="card-header"><div class="card-icon">🏦</div><div><div class="card-title">Parametry hypotéky</div><div class="card-subtitle">Fixace 3 roky · 4,79 % p.a. · max 30 let</div></div></div>
+      <div class="field"><div class="field-label"><span>Výše úvěru</span><strong id="hypo-cc-val">3 000 000 Kč</strong></div><div class="slider-wrap"><input type="range" id="hypo-cc" min="300000" max="20000000" step="50000" value="3000000" aria-label="Výše úvěru" oninput="sS('hypo-cc','hypo-cc-num','hypo-cc-val',1);calcHypo()"><input type="text" class="num-input" id="hypo-cc-num" value="3 000 000" aria-label="Výše úvěru Kč" onchange="sI('hypo-cc-num','hypo-cc','hypo-cc-val',1);calcHypo()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="field"><div class="field-label"><span>Splatnost</span><strong id="hypo-n-val">360 měs.<span class="yh">(30 let)</span></strong></div><div class="slider-wrap"><input type="range" id="hypo-n" min="60" max="360" step="1" value="360" aria-label="Splatnost" oninput="sS('hypo-n','hypo-n-num','hypo-n-val',0);calcHypo()"><input type="text" class="num-input" id="hypo-n-num" value="360" aria-label="Splatnost měs." onchange="sI('hypo-n-num','hypo-n','hypo-n-val',0);calcHypo()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="prepay-section"><div class="insurance-title">Mimořádná splátka</div><label class="poj-item"><input type="checkbox" id="hypo-ms-on" onchange="toggleMs('hypo')"><span class="poj-check"></span><div class="poj-text"><strong>Chci zadat mimořádnou splátku</strong><em>Jednorázové splacení části jistiny</em></div></label><div class="prepay-fields" id="hypo-ms-fields"><div class="prepay-field"><label>Částka mimořádné splátky</label><input type="text" id="hypo-ms-amt" placeholder="např. 200 000" onchange="calcMs('hypo')" onkeydown="if(event.key==='Enter')this.blur()"></div><div class="prepay-field"><label>V kterém měsíci od počátku</label><input type="text" id="hypo-ms-month" placeholder="např. 36" onchange="calcMs('hypo')" onkeydown="if(event.key==='Enter')this.blur()"></div></div><div class="prepay-result" id="hypo-ms-result"></div></div>
+      <div class="invest-section"><div class="insurance-title">📈 Investice vedle hypotéky</div><label class="poj-item"><input type="checkbox" id="hypo-inv-on" onchange="toggleInv()"><span class="poj-check"></span><div class="poj-text"><strong>Chci simulovat investování</strong><em>Měsíční investice vedle splácení hypotéky</em></div></label>
+      <div class="invest-fields" id="hypo-inv-fields">
+        <div style="display:flex;gap:4px">
+          <button class="inv-tab active" id="inv-tab-amt" onclick="setInvMode('amt')">Zadat částku</button>
+          <button class="inv-tab" id="inv-tab-yr" onclick="setInvMode('yr')">Zadat cíl (roky)</button>
+        </div>
+        <div id="inv-mode-amt">
+          <div class="prepay-field"><label>Měsíční investice (Kč)</label><div class="slider-wrap"><input type="range" id="hypo-inv-amt" min="500" max="30000" step="500" value="5000" aria-label="Měsíční investice" oninput="updInvAmt()"><strong id="hypo-inv-amt-val" style="font-size:13px;min-width:70px;text-align:right">5 000 Kč</strong></div></div>
+        </div>
+        <div id="inv-mode-yr" style="display:none">
+          <div class="prepay-field"><label>Doplatit za (roky)</label><div class="slider-wrap"><input type="range" id="hypo-inv-yr" min="3" max="30" step="1" value="15" aria-label="Cíl v rocích" oninput="updInvYr()"><strong id="hypo-inv-yr-val" style="font-size:13px;min-width:50px;text-align:right">15 let</strong></div></div>
+        </div>
+        <div>
+          <div class="prepay-field"><label>Očekávané zhodnocení (% p.a.)</label><div class="slider-wrap"><input type="range" id="hypo-inv-ret" min="1" max="15" step="0.5" value="7" aria-label="Zhodnocení" oninput="updInvRet()"><strong id="hypo-inv-ret-val" style="font-size:13px;min-width:50px;text-align:right">7,0 %</strong></div></div>
+        </div>
+      </div>
+      <div class="invest-chart" id="hypo-inv-chart"><canvas id="hypo-inv-canvas"></canvas><div class="invest-stats" id="hypo-inv-stats"></div></div></div>
+    </div>
+    <div><div class="rate-pill kb"><span class="rate-pill-dot"></span><span id="hypo-rate-val">—</span></div><div id="hypo-result" class="result-card kb"></div></div>
+
+  </div>
+
+  <!-- PŮJČKA NA BYDLENÍ -->
+  <div id="panel-mp" class="layout panel-mp hidden">
+    <div class="card">
+      <div class="card-header"><div class="card-icon">🏠</div><div><div class="card-title">Parametry úvěru</div><div class="card-subtitle">Půjčka na bydlení · PKÚ + PDÚ</div></div></div>
+      <div class="field"><div class="field-label"><span>Výše úvěru</span><strong id="mp-cc-val">640 000 Kč</strong></div><div class="slider-wrap"><input type="range" id="mp-cc" min="50000" max="3500000" step="10000" value="640000" aria-label="Výše úvěru" oninput="sS('mp-cc','mp-cc-num','mp-cc-val',1);calcMp()"><input type="text" class="num-input" id="mp-cc-num" value="640 000" aria-label="Výše úvěru Kč" onchange="sI('mp-cc-num','mp-cc','mp-cc-val',1);calcMp()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="field"><div class="field-label"><span>Splatnost</span><strong id="mp-n-val">120 měs.<span class="yh">(10 let)</span></strong></div><div class="slider-wrap"><input type="range" id="mp-n" min="30" max="240" step="1" value="120" aria-label="Splatnost" oninput="sS('mp-n','mp-n-num','mp-n-val',0);calcMp()"><input type="text" class="num-input" id="mp-n-num" value="120" aria-label="Splatnost měs." onchange="sI('mp-n-num','mp-n','mp-n-val',0);calcMp()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="prepay-section"><div class="insurance-title">Mimořádná splátka</div><label class="poj-item"><input type="checkbox" id="mp-ms-on" onchange="toggleMs('mp')"><span class="poj-check"></span><div class="poj-text"><strong>Chci zadat mimořádnou splátku</strong><em>Jednorázové splacení části jistiny</em></div></label><div class="prepay-fields" id="mp-ms-fields"><div class="prepay-field"><label>Částka mimořádné splátky</label><input type="text" id="mp-ms-amt" placeholder="např. 100 000" onchange="calcMs('mp')" onkeydown="if(event.key==='Enter')this.blur()"></div><div class="prepay-field"><label>V kterém měsíci od počátku</label><input type="text" id="mp-ms-month" placeholder="např. 24" onchange="calcMs('mp')" onkeydown="if(event.key==='Enter')this.blur()"></div></div><div class="prepay-result" id="mp-ms-result"></div></div>
+    </div>
+    <div><div class="rate-pill mp"><span class="rate-pill-dot"></span><span id="mp-rate-val">—</span></div><div id="mp-result" class="result-card mp"></div></div>
+    <div id="mp-detail" class="detail-card full-width"></div>
+
+  </div>
+
+  <!-- AMERICKÁ HYPOTÉKA -->
+  <div id="panel-amhypo" class="layout panel-kb hidden">
+    <div class="card">
+      <div class="card-header"><div class="card-icon">🏡</div><div><div class="card-title">Parametry úvěru</div><div class="card-subtitle">Americká hypotéka · max 20 let</div></div></div>
+      <div class="field"><div class="field-label"><span>Čistý příjem žadatele</span><strong id="am-prijem-val">50 000 Kč</strong></div><div class="slider-wrap"><input type="range" id="am-prijem" min="10000" max="200000" step="1000" value="50000" aria-label="Čistý příjem" oninput="sS('am-prijem','am-prijem-num','am-prijem-val',1);calcAm()"><input type="text" class="num-input" id="am-prijem-num" value="50 000" aria-label="Čistý příjem Kč" onchange="sI('am-prijem-num','am-prijem','am-prijem-val',1);calcAm()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="field"><div class="field-label"><span>Výše úvěru</span><strong id="am-cc-val">1 000 000 Kč</strong></div><div class="slider-wrap"><input type="range" id="am-cc" min="100000" max="10000000" step="50000" value="1000000" aria-label="Výše úvěru" oninput="sS('am-cc','am-cc-num','am-cc-val',1);calcAm()"><input type="text" class="num-input" id="am-cc-num" value="1 000 000" aria-label="Výše úvěru Kč" onchange="sI('am-cc-num','am-cc','am-cc-val',1);calcAm()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="field"><div class="field-label"><span>Splatnost</span><strong id="am-n-val">240 měs.<span class="yh">(20 let)</span></strong></div><div class="slider-wrap"><input type="range" id="am-n" min="12" max="240" step="1" value="240" aria-label="Splatnost" oninput="sS('am-n','am-n-num','am-n-val',0);calcAm()"><input type="text" class="num-input" id="am-n-num" value="240" aria-label="Splatnost měs." onchange="sI('am-n-num','am-n','am-n-val',0);calcAm()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div id="am-warn" style="display:none;margin-top:14px;padding:12px 16px;background:#fef3e2;border:1.5px solid #f5c97a;border-radius:10px;font-size:12px;color:#7a4f00;font-weight:500">⚠️ <span id="am-warn-txt"></span></div>
+      <div class="prepay-section"><div class="insurance-title">Mimořádná splátka</div><label class="poj-item"><input type="checkbox" id="am-ms-on" onchange="toggleMs('am')"><span class="poj-check"></span><div class="poj-text"><strong>Chci zadat mimořádnou splátku</strong><em>Jednorázové splacení části jistiny</em></div></label><div class="prepay-fields" id="am-ms-fields"><div class="prepay-field"><label>Částka mimořádné splátky</label><input type="text" id="am-ms-amt" placeholder="např. 200 000" onchange="calcMs('am')" onkeydown="if(event.key==='Enter')this.blur()"></div><div class="prepay-field"><label>V kterém měsíci od počátku</label><input type="text" id="am-ms-month" placeholder="např. 36" onchange="calcMs('am')" onkeydown="if(event.key==='Enter')this.blur()"></div></div><div class="prepay-result" id="am-ms-result"></div></div>
+    </div>
+    <div><div class="rate-pill kb"><span class="rate-pill-dot"></span><span id="am-rate-val">—</span></div><div id="am-result" class="result-card kb"></div></div>
+
+  </div>
+
+  <!-- PŘIDĚLENÝ ÚVĚR SS -->
+  <div id="panel-pdu" class="layout panel-mp hidden">
+    <div class="card">
+      <div class="card-header"><div class="card-icon">🏗️</div><div><div class="card-title">Parametry úvěru</div><div class="card-subtitle">Přidělený úvěr SS · 3,49 % · 0,9 % splátka</div></div></div>
+      <div class="field"><div class="field-label"><span>Cílová částka SS</span><strong id="pdu-c-val">600 000 Kč</strong></div><div class="slider-wrap"><input type="range" id="pdu-c" min="50000" max="2000000" step="10000" value="600000" aria-label="Cílová částka" oninput="sS('pdu-c','pdu-c-num','pdu-c-val',1);syncPduLim();calcPdu()"><input type="text" class="num-input" id="pdu-c-num" value="600 000" aria-label="Cílová částka Kč" onchange="sI('pdu-c-num','pdu-c','pdu-c-val',1);syncPduLim();calcPdu()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div class="field"><div class="field-label"><span>Aktuální zůstatek SS</span><strong id="pdu-z-val">150 000 Kč</strong></div><div class="slider-wrap"><input type="range" id="pdu-z" min="0" max="600000" step="5000" value="150000" aria-label="Zůstatek SS" oninput="sS('pdu-z','pdu-z-num','pdu-z-val',1);calcPdu()"><input type="text" class="num-input" id="pdu-z-num" value="150 000" aria-label="Zůstatek Kč" onchange="sI('pdu-z-num','pdu-z','pdu-z-val',1);calcPdu()" onkeydown="if(event.key==='Enter')this.blur()"></div></div>
+      <div style="margin-top:14px;padding:12px 16px;background:var(--mp-pale);border:1.5px solid var(--mp-border);border-radius:10px;font-size:12px;color:var(--ink3);font-weight:500">Splatnost se vypočítá automaticky · fixní sazba 3,49 % · splátka 0,9 % z cílové částky</div>
+      <div class="prepay-section"><div class="insurance-title">Mimořádná splátka</div><label class="poj-item"><input type="checkbox" id="pdu-ms-on" onchange="toggleMs('pdu')"><span class="poj-check"></span><div class="poj-text"><strong>Chci zadat mimořádnou splátku</strong><em>Jednorázové splacení části jistiny</em></div></label><div class="prepay-fields" id="pdu-ms-fields"><div class="prepay-field"><label>Částka mimořádné splátky</label><input type="text" id="pdu-ms-amt" placeholder="např. 50 000" onchange="calcMs('pdu')" onkeydown="if(event.key==='Enter')this.blur()"></div><div class="prepay-field"><label>V kterém měsíci od počátku</label><input type="text" id="pdu-ms-month" placeholder="např. 24" onchange="calcMs('pdu')" onkeydown="if(event.key==='Enter')this.blur()"></div></div><div class="prepay-result" id="pdu-ms-result"></div></div>
+    </div>
+    <div><div id="pdu-result" class="result-card mp"></div></div>
+    <div id="pdu-detail" class="detail-card full-width"></div>
+
+  </div>
+</div>
+<script>
+// ── MATH ──
+function ann(pv,r,n){return r===0?pv/n:pv*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1)}
+function calcRPSN(cfs){let lo=1e-5/12,hi=1/12;for(let i=0;i<200;i++){const m=(lo+hi)/2;cfs.reduce((s,c,t)=>s+c/Math.pow(1+m,t),0)>0?lo=m:hi=m}return Math.pow(1+(lo+hi)/2,12)-1}
+function calcSS(dep,mpku,ssR,uM,spM){let b=0;const h=[];for(let m=1;m<=mpku;m++){b+=dep;h.push(b);if(uM.includes(m)){const p=Math.max(0,...uM.filter(x=>x<m));const yr=h.slice(p,m);b+=yr.reduce((a,v)=>a+v,0)/yr.length*ssR}if(spM.includes(m))b+=1000}return b}
+function calcMPfn(CC,n,rA,ssRA){const PKU=25,PDU=n-PKU,r=rA/100/12,pkuI=CC*r,uM=[10,22],spM=[14];let sg=ann(CC,r,PDU)+pkuI;for(let i=0;i<1000;i++){const dep=sg-pkuI,ss=calcSS(dep,PKU,ssRA/100,uM,spM),a=ann(CC-ss,r,PDU);if(Math.abs(a-sg)<.001)break;sg=(a+sg)/2}const s=Math.round(sg),dep=s-pkuI,ssBal=calcSS(dep,PKU,ssRA/100,uM,spM);const pduS=Math.round(ann(CC-ssBal,r,PDU));const total=s*PKU+pduS*PDU+25*n;const cfs=[-CC,...Array(n).fill(0).map((_,i)=>(i<PKU?s:pduS)+25)];return{s,pduS,dep,ssBal,principal:CC-ssBal,total,rpsn:calcRPSN(cfs),PKU,PDU,pkuI}}
+
+function fK(n){return Math.round(n).toLocaleString('cs-CZ')+'\u202fKč'}
+function fP(n,d=2){return n.toFixed(d).replace('.',',')+'\u202f%'}
+function fY(n){if(n<12)return '';const y=Math.floor(n/12),m=n%12;return m>0?`(${y}r ${m}m)`:`(${y} let)`}
+
+
+
+// ── RESULT HTML (4: přeplatek) ──
+function rHTML(spl,rp,total,CC,c3v,c3l){
+  const op=total-CC;
+  return `<div class="result-label">Měsíční splátka</div><div class="result-amount"><div class="num">${Math.round(spl).toLocaleString('cs-CZ')}</div><div class="cur">Kč</div><div class="per">/ měs.</div></div><div class="result-divider"></div><div class="result-metrics"><div class="metric"><div class="m-val accent">${fP(rp*100)}</div><div class="m-lbl">RPSN</div></div><div class="metric"><div class="m-val">${fK(total)}</div><div class="m-lbl">Celkem</div></div><div class="metric"><div class="m-val overp">+${fK(op)}</div><div class="m-lbl">Přeplatek</div></div><div class="metric"><div class="m-val">${c3v}</div><div class="m-lbl">${c3l}</div></div></div>`;
+}
+
+function detHTML(d){
+  return `<div class="detail-section"><div class="phase-header"><span class="phase-badge pku"><span class="ph-dot"></span>PKÚ — překlenovací</span><span class="phase-months">${d.PKU} měsíců</span></div><div class="detail-row"><span class="dr-lbl">Měsíční splátka</span><span class="dr-val">${fK(d.s)}</span></div><div class="detail-row sub"><span class="dr-lbl">Úrok z úvěru</span><span class="dr-val">${fK(d.pkuI)}</span></div><div class="detail-row sub"><span class="dr-lbl">Vklad na SS</span><span class="dr-val">${fK(d.dep)}</span></div><div class="detail-row sub"><span class="dr-lbl">SS zůstatek při přidělení</span><span class="dr-val">${fK(d.ssBal)}</span></div></div><div class="detail-section"><div class="phase-header"><span class="phase-badge pdu"><span class="ph-dot"></span>PDÚ — přidělený</span><span class="phase-months">${d.PDU} měsíců</span></div><div class="detail-row"><span class="dr-lbl">Měsíční splátka</span><span class="dr-val">${fK(d.pduS)}</span></div><div class="detail-row sub"><span class="dr-lbl">Jistina PDÚ</span><span class="dr-val">${fK(d.principal)}</span></div></div><div class="detail-fee"><span>Poplatek za vedení SS</span><span>25 Kč / měs.</span></div>`;
+}
+
+// ── COMPARE (2) ──
+let cmpOn=false;const cmpItems=new Map();
+const PM={spotreb:{n:'Spotřebitelský',i:'💳',c:'kb'},hypo:{n:'Hypotéka',i:'🏦',c:'kb'},mp:{n:'Půjčka na bydlení',i:'🏠',c:'mp'},amhypo:{n:'Americká hypo',i:'🏡',c:'kb'},pdu:{n:'Přidělený úvěr',i:'🏗️',c:'mp'}};
+
+function storeCmp(pid,data){if(!cmpOn)return;if(cmpItems.has(pid)){cmpItems.set(pid,{...PM[pid],...data});renderCmpTbl()}}
+function toggleCmp(){cmpOn=!cmpOn;const b=document.getElementById('cmp-btn');b.classList.toggle('active',cmpOn);b.setAttribute('aria-checked',cmpOn);document.getElementById('mc').classList.toggle('compare-mode',cmpOn);document.getElementById('cmp-panel').classList.toggle('visible',cmpOn);document.getElementById('kons-section').style.display=cmpOn?'block':'none';if(cmpOn){if(!document.getElementById('kons-loans').innerHTML)renderKonsLoans()}if(!cmpOn){cmpItems.clear();document.querySelectorAll('.cmp-chk').forEach(c=>c.classList.remove('checked'))}renderCmpTbl()}
+function toggleCmpItem(pid){if(cmpItems.has(pid)){cmpItems.delete(pid);document.querySelector(`.cmp-chk[data-p="${pid}"]`).classList.remove('checked')}else{document.querySelector(`.cmp-chk[data-p="${pid}"]`).classList.add('checked');cmpItems.set(pid,{...PM[pid],spl:0,rpsn:0,total:0,CC:0,op:0,saz:'-'});({spotreb:calcSp,hypo:calcHypo,mp:calcMp,amhypo:calcAm,pdu:calcPdu})[pid]()}renderCmpTbl()}
+function renderCmpTbl(){
+  const el=document.getElementById('cmp-tbl');
+  if(!cmpItems.size&&!rivalData.active){el.innerHTML='<div class="es">Zapněte srovnání a klikněte na produkty</div>';return}
+  let h='<table><thead><tr><th>Produkt</th><th>Splátka</th><th>Sazba</th><th>Celkem</th><th>Přeplatek</th><th>Splatnost</th><th></th></tr></thead><tbody>';
+  for(const[id,d]of cmpItems){
+    const nM=d.n||'-';
+    h+=`<tr><td><span class="pl"><span class="pd ${d.c}"></span>${d.i} ${d.n}</span></td><td><span class="vh">${d.spl?fK(d.spl):'-'}</span></td><td>${d.saz||'-'}</td><td>${d.total?fK(d.total):'-'}</td><td>${d.op?'+'+fK(d.op):'-'}</td><td>${d.nMes?d.nMes+' měs.':'-'}</td><td><button class="cmp-rm" onclick="toggleCmpItem('${id}')" aria-label="Odebrat">×</button></td></tr>`}
+  // Rival row
+  h+=`<tr class="rival-row"><td><span class="rival-tag">⚔ Konkurence</span></td>`;
+  h+=`<td><input class="rival-input" id="rv-spl" type="text" placeholder="Splátka" value="${rivalData.spl||''}" onchange="calcRival('spl')" onkeydown="if(event.key==='Enter')this.blur()"></td>`;
+  h+=`<td><input class="rival-input" id="rv-saz" type="text" placeholder="Sazba %" value="${rivalData.saz||''}" onchange="calcRival('saz')" onkeydown="if(event.key==='Enter')this.blur()"></td>`;
+  h+=`<td>${rivalData.total?fK(rivalData.total):'-'}</td>`;
+  h+=`<td>${rivalData.op?'+'+fK(rivalData.op):'-'}</td>`;
+  h+=`<td><input class="rival-input" id="rv-n" type="text" placeholder="Měs." value="${rivalData.n||''}" onchange="calcRival('n')" onkeydown="if(event.key==='Enter')this.blur()"></td>`;
+  h+=`<td></td></tr>`;
+  // Extra row for rival CC input
+  h+=`<tr class="rival-row"><td colspan="7" style="padding:6px 16px 12px;font-size:11px;color:var(--ink4)">Výše úvěru konkurence: <input class="rival-input" id="rv-cc" type="text" placeholder="Výše úvěru" value="${rivalData.cc||''}" onchange="calcRival('cc')" onkeydown="if(event.key==='Enter')this.blur()" style="width:140px;display:inline-block;margin-left:6px"> <span style="margin-left:12px">${rivalData.ccVal?'Úvěr: '+fK(rivalData.ccVal):''}</span></td></tr>`;
+  h+='</tbody></table>';el.innerHTML=h;if(typeof calcKons==='function')calcKons()}
+
+// ── RIVAL (competitor) ──
+let rivalData={active:true,spl:'',saz:'',n:'',cc:'',total:0,op:0,ccVal:0};
+function parseNum(s){return parseFloat(String(s).replace(/[\s\u202f]/g,'').replace(',','.'))||0}
+function calcRival(field){
+  // Read current values from inputs (they may have been re-rendered)
+  const splEl=document.getElementById('rv-spl'),sazEl=document.getElementById('rv-saz'),nEl=document.getElementById('rv-n'),ccEl=document.getElementById('rv-cc');
+  if(splEl)rivalData.spl=splEl.value;if(sazEl)rivalData.saz=sazEl.value;if(nEl)rivalData.n=nEl.value;if(ccEl)rivalData.cc=ccEl.value;
+  const spl=parseNum(rivalData.spl),saz=parseNum(rivalData.saz),n=parseNum(rivalData.n),cc=parseNum(rivalData.cc);
+  rivalData.total=0;rivalData.op=0;rivalData.ccVal=0;
+  // If user provides splátka + splatnost → compute total
+  if(spl>0&&n>0){
+    rivalData.total=Math.round(spl*n);
+    if(cc>0){rivalData.ccVal=cc;rivalData.op=Math.round(spl*n-cc)}
+    else if(saz>0){
+      // Derive CC from spl, saz, n
+      const r=saz/100/12;
+      if(r>0){const derived=spl*(1-Math.pow(1+r,-n))/r;rivalData.ccVal=Math.round(derived);rivalData.op=Math.round(spl*n-derived)}
+    }
+  }
+  // If user provides CC + sazba + splatnost but no splátka → compute splátka
+  else if(cc>0&&saz>0&&n>0&&spl===0){
+    const r=saz/100/12;const computed=Math.round(ann(cc,r,n));
+    rivalData.spl=computed.toLocaleString('cs-CZ');
+    rivalData.ccVal=cc;rivalData.total=Math.round(computed*n);rivalData.op=Math.round(computed*n-cc);
+  }
+  renderCmpTbl();
+}
+
+// ── PRODUCTS ──
+function mpRate(cc){return cc>=1000000?4.99:5.59}
+function calcMp(){const CC=+document.getElementById('mp-cc').value,n=+document.getElementById('mp-n').value,ra=mpRate(CC);document.getElementById('mp-rate-val').textContent=fP(ra,2)+' p.a.';const d=calcMPfn(CC,n,ra,5.0);document.getElementById('mp-result').innerHTML=rHTML(d.s,d.rpsn,d.total,CC,fK(d.ssBal),'SS zůstatek');document.getElementById('mp-detail').innerHTML=detHTML(d);storeCmp('mp',{spl:d.s,rpsn:d.rpsn,total:d.total,CC,op:d.total-CC,saz:fP(ra),nMes:n})}
+
+function hypoRate(cc){return 4.79}
+function calcHypo(){const CC=+document.getElementById('hypo-cc').value,n=+document.getElementById('hypo-n').value,ra=4.79;document.getElementById('hypo-rate-val').textContent=fP(ra,2)+' p.a.';const r=ra/100/12,s=Math.round(ann(CC,r,n)),total=s*n,rp=calcRPSN([-(CC-4000),...Array(n).fill(s)]);document.getElementById('hypo-result').innerHTML=rHTML(s,rp,total,CC,fP(ra,2),'Sazba p.a.');storeCmp('hypo',{spl:s,rpsn:rp,total,CC,op:total-CC,saz:fP(ra),nMes:n})}
+
+// 5: dynamic slider limit for am. hypo
+function calcAm(){const CC=+document.getElementById('am-cc').value,n=+document.getElementById('am-n').value,prijem=+document.getElementById('am-prijem').value,maxCC=prijem<=70000?2500000:10000000;const ccSl=document.getElementById('am-cc');ccSl.max=maxCC;const warn=document.getElementById('am-warn');if(CC>maxCC){ccSl.value=maxCC;document.getElementById('am-cc-num').value=Math.round(maxCC).toLocaleString('cs-CZ');document.getElementById('am-cc-val').innerHTML=fK(maxCC);warn.style.display='block';document.getElementById('am-warn-txt').textContent=`Při příjmu ${fK(prijem)} je max. výše úvěru ${fK(maxCC)}.`}else{warn.style.display='none'}const ac=Math.min(CC,maxCC),ra=5.19;document.getElementById('am-rate-val').textContent=fP(ra,2)+' p.a.';const r=ra/100/12,s=Math.round(ann(ac,r,n)),total=s*n,rp=calcRPSN([-(ac-4000),...Array(n).fill(s)]);document.getElementById('am-result').innerHTML=rHTML(s,rp,total,ac,fP(ra,2),'Sazba p.a.');storeCmp('amhypo',{spl:s,rpsn:rp,total,CC:ac,op:total-ac,saz:fP(ra),nMes:n})}
+
+// 5: dynamic PDU slider limits
+function syncPduLim(){const c=+document.getElementById('pdu-c').value,zs=document.getElementById('pdu-z');zs.max=c;if(+zs.value>c){zs.value=c;document.getElementById('pdu-z-num').value=Math.round(c).toLocaleString('cs-CZ');document.getElementById('pdu-z-val').innerHTML=fK(c)}}
+
+function calcPdu(){const cilova=+document.getElementById('pdu-c').value,zustatek=+document.getElementById('pdu-z').value,jistina=cilova-zustatek,minZ=cilova*0.25;
+  if(zustatek<minZ){document.getElementById('pdu-result').innerHTML=`<div class="result-label" style="color:rgba(255,255,255,.5);line-height:1.6">Zůstatek musí být min. 25 % z cílové částky<br><span style="font-size:16px;color:rgba(255,255,255,.3)">Minimálně ${fK(minZ)}</span></div>`;document.getElementById('pdu-detail').innerHTML='';return}
+  if(jistina<=0){document.getElementById('pdu-result').innerHTML='<div class="result-label" style="color:rgba(255,255,255,.5)">Zůstatek přesahuje cílovou částku</div>';document.getElementById('pdu-detail').innerHTML='';return}
+  const spl=cilova*0.009,r=3.49/100/12;if(spl<=jistina*r){document.getElementById('pdu-result').innerHTML='<div class="result-label" style="color:rgba(255,255,255,.5)">Splátka nepokrývá úroky – zvyšte cílovou částku</div>';return}
+  const n=Math.ceil(Math.log(spl/(spl-jistina*r))/Math.log(1+r)),total=(spl+25)*n,cfs=[-jistina,...Array(n).fill(spl+25)],rp=calcRPSN(cfs);
+  document.getElementById('pdu-result').innerHTML=rHTML(spl,rp,total,jistina,fK(jistina),'Jistina úvěru');
+  const roky=Math.floor(n/12),mesice=n%12;
+  document.getElementById('pdu-detail').innerHTML=`<div class="detail-section"><div class="detail-row"><span class="dr-lbl">Splatnost (vypočtená)</span><span class="dr-val">${n} měs. (${roky}r ${mesice}m)</span></div><div class="detail-row"><span class="dr-lbl">Cílová částka</span><span class="dr-val">${fK(cilova)}</span></div><div class="detail-row"><span class="dr-lbl">Zůstatek SS</span><span class="dr-val">${fK(zustatek)}</span></div><div class="detail-row"><span class="dr-lbl">Jistina úvěru</span><span class="dr-val">${fK(jistina)}</span></div><div class="detail-row"><span class="dr-lbl">Splátka jistiny</span><span class="dr-val">${fK(spl)}</span></div></div><div class="detail-fee"><span>Poplatek za vedení SS</span><span>25 Kč / měs.</span></div>`;
+  storeCmp('pdu',{spl,rpsn:rp,total,CC:jistina,op:total-jistina,saz:'3,49 %',nMes:n})}
+
+// ── SPOTŘEBITELSKÝ ──
+const SAZBY={zakladni:{AR1:[11.9,9.9,7.5,6.5,4.9,4.9],AR2:[12.9,10.9,8.5,7.9,6.9,6.9],AR3:[13.8,11.8,9.5,9.5,8.9,8.9],AR4:[15.5,13.5,11.5,11.5,10.9,10.9],AR5:[17.5,15.5,13.5,13.5,12.5,12.5],AR6:[20.9,18.9,16.9,16.9,16.9,16.9],AR7:[26.9,24.9,22.9,22.9,22.9,22.9],AR8:[31.9,31.9,31.9,31.9,31.9,31.9],RC1:[11.9,9.9,7.5,6.5,4.9,4.9],RC2:[12.9,10.9,8.5,7.9,6.9,6.9],RC3:[13.8,11.8,9.5,9.5,8.9,8.9],RC4:[15.5,13.5,11.5,11.5,10.9,10.9],RC5:[17.5,15.5,13.5,13.5,12.5,12.5],RC6:[20.9,18.9,16.9,16.9,16.9,16.9],RC7:[26.9,24.9,22.9,22.9,22.9,22.9],RC8:[31.9,31.9,31.9,31.9,31.9,31.9]},konsolidace:{AR1:[11.9,9.9,7.5,6.5,4.9,4.29],AR2:[12.9,10.9,8.5,7.9,6.9,6.9],AR3:[13.8,11.8,9.5,9.5,8.9,8.9],AR4:[15.5,13.5,11.5,11.5,10.9,10.9],AR5:[17.5,15.5,13.5,13.5,12.5,12.5],AR6:[20.9,18.9,16.9,16.9,16.9,16.9],AR7:[26.9,24.9,22.9,22.9,22.9,22.9],AR8:[31.9,31.9,31.9,31.9,31.9,31.9],RC1:[11.9,9.9,7.5,6.5,4.9,4.29],RC2:[12.9,10.9,8.5,7.9,6.9,6.9],RC3:[13.8,11.8,9.5,9.5,8.9,8.9],RC4:[15.5,13.5,11.5,11.5,10.9,10.9],RC5:[17.5,15.5,13.5,13.5,12.5,12.5],RC6:[20.9,18.9,16.9,16.9,16.9,16.9],RC7:[26.9,24.9,22.9,22.9,22.9,22.9],RC8:[31.9,31.9,31.9,31.9,31.9,31.9]},novy:{AR1:[11.9,9.9,7.1,6.1,4.9,4.29],AR2:[12.9,10.9,8.9,7.9,5.95,5.95],AR3:[13.9,11.9,9.7,8.9,6.95,6.95],AR4:[13.9,11.9,9.7,8.9,6.95,6.95],AR5:[13.9,11.9,9.7,8.9,6.95,6.95],AR6:[13.9,11.9,9.7,8.9,6.95,6.95],AR7:[22.9,22.9,19.9,17.4,15.9,15.9],AR8:[29.9,29.9,29.9,29.9,29.9,29.9],RC1:[11.9,9.9,7.1,6.1,4.9,4.29],RC2:[12.9,10.9,8.9,7.9,5.95,5.95],RC3:[13.9,11.9,9.7,8.9,6.95,6.95],RC4:[13.9,11.9,9.7,8.9,6.95,6.95],RC5:[13.9,11.9,9.7,8.9,6.95,6.95],RC6:[13.9,11.9,9.7,8.9,6.95,6.95],RC7:[22.9,22.9,19.9,17.4,15.9,15.9],RC8:[29.9,29.9,29.9,29.9,29.9,29.9]},retence:{AR1:[10.9,8.9,5.9,4.8,4.8,4.29],AR2:[11.9,9.9,7.4,5.5,4.8,4.8],AR3:[12.9,10.9,7.9,6.9,4.8,4.8],AR4:[12.9,10.9,8.5,7.9,6.9,6.9],AR5:[12.9,10.9,9.5,8.5,6.9,6.9],AR6:[12.9,10.9,9.5,8.9,6.9,6.9],AR7:[19.9,16.9,12.9,11.9,9.9,9.9],AR8:[29.9,29.9,29.9,29.9,29.9,29.9],RC1:[10.9,8.9,5.9,4.8,4.8,4.29],RC2:[11.9,9.9,7.4,5.5,4.8,4.8],RC3:[12.9,10.9,7.9,6.9,4.8,4.8],RC4:[12.9,10.9,8.5,7.9,6.9,6.9],RC5:[12.9,10.9,9.5,8.5,6.9,6.9],RC6:[12.9,10.9,9.5,8.9,6.9,6.9],RC7:[19.9,16.9,12.9,11.9,9.9,9.9],RC8:[29.9,29.9,29.9,29.9,29.9,29.9]}};
+const LIM=[49000,99000,249000,399000,999000,Infinity];
+function spRate(s,r,cc){const t=SAZBY[s]&&SAZBY[s][r];return t?t[LIM.findIndex(l=>cc<=l)]:null}
+function updateSpSchema(){const schema=document.getElementById('sp-schema').value,sl=document.getElementById('sp-n'),maxN=schema==='konsolidace'?120:96;sl.max=maxN;if(+sl.value>maxN){sl.value=maxN;document.getElementById('sp-n-num').value=maxN}calcSp()}
+function calcSp(){const CC=+document.getElementById('sp-cc').value,n=+document.getElementById('sp-n').value,schema=document.getElementById('sp-schema').value,rating=document.getElementById('sp-rating').value,poj=document.getElementById('sp-poj').checked,ra=spRate(schema,rating,CC);if(!ra)return;document.getElementById('sp-rate-val').textContent=fP(ra,2)+' p.a.';const r=ra/100/12,pojM=poj?CC*0.0017:0,s=Math.round(ann(CC,r,n)+pojM),total=s*n,rp=calcRPSN([-(CC-850),...Array(n).fill(s)]);document.getElementById('sp-result').innerHTML=rHTML(s,rp,total,CC,fK(total-CC),'Přeplatek');storeCmp('spotreb',{spl:s,rpsn:rp,total,CC,op:total-CC,saz:fP(ra),nMes:n})}
+
+// ── SYNC (6: years hint) ──
+function fV(v,ic){return ic?Math.round(v).toLocaleString('cs-CZ'):String(v)}
+function lbl(v,ic){if(ic)return fK(v);const y=fY(v);return v+'\u202fměs.'+(y?'<span class="yh">'+y+'</span>':'')}
+function sS(sid,nid,lid,ic){const v=+document.getElementById(sid).value;document.getElementById(nid).value=fV(v,ic);document.getElementById(lid).innerHTML=lbl(v,ic)}
+function sI(nid,sid,lid,ic){const raw=document.getElementById(nid).value.replace(/[\s\u202f]/g,'').replace(',','.');let v=parseFloat(raw);const sl=document.getElementById(sid);if(isNaN(v))v=+sl.value;v=Math.max(+sl.min,Math.min(+sl.max,Math.round(v)));sl.value=v;document.getElementById(nid).value=fV(v,ic);document.getElementById(lid).innerHTML=lbl(v,ic)}
+
+// ── TABS ──
+const PRODS=['spotreb','hypo','mp','amhypo','pdu'];
+function hpc(p,btn){if(cmpOn){toggleCmpItem(p);return}setProduct(p)}
+function setProduct(p){PRODS.forEach(id=>{const el=document.getElementById('panel-'+id);el.classList.toggle('hidden',id!==p);el.classList.toggle('panel-visible',id===p)});document.querySelectorAll('.prod-btn').forEach((b,i)=>{const a=PRODS[i]===p;b.classList.toggle('active',a);b.setAttribute('aria-selected',a)})}
+
+// ── PREPAYMENT (mimořádná splátka) ──
+function toggleMs(prefix){
+  const on=document.getElementById(prefix+'-ms-on').checked;
+  const fields=document.getElementById(prefix+'-ms-fields');
+  fields.classList.toggle('open',on);
+  if(!on){document.getElementById(prefix+'-ms-result').classList.remove('visible');document.getElementById(prefix+'-ms-result').innerHTML=''}
+  else calcMs(prefix);
+}
+
+// Map prefix to the function that returns {CC, rateAnnual, nMonths, monthlyPayment}
+function getMsParams(prefix){
+  if(prefix==='sp'){
+    const CC=+document.getElementById('sp-cc').value,n=+document.getElementById('sp-n').value;
+    const schema=document.getElementById('sp-schema').value,rating=document.getElementById('sp-rating').value;
+    const ra=spRate(schema,rating,CC);if(!ra)return null;
+    const r=ra/100/12,poj=document.getElementById('sp-poj').checked?CC*0.0017:0;
+    return{CC,ra,n,s:Math.round(ann(CC,r,n)+poj),poj};
+  }
+  if(prefix==='hypo'){
+    const CC=+document.getElementById('hypo-cc').value,n=+document.getElementById('hypo-n').value,ra=hypoRate(CC);
+    const r=ra/100/12;return{CC,ra,n,s:Math.round(ann(CC,r,n)),poj:0};
+  }
+  if(prefix==='am'){
+    const CC=Math.min(+document.getElementById('am-cc').value,+document.getElementById('am-cc').max),n=+document.getElementById('am-n').value;
+    const ra=5.19,r=ra/100/12;return{CC,ra,n,s:Math.round(ann(CC,r,n)),poj:0};
+  }
+  if(prefix==='mp'){
+    const CC=+document.getElementById('mp-cc').value,n=+document.getElementById('mp-n').value,ra=mpRate(CC);
+    const r=ra/100/12;return{CC,ra,n,s:Math.round(ann(CC,r,n)),poj:0};
+  }
+  if(prefix==='pdu'){
+    const cilova=+document.getElementById('pdu-c').value,zustatek=+document.getElementById('pdu-z').value;
+    const jistina=cilova-zustatek,ra=3.49,r=ra/100/12,spl=cilova*0.009;
+    if(jistina<=0||spl<=jistina*r)return null;
+    const n=Math.ceil(Math.log(spl/(spl-jistina*r))/Math.log(1+r));
+    return{CC:jistina,ra,n,s:Math.round(spl),poj:0};
+  }
+  return null;
+}
+
+function calcMs(prefix){
+  const on=document.getElementById(prefix+'-ms-on');
+  if(!on||!on.checked)return;
+  const amtRaw=document.getElementById(prefix+'-ms-amt').value;
+  const monthRaw=document.getElementById(prefix+'-ms-month').value;
+  const amt=parseNum(amtRaw),month=Math.round(parseNum(monthRaw));
+  const el=document.getElementById(prefix+'-ms-result');
+  if(!amt||!month||amt<=0||month<=0){el.classList.remove('visible');el.innerHTML='';return}
+
+  const p=getMsParams(prefix);
+  if(!p){el.classList.remove('visible');return}
+  if(month>p.n){el.innerHTML='<span style="color:var(--ink4)">Měsíc mimořádné splátky je za koncem splatnosti</span>';el.classList.add('visible');return}
+
+  const r=p.ra/100/12;
+  const origTotal=p.s*p.n;
+
+  // Simulate WITHOUT prepayment (baseline)
+  let balOrig=p.CC, totalOrig=0, nOrig=0;
+  for(let m=1;m<=p.n*2&&balOrig>0.5;m++){
+    const interest=balOrig*r;
+    const pay=Math.min(p.s, balOrig+interest);
+    balOrig-=(pay-interest);
+    totalOrig+=pay;
+    nOrig=m;
+  }
+
+  // Simulate WITH prepayment
+  let balMs=p.CC, totalMs=0, nMs=0;
+  for(let m=1;m<=p.n*2&&balMs>0.5;m++){
+    // Apply prepayment at start of this month
+    if(m===month){
+      const actualPrepay=Math.min(amt, balMs);
+      balMs-=actualPrepay;
+      totalMs+=actualPrepay;
+      if(balMs<=0.5)break;
+    }
+    const interest=balMs*r;
+    const pay=Math.min(p.s, balMs+interest);
+    const principal=pay-interest;
+    balMs-=principal;
+    totalMs+=pay;
+    nMs=m;
+  }
+
+  const savedMonths=nOrig-nMs;
+  const savedTotal=totalOrig-totalMs;
+
+  if(savedMonths<=0&&savedTotal<=0){el.innerHTML='<span style="color:var(--ink4)">Mimořádná splátka nemá dostatečný efekt</span>';el.classList.add('visible');return}
+
+  let html='';
+  if(savedMonths>0){
+    const yr=Math.floor(savedMonths/12),mo=savedMonths%12;
+    const yrTxt=yr>0?yr+'r ':'';
+    html+=`<div class="pr-row"><span>Zkrácení splatnosti</span><span class="pr-val">−${savedMonths} měs. (${yrTxt}${mo}m)</span></div>`;
+    html+=`<div class="pr-row"><span>Nová splatnost</span><span class="pr-val">${nMs} měs. ${fY(nMs)}</span></div>`;
+  }
+  if(savedTotal>0){
+    html+=`<div class="pr-row"><span>Úspora na přeplatku</span><span class="pr-val">−${fK(Math.round(savedTotal))}</span></div>`;
+  }
+  const overpayMs=Math.round(totalMs-p.CC);
+  const overpayOrig=Math.round(totalOrig-p.CC);
+  html+=`<div class="pr-row"><span>Přeplatek (pouze úroky)</span><span class="pr-val">${fK(overpayMs)}</span></div>`;
+  html+=`<div class="pr-row" style="opacity:.6"><span>Přeplatek bez mimořádné</span><span>${fK(overpayOrig)}</span></div>`;
+  el.innerHTML=html;
+  el.classList.add('visible');
+}
+
+// ── INVESTMENT (hypo) ──
+function updInvAmt(){var v=document.getElementById('hypo-inv-amt').value;document.getElementById('hypo-inv-amt-val').textContent=parseFloat(v).toLocaleString('cs-CZ')+' Kč';calcInv()}
+function updInvYr(){document.getElementById('hypo-inv-yr-val').textContent=document.getElementById('hypo-inv-yr').value+' let';calcInv()}
+function updInvRet(){var v=document.getElementById('hypo-inv-ret').value;document.getElementById('hypo-inv-ret-val').textContent=parseFloat(v).toFixed(1).replace('.',',')+' %';calcInv()}
+let invMode='amt'; // 'amt' or 'yr'
+function setInvMode(mode){
+  invMode=mode;
+  document.getElementById('inv-tab-amt').classList.toggle('active',mode==='amt');
+  document.getElementById('inv-tab-yr').classList.toggle('active',mode==='yr');
+  document.getElementById('inv-mode-amt').style.display=mode==='amt'?'block':'none';
+  document.getElementById('inv-mode-yr').style.display=mode==='yr'?'block':'none';
+  calcInv();
+}
+function toggleInv(){
+  const on=document.getElementById('hypo-inv-on').checked;
+  document.getElementById('hypo-inv-fields').classList.toggle('open',on);
+  if(!on){document.getElementById('hypo-inv-chart').classList.remove('visible')}
+  else calcInv();
+}
+
+function calcInv(){
+  if(!document.getElementById('hypo-inv-on').checked)return;
+  const retPa=+document.getElementById('hypo-inv-ret').value;
+  const chart=document.getElementById('hypo-inv-chart');
+  const stats=document.getElementById('hypo-inv-stats');
+  if(!retPa){chart.classList.remove('visible');return}
+
+  const CC=+document.getElementById('hypo-cc').value,n=+document.getElementById('hypo-n').value,ra=hypoRate(CC);
+  const r=ra/100/12,s=Math.round(ann(CC,r,n));
+  const retM=retPa/100/12;
+
+  // Build mortgage balance array
+  let bal=CC;const balArr=[CC];
+  for(let m=1;m<=n;m++){const interest=bal*r;const pay=Math.min(s,bal+interest);bal-=(pay-interest);bal=Math.max(0,bal);balArr.push(bal)}
+
+  let monthly,targetM;
+
+  if(invMode==='amt'){
+    // Mode A: user sets monthly amount → find when investment >= remaining debt
+    monthly=+document.getElementById('hypo-inv-amt').value;
+    if(!monthly||monthly<=0){chart.classList.remove('visible');return}
+    // Simulate to find crossover
+    let inv=0;targetM=0;
+    for(let m=1;m<=n;m++){
+      inv=inv*(1+retM)+monthly;
+      const mb=m<=n?balArr[m]:0;
+      if(inv>=mb){targetM=m;break}
+    }
+    if(!targetM)targetM=n; // never crosses, show full term
+  } else {
+    // Mode B: user sets target years → compute needed monthly
+    const yr=+document.getElementById('hypo-inv-yr').value;
+    if(!yr){chart.classList.remove('visible');return}
+    targetM=yr*12;
+    const targetBal=targetM<=n?balArr[targetM]:0;
+    if(targetBal<=0){
+      stats.innerHTML='<div class="invest-stat" style="grid-column:1/-1"><div class="is-val green">Hypotéka bude v tomto čase již splacena</div><div class="is-lbl">Investice není potřeba</div></div>';
+      chart.classList.add('visible');
+      const cv=document.getElementById('hypo-inv-canvas');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+      return;
+    }
+    const fvF=(Math.pow(1+retM,targetM)-1)/retM;
+    monthly=fvF>0?targetBal/fvF:0;
+  }
+
+  // Simulate both curves
+  const chartN=Math.max(targetM,n);
+  let simBal=CC,simInv=0;const bA=[CC],iA=[0];let crossMonth=0;
+  for(let m=1;m<=chartN;m++){
+    if(simBal>0.5){const interest=simBal*r;const pay=Math.min(s,simBal+interest);simBal-=(pay-interest);simBal=Math.max(0,simBal)}
+    simInv=simInv*(1+retM)+monthly;
+    bA.push(simBal);iA.push(simInv);
+    if(!crossMonth&&simInv>=simBal&&simBal>0)crossMonth=m;
+  }
+
+  const targetBal=targetM<=n?balArr[Math.min(targetM,n)]:0;
+  const totalInvested=Math.round(monthly*(crossMonth||targetM));
+  const finalInv=Math.round(iA[crossMonth||targetM]||0);
+  const investGain=finalInv-totalInvested;
+
+  // Calculate saved interest: sum of interest payments from crossover month to end of original mortgage
+  const payoffMonth=crossMonth||targetM;
+  let savedInterest=0;
+  if(payoffMonth<n){
+    let tmpBal=balArr[payoffMonth];
+    for(let m=payoffMonth+1;m<=n;m++){
+      const interest=tmpBal*r;
+      savedInterest+=interest;
+      const pay=Math.min(s,tmpBal+interest);
+      tmpBal-=(pay-interest);tmpBal=Math.max(0,tmpBal);
+    }
+  }
+
+  // Draw chart
+  chart.classList.add('visible');
+  const canvas=document.getElementById('hypo-inv-canvas');
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=canvas.offsetWidth*dpr;canvas.height=180*dpr;canvas.style.height='180px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const W=canvas.offsetWidth,H=180,pad={t:10,b:25,l:5,r:5};
+  const gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);
+  const maxV=Math.max(CC,...iA.slice(0,chartN+1));
+  const xStep=gW/chartN,yScale=gH/maxV;
+
+  // Mortgage (red)
+  ctx.beginPath();ctx.strokeStyle='rgba(192,57,43,.55)';ctx.lineWidth=2;
+  for(let i=0;i<=chartN;i++)ctx.lineTo(pad.l+i*xStep,pad.t+gH-bA[i]*yScale);
+  ctx.stroke();ctx.lineTo(pad.l+chartN*xStep,pad.t+gH);ctx.lineTo(pad.l,pad.t+gH);ctx.closePath();ctx.fillStyle='rgba(192,57,43,.05)';ctx.fill();
+
+  // Investment (green)
+  ctx.beginPath();ctx.strokeStyle='rgba(26,102,68,.65)';ctx.lineWidth=2;
+  for(let i=0;i<=chartN;i++)ctx.lineTo(pad.l+i*xStep,pad.t+gH-Math.min(iA[i],maxV)*yScale);
+  ctx.stroke();ctx.lineTo(pad.l+chartN*xStep,pad.t+gH);ctx.lineTo(pad.l,pad.t+gH);ctx.closePath();ctx.fillStyle='rgba(26,102,68,.05)';ctx.fill();
+
+  // Crossover dot + vertical line
+  if(crossMonth){
+    const cx=pad.l+crossMonth*xStep,cy=pad.t+gH-iA[crossMonth]*yScale;
+    ctx.setLineDash([4,3]);ctx.strokeStyle='rgba(26,102,68,.3)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(cx,pad.t);ctx.lineTo(cx,pad.t+gH);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fillStyle='#1a6644';ctx.fill();
+    ctx.fillStyle='rgba(26,102,68,.9)';ctx.font='700 10px Plus Jakarta Sans';ctx.textAlign='center';
+    const yr=Math.floor(crossMonth/12),mo=crossMonth%12;
+    ctx.fillText((yr?yr+'r ':'')+(mo?mo+'m':''),cx,cy-10);
+  }
+
+  // Axis
+  ctx.fillStyle='#a09a94';ctx.font='500 9px Plus Jakarta Sans';
+  ctx.textAlign='left';ctx.fillText('0',pad.l,H-5);
+  ctx.textAlign='center';ctx.fillText(Math.round(chartN/2)+'m',pad.l+gW/2,H-5);
+  ctx.textAlign='right';ctx.fillText(chartN+'m',W-pad.r,H-5);
+
+  // Stats
+  const cm=crossMonth||targetM;
+  let sh='';
+  if(invMode==='yr'){
+    sh+=`<div class="invest-stat"><div class="is-val" style="color:var(--kb)">${fK(Math.round(monthly))}</div><div class="is-lbl">Potřebná měs. investice</div></div>`;
+  }
+  if(crossMonth){
+    sh+=`<div class="invest-stat"><div class="is-val green">${crossMonth} měs. ${fY(crossMonth)}</div><div class="is-lbl">Průnik investice = dluh</div></div>`;
+  }
+  sh+=`<div class="invest-stat"><div class="is-val">${fK(Math.round(targetBal))}</div><div class="is-lbl">Zbývající dluh v průniku</div></div>`;
+  sh+=`<div class="invest-stat"><div class="is-val">${fK(totalInvested)}</div><div class="is-lbl">Celkem investováno</div></div>`;
+  if(investGain>0) sh+=`<div class="invest-stat"><div class="is-val green">+${fK(Math.round(investGain))}</div><div class="is-lbl">Výnos investice</div></div>`;
+  if(savedInterest>0) sh+=`<div class="invest-stat"><div class="is-val green">−${fK(Math.round(savedInterest))}</div><div class="is-lbl">Ušetřené úroky</div></div>`;
+  stats.innerHTML=sh;
+}
+
+// ── KONSOLIDACE (compare) ──
+let konsLoans=[{cc:'',spl:'',saz:''}];
+function addKonsLoan(){konsLoans.push({cc:'',spl:'',saz:''});renderKonsLoans()}
+function rmKonsLoan(i){if(konsLoans.length>1){konsLoans.splice(i,1);renderKonsLoans()}}
+function updateKonsLoan(i,field,val){konsLoans[i][field]=val;calcKons()}
+function renderKonsLoans(){
+  let h='';
+  konsLoans.forEach((l,i)=>{
+    h+=`<div class="kons-loan">
+      <div><label>Zůstatek</label><input type="text" value="${l.cc}" placeholder="Kč" onchange="updateKonsLoan(${i},'cc',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></div>
+      <div><label>Splátka / měs.</label><input type="text" value="${l.spl}" placeholder="Kč" onchange="updateKonsLoan(${i},'spl',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></div>
+      <div><label>Sazba % p.a.</label><input type="text" value="${l.saz}" placeholder="%" onchange="updateKonsLoan(${i},'saz',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></div>
+      ${konsLoans.length>1?`<button class="kons-rm" onclick="rmKonsLoan(${i})" aria-label="Odebrat">×</button>`:'<span></span>'}
+    </div>`;
+  });
+  document.getElementById('kons-loans').innerHTML=h;
+  calcKons();
+}
+function calcKons(){
+  let totalCC=0,totalSpl=0,totalPaid=0,totalInterest=0;
+  // Per-loan: simulate to get total interest paid over full term
+  const loanDetails=[];
+  konsLoans.forEach(l=>{
+    const cc=parseNum(l.cc),spl=parseNum(l.spl),saz=parseNum(l.saz);
+    totalCC+=cc;totalSpl+=spl;
+    if(cc>0&&spl>0&&saz>0){
+      const r=saz/100/12;
+      if(spl>cc*r){
+        const nm=Math.ceil(Math.log(spl/(spl-cc*r))/Math.log(1+r));
+        totalPaid+=spl*nm;
+        // Simulate month by month to get interest over 36 months (fixace)
+        let b=cc,intFix=0,splFix=0;
+        for(let m=1;m<=36&&b>0.5;m++){
+          const interest=b*r;intFix+=interest;
+          const pay=Math.min(spl,b+interest);b-=(pay-interest);splFix+=pay;
+        }
+        loanDetails.push({cc,spl,saz,nm,intFix,splFix});
+      }
+    } else if(cc>0&&spl>0){
+      totalPaid+=spl*Math.ceil(cc/spl);
+      // No rate → approximate: no interest calc possible
+      loanDetails.push({cc,spl,saz:0,nm:Math.ceil(cc/spl),intFix:0,splFix:spl*36});
+    }
+  });
+  const el=document.getElementById('kons-total');
+  const savEl=document.getElementById('kons-saving');
+  if(totalCC>0||totalSpl>0){
+    let h=`<span>Celkem zůstatky: <span class="kt-val">${fK(totalCC)}</span></span>`;
+    h+=`<span>Celkem splátky: <span class="kt-val">${fK(totalSpl)}/měs.</span></span>`;
+    if(totalPaid>0) h+=`<span>Přeplatek: <span class="kt-val">${fK(Math.round(totalPaid-totalCC))}</span></span>`;
+    el.innerHTML=h;
+  } else {
+    el.innerHTML='';
+  }
+
+  // Compare with hypo if selected in compare items
+  const hypoData=cmpItems.get('hypo');
+  if(hypoData&&hypoData.spl>0&&totalCC>0&&loanDetails.length>0){
+    // Hypo: simulate 36 months (fixace 3 roky)
+    const hypoCC=hypoData.CC,hypoSpl=hypoData.spl;
+    const hypoRa=parseFloat(String(hypoData.saz).replace(',','.').replace(/[^\d.]/g,''));
+    if(hypoRa>0){
+      const hr=hypoRa/100/12;
+      let hb=hypoCC,hIntFix=0,hSplFix=0;
+      for(let m=1;m<=36&&hb>0.5;m++){
+        const interest=hb*hr;hIntFix+=interest;
+        const pay=Math.min(hypoSpl,hb+interest);hb-=(pay-interest);hSplFix+=pay;
+      }
+
+      // Old loans: total paid in 36 months and total interest in 36 months
+      const oldSplFix=loanDetails.reduce((a,l)=>a+l.splFix,0);
+      const oldIntFix=loanDetails.reduce((a,l)=>a+l.intFix,0);
+
+      const savedTotal=Math.round(oldSplFix-hSplFix);
+      const savedInterest=Math.round(oldIntFix-hIntFix);
+
+      let sh=`<div class="kons-saving-header">📊 Úspora za dobu fixace (3 roky / 36 měsíců)</div>`;
+      sh+=`<div class="kons-saving-row"><span>Stávající úvěry — zaplaceno za 36 měs.</span><span class="ks-val">${fK(Math.round(oldSplFix))}</span></div>`;
+      sh+=`<div class="kons-saving-row" style="opacity:.5;font-size:11px;padding-left:12px"><span>z toho úroky</span><span>${fK(Math.round(oldIntFix))}</span></div>`;
+      sh+=`<div class="kons-saving-row"><span>Hypotéka u nás — zaplaceno za 36 měs.</span><span class="ks-val">${fK(Math.round(hSplFix))}</span></div>`;
+      sh+=`<div class="kons-saving-row" style="opacity:.5;font-size:11px;padding-left:12px"><span>z toho úroky</span><span>${fK(Math.round(hIntFix))}</span></div>`;
+      if(savedTotal>0) sh+=`<div class="kons-saving-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>Ušetřeno celkem</span><span class="ks-val green">${fK(savedTotal)}</span></div>`;
+      if(savedInterest>0) sh+=`<div class="kons-saving-row"><span>Ušetřeno na úrocích</span><span class="ks-val green">${fK(savedInterest)}</span></div>`;
+      if(savedTotal<=0) sh+=`<div class="kons-saving-row" style="margin-top:6px"><span style="color:var(--ink4)">Hypotéka u nás vychází dráž za dobu fixace</span></div>`;
+      savEl.innerHTML=sh;savEl.style.display='flex';
+    } else { savEl.style.display='none'; }
+  } else {
+    savEl.style.display='none';
+  }
+}
+
+// ── INIT ──
+syncPduLim();calcSp();calcHypo();calcMp();calcAm();calcPdu();
+</script>
+</body>
+</html>
