@@ -1722,12 +1722,9 @@ function runEngineForData(D, target){
     const vydZvys = zvyseneVydaje(vydBase, stupen);
 
     // Cílová částka dle režimu
-    // K: příjem + navýšení výdajů pro daný stupeň
-    //    = klient dostane svůj příjem NAVÍC zaplatí zvýšené náklady invalidity
+    // K: dorovnat efektivní příjem (s capem u manuálních), min. výdaje
     // S: pokrýt výdaje (dle stupně)
-    const vydBaseNorm = stupen === 'I' ? D.vydaje : Math.max(D.vydaje - D.splatky, 0);
-    const zvyseni = vydZvys - vydBaseNorm;  // absolutní nárůst výdajů pro daný stupeň
-    const cilK = prijemEfektivni + zvyseni;  // příjem + extra výdaje invalidity
+    const cilK = Math.max(prijemEfektivni, vydZvys);
     const cilS = vydZvys;
     const cil  = rezim === 'k' ? cilK : cilS;
 
@@ -1754,9 +1751,12 @@ function runEngineForData(D, target){
     kapS[st] = {kap: rS.mezera * 12 * afInv, ...rS};
   }
 
-  // Monotónnost: každý vyšší stupeň musí mít alespoň tolik jako nižší
-  // Rezerva do invalidity NEVSTUPUJE — zohledňuje se pouze u PN
+  // Odečíst investovatelnou rezervu PŘED monotónností
   for(const kap of [kapK, kapS]){
+    kap.I.kap   = Math.max(kap.I.kap   - investRezerva, 0);
+    kap.II.kap  = Math.max(kap.II.kap  - investRezerva, 0);
+    kap.III.kap = Math.max(kap.III.kap - investRezerva, 0);
+    // Monotónnost: každý vyšší stupeň musí mít alespoň tolik jako nižší
     kap.II.kap  = Math.max(kap.II.kap,  kap.I.kap);
     kap.III.kap = Math.max(kap.III.kap, kap.II.kap);
   }
@@ -1777,6 +1777,15 @@ function runEngineForData(D, target){
   // Adaptace — fixní částky
   const ADAPTACE_II  = 150000;
   const ADAPTACE_III = 400000;
+
+  // Zajištění dětí při invaliditě III. stupně (jen Standardní)
+  // 5 000 Kč/měs × 12 × roky do 26 (lineárně, bez AF)
+  let invDetiIII = 0;
+  D.children.forEach(child => {
+    const roky = Math.max(26 - child.vek, 0);
+    invDetiIII += 5000 * 12 * roky;
+  });
+  invDetiIII = pocetD > 0 ? Math.round(invDetiIII / 50000) * 50000 : 0;
 
   // Úvěrový balíček — pravidlo 80/20
   // Komplexní: každý má celý balíček (100 % úvěru)
@@ -1803,18 +1812,18 @@ function runEngineForData(D, target){
       II:  {pc: prirK.II,  mezera: kapK.II.mezera,  zachPrijem: kapK.II.zachPrijem,  invDuc: kapK.II.invDuc,  cil: kapK.II.cil},
       III: {pc: prirK.III, mezera: kapK.III.mezera, zachPrijem: kapK.III.zachPrijem, invDuc: kapK.III.invDuc, cil: kapK.III.cil},
       adaptII: ADAPTACE_II, adaptIII: ADAPTACE_III,
-      detiIII: 0,
+      detiIII: invDetiIII, // Komplexní: stejné zajištění dětí jako Standardní
       celkemII:  prirK.I + prirK.II + ADAPTACE_II,
-      celkemIII: prirK.I + prirK.II + ADAPTACE_II + prirK.III + ADAPTACE_III,
+      celkemIII: prirK.I + prirK.II + ADAPTACE_II + prirK.III + ADAPTACE_III + invDetiIII,
     },
     S: {
       I:   {pc: prirS.I,   mezera: kapS.I.mezera,   zachPrijem: kapS.I.zachPrijem,   invDuc: kapS.I.invDuc,   cil: kapS.I.cil},
       II:  {pc: prirS.II,  mezera: kapS.II.mezera,  zachPrijem: kapS.II.zachPrijem,  invDuc: kapS.II.invDuc,  cil: kapS.II.cil},
       III: {pc: prirS.III, mezera: kapS.III.mezera, zachPrijem: kapS.III.zachPrijem, invDuc: kapS.III.invDuc, cil: kapS.III.cil},
       adaptII: ADAPTACE_II, adaptIII: ADAPTACE_III,
-      detiIII: 0,
+      detiIII: invDetiIII,
       celkemII:  prirS.I + prirS.II + ADAPTACE_II,
-      celkemIII: prirS.I + prirS.II + ADAPTACE_II + prirS.III + ADAPTACE_III,
+      celkemIII: prirS.I + prirS.II + ADAPTACE_II + prirS.III + ADAPTACE_III + invDetiIII,
     },
     uverBalicek, uverBalicekStd, uverBalicekZakl,
   };
@@ -1930,9 +1939,19 @@ function runEngineForData(D, target){
   }
   const skipPNfinal = skipPN || pnSkipDueToRezerva;
 
-  // ZÁVAŽNÁ ONEMOCNĚNÍ — fixní 500 000 Kč ve všech variantách
+  // ZÁVAŽNÁ ONEMOCNĚNÍ — logika zachována
   // ═══════════════════════════════════════
-  const pc_zo     = 500000;
+  const anamMult = D.anamneza==='obe'?1.30:D.anamneza!=='zadna'?1.15:1.0;
+  const zoMes    = isOSVC ? 18 : 13;
+  const zoZaklad = D.vydaje * 0.7 * zoMes;
+  const rezPodilZO = isSingle ? 0.80 : (maZavisleOsoby ? 0.40 : 0.60);
+  const zoPoRez = Math.max(zoZaklad * anamMult - D.rezerva * rezPodilZO, 0);
+  let zoMinimum = 500000;
+  if(isOSVC) zoMinimum += 100000;
+  if(pocetD > 0) zoMinimum += 100000;
+  if(D.anamneza !== 'zadna') zoMinimum += 100000;
+  if(D.zavPart === 'plna') zoMinimum += 50000;
+  const pc_zo     = r50(Math.max(zoPoRez, zoMinimum));
   const pc_zo_net = Math.max(pc_zo - (D.zpZO||0), 0);
 
   // ═══════════════════════════════════════
@@ -2192,26 +2211,21 @@ function buildKomplex(R){
     const zvys = {I:'+ 4 %',II:'+ 10 %',III:'+ 25 %'}[st];
     return `Dorovnání na 100 % příjmu (${fKst(data.cil)}/měs) · výdaje ${zvys} · zachovaný příjem ${fKst(Math.round(data.zachPrijem))} · inv. důchod ${fKst(data.invDuc)} · mezera ${fKst(data.mezera)}/měs`;
   }
-  // Zvýšení výdajů pro popis
-  const zvysI   = Math.min(D.vydaje, 80000) * 0.04;
-  const zvysII  = Math.min(Math.max(D.vydaje - D.splatky, 0), 80000) * 0.10;
-  const zvysIII = Math.min(Math.max(D.vydaje - D.splatky, 0), 80000) * 0.25;
-
   const invItems = [
     {n:'I. stupeň', a:inv.K.I.pc, t:'K',
-      d:`Cíl: příjem ${fKst(D.prijem)} + zvýšení výdajů ${fKst(Math.round(zvysI))} = ${fKst(Math.round(D.prijem+zvysI))}/měs · zachovaný příjem ${fKst(Math.round(inv.K.I.zachPrijem))} · inv. důchod ${fKst(inv.K.I.invDuc)}`},
+      d:`Dorovnání na 100 % příjmu · plné výdaje + 4 % · zachovaný příjem ${fKst(Math.round(inv.K.I.zachPrijem))} · inv. důchod ${fKst(inv.K.I.invDuc)}`},
     {n:'II. stupeň (přírůstek)', a:inv.K.II.pc, t:'K',
-      d:`Cíl: příjem ${fKst(D.prijem)} + zvýšení výdajů ${fKst(Math.round(zvysII))} = ${fKst(Math.round(D.prijem+zvysII))}/měs · celkem při II. stupni: ${fKst(inv.K.celkemII)}`},
+      d:`Dorovnání příjmu · výdaje bez hypo + 10 % · celkem při II. stupni: ${fKst(inv.K.celkemII)}`},
     {n:'Adaptace prostředí (II. st.)', a:inv.K.adaptII, t:'K',
       d:'Úpravy bydlení a pracovního prostředí při II. stupni invalidity'},
     {n:'III. stupeň (přírůstek)', a:inv.K.III.pc, t:'K',
-      d:`Cíl: příjem ${fKst(D.prijem)} + zvýšení výdajů ${fKst(Math.round(zvysIII))} = ${fKst(Math.round(D.prijem+zvysIII))}/měs · celkem při III. stupni: ${fKst(inv.K.celkemIII)}`},
+      d:`Dorovnání příjmu · výdaje bez hypo + 25 % · celkem při III. stupni: ${fKst(inv.K.celkemIII)}`},
     {n:'Adaptace bydlení (III. st.)', a:inv.K.adaptIII, t:'K',
       d:'Bezbariérové úpravy a kompenzační pomůcky při III. stupni invalidity'},
     ...(inv.K.detiIII>0?[{n:'Zajištění dětí (III. st.)', a:inv.K.detiIII, t:'L',
       d:'5 000 Kč/měs × 12 × roky do 26 let — klesající PČ'}]:[]),
   ].filter(it=>it.a>0);
-  if(invItems.filter(it=>it.a>0).length===0) invItems.push({n:'Příjem a výdaje pokryty zachovaným příjmem a důchody',a:0,t:'K',d:'Kapitalizace mezery není nutná — zachovaný příjem + důchody pokryjí příjem i zvýšené výdaje'});
+  if(invItems.filter(it=>it.a>0).length===0) invItems.push({n:'Výdaje pokryty zachovaným příjmem a důchody',a:0,t:'K',d:'Kapitalizace mezery není nutná — rezerva a důchody výdaje pokryjí'});
 
   const risks = [
     {ico:'🕊️',ibg:'ri-gray',name:'Pojištění pro případ smrti',
@@ -2320,7 +2334,7 @@ function buildStandard(R){
      desc:'Dorovnání na 100 % výdajů · kumulativní přírůstky · hypotéka zvlášť',
      prio:'c', items:invItems},
     {ico:'🫀',ibg:'ri-red',name:'Závažná onemocnění',desc:'Jednorázová výplata při závažné diagnóze',prio:'c',
-     items:[{n:'Závažná onemocnění',a:pc_zo_net,t:'K',
+     items:[{n:'Závažná onemocnění',a:Math.max(r50(pc_zo_net*0.85),500000),t:'K',
        d:'Min. 500 tis. Kč — 85 % komplexního doporučení'}]},
   ];
 
@@ -2372,7 +2386,7 @@ function buildStandard(R){
 function buildZakladni(R){
   const {D,inv,isOSVC,
     pc_smrt_s_net,pc_smrt_deti_z,
-    pnCek,davZ,
+    pnCek,davZ,pc_zo_net,
     isSingle,maManzel,maZavisleOsoby,skipPN,celkoveZavazky} = R;
 
   // ── SMRT — základní ──
@@ -2390,14 +2404,14 @@ function buildZakladni(R){
 
   // ── INVALIDITA — Základní: 75 % ze Standardní ──
   const invItems = [
-    {n:'I. stupeň (75 %)', a:r50(inv.S.I.pc*0.75), t:'K',
-      d:`Základní krytí 75 % výdajů · plné výdaje + 4 %`},
+    {n:'I. stupeň (75 %) ❗', a:r50(inv.S.I.pc*0.75), t:'K',
+      d:`75 % standardní · plné výdaje + 4 % · nutno snížit výdaje o 25 % pro dostatečnou ochranu`},
     {n:'II. stupeň, přírůstek (75 %)', a:r50(inv.S.II.pc*0.75), t:'K',
-      d:`Základní krytí 75 % výdajů · výdaje bez hypo + 10 %`},
+      d:`75 % standardní · výdaje bez hypo + 10 %`},
     {n:'Adaptace prostředí (II. st.)', a:Math.round(inv.S.adaptII*0.75/50000)*50000, t:'K',
       d:'75 % standardní adaptace při II. stupni'},
-    {n:'III. stupeň, přírůstek (75 %)', a:r50(inv.S.III.pc*0.75), t:'K',
-      d:`Základní krytí 75 % výdajů · výdaje bez hypo + 25 %`},
+    {n:'III. stupeň, přírůstek (75 %) ❗', a:r50(inv.S.III.pc*0.75), t:'K',
+      d:`75 % standardní · výdaje bez hypo + 25 % · nutno snížit výdaje o 25 % pro dostatečnou ochranu`},
     {n:'Adaptace bydlení (III. st.)', a:Math.round(inv.S.adaptIII*0.75/50000)*50000, t:'K',
       d:'75 % standardní adaptace při III. stupni'},
   ].filter(it=>it.a>0);
@@ -2408,9 +2422,11 @@ function buildZakladni(R){
      desc:isSingle&&!maZavisleOsoby?'Splacení závazků':'Základní zajištění výdajů + hypotéka',
      prio:'c', items:smrtItems},
     {ico:'🦽',ibg:'ri-red',name:'Pojištění invalidity',
-     desc:'Základní krytí · 75 % výdajů domácnosti · 25 % nekryto',
+     desc:'75 % standardní varianty · pouze kritická rizika',
      prio:'c', items:invItems},
-
+    {ico:'🫀',ibg:'ri-red',name:'Závažná onemocnění',desc:'Minimální PČ',prio:'c',
+     items:[{n:'Závažná onemocnění',a:Math.max(r50(pc_zo_net*0.50),500000),t:'K',
+       d:'Min. 500 tis. Kč — 50 % komplexního doporučení'}]},
   ];
 
   if(!skipPN && davZ > 0){
@@ -2440,7 +2456,7 @@ function buildZakladni(R){
   if(skipPN || davZ === 0) skipped.push('Pracovní neschopnost');
   if(uvZakl <= 0) skipped.push('Úvěrový balíček (žádné úvěry)');
 
-  return {key:'z',name:'Nutné minimum',desc:'Základní krytí — pojistné částky pokrývají 75 % výdajů domácnosti (25 % výdajů nekryto) — bude potřeba se uskromnit',badge:'⚠️ Minimum',bc:'vb-z',risks,skipped,isMinimum:true};
+  return {key:'z',name:'Nutné minimum',desc:'⚠️ Nedostatečná ochrana — nutno snížit výdaje o 25 %',badge:'⚠️ Minimum',bc:'vb-z',risks,skipped,isMinimum:true};
 }
 
 
@@ -3080,7 +3096,7 @@ function exportPDF(){
   const V = activeKey==='k' ? (VK||VS) : activeKey==='s' ? VS : VZ;
 
   const varNames = {k:'Komplexní',s:'Standardní',z:'Nutné minimum'};
-  const varDescs = {k:'Maximální ochrana — pojištění na 100 % příjmu',s:'Pojištění výdajů — klíčová rizika',z:'Základní krytí — pojistné částky pokrývají 75 % výdajů domácnosti (25 % výdajů nekryto) — bude potřeba se uskromnit'};
+  const varDescs = {k:'Maximální ochrana — pojištění na 100 % příjmu',s:'Pojištění výdajů — klíčová rizika',z:'⚠️ Nedostatečná ochrana — nutno snížit výdaje o 25 %'};
   const date = new Date().toLocaleDateString('cs-CZ');
 
   // Profil z DOM
@@ -3274,7 +3290,14 @@ function exportPDF(){
     const smrtHorizont2  = Math.min(R_arg.rokiDD||30, 20);
     const afSmrt2        = anuita(Math.max(R_arg.realVynosInv||0.055, 0.01), smrtHorizont2);
 
-    // ZO helpery — fixní 500 000 Kč
+    // ZO helpery
+    const zoMes2      = isOSVC2 ? 18 : 13;
+    const zoZaklad2   = D2.vydaje * 0.7 * zoMes2;
+    const anamMult2   = D2.anamneza==='obe'?1.30:D2.anamneza!=='zadna'?1.15:1.0;
+    const rezPodil2   = R_arg.isSingle ? 0.80 : (R_arg.maZavisleOsoby ? 0.40 : 0.60);
+    let zoMin2 = 500000;
+    if(isOSVC2) zoMin2+=100000; if((R_arg.pocetD||0)>0) zoMin2+=100000;
+    if(D2.anamneza&&D2.anamneza!=='zadna') zoMin2+=100000; if(D2.zavPart==='plna') zoMin2+=50000;
 
     // PN helpery
     const pnCil2   = isOSVC2 ? D2.prijem : D2.vydaje;
@@ -3289,29 +3312,16 @@ function exportPDF(){
 
     // Přírůstky dle stupně — z inv objektu v R_arg (správné kumulativní součty z engine)
     const invObj = R_arg.inv;
-    // Určit variantu dle V_arg.key: k=Komplexní, s=Standardní, z=Základní (75 % Standardní)
-    const invVbase = (V_arg.key === 'k') ? (invObj?.K || invObj?.S) : invObj?.S;
-    const isVarZ2  = V_arg.key === 'z';
-    const inv75    = v => isVarZ2 ? Math.round(v * 0.75 / 50000) * 50000 : v;
-    // Přírůstky: co se přidá při daném stupni (bez kumulace), pro Z = 75 % S
-    const invPrirI   = invVbase ? inv75(invVbase.I.pc)   : 0;
-    const invPrirII  = invVbase ? inv75(invVbase.II.pc + (invVbase.adaptII||0))  : 0;
-    const invPrirIII = invVbase ? inv75(invVbase.III.pc + (invVbase.adaptIII||0)) : 0;
+    // Určit variantu (K nebo S) dle V_arg
+    const invV = (V_arg.key === 'k') ? (invObj?.K || invObj?.S) : invObj?.S;
+    // Přírůstky: co se přidá při daném stupni (bez kumulace)
+    const invPrirI   = invV ? invV.I.pc   : 0;
+    const invPrirII  = invV ? (invV.II.pc + (invV.adaptII||0))  : 0;
+    const invPrirIII = invV ? (invV.III.pc + (invV.adaptIII||0) + (invV.detiIII||0)) : 0;
     // Kumulativní součty — co klient skutečně dostane při daném stupni
     const invCelkemI   = invPrirI;
     const invCelkemII  = invPrirI + invPrirII;
     const invCelkemIII = invPrirI + invPrirII + invPrirIII;
-
-    // isVarK2 / isVarZ2 — pro grafy a karty
-    const isVarK2 = V_arg.key === 'k';
-    const isVarZ2 = V_arg.key === 'z';
-    const refI2   = isVarK2 ? (D2.prijem + Math.min(D2.vydaje, 80000)*0.04) : vydI;
-    const refII2  = isVarK2 ? (D2.prijem + Math.min(vydBezHypo, 80000)*0.10) : vydII;
-    const refIII2 = isVarK2 ? (D2.prijem + Math.min(vydBezHypo, 80000)*0.25) : vydIII;
-    // Měřítko pro grafy — maximum ze všech referenčních čar
-    const maxScale = Math.max(D2.prijem, D2.vydaje, refI2, refII2, refIII2, smrtMezera2*2||0, pnCil2) * 1.05;
-    // pct: převod hodnoty na % šířky v grafu
-    const pct = v => maxScale > 0 ? Math.min(Math.round(v / maxScale * 100), 100) : 0;
 
     // Pomocná funkce: karta měsíčního rozpočtu
     const cfRow = (label, amount, color) =>
@@ -3320,23 +3330,10 @@ function exportPDF(){
         <span style="font-weight:600;color:${color||'#1A1A1A'}">${fKc(amount)}</span>
        </div>`;
 
-    // Určení varianty (K nebo S) pro zobrazení
-    const isVarK = V_arg.key === 'k';
-    // Výpočet zvýšení výdajů pro Komplexní variantu (vydBezHypo definováno výše na řádku ~3278)
-    const zvyseniI2   = Math.min(D2.vydaje, 80000) * 0.04;
-    const zvyseniII2  = Math.min(vydBezHypo, 80000) * 0.10;
-    const zvyseniIII2 = Math.min(vydBezHypo, 80000) * 0.25;
-    const zvyseniMap  = {I: zvyseniI2, II: zvyseniII2, III: zvyseniIII2};
-
     const cfCardInv = (st, vyd, invPC, invCelkem) => {
       const s = src(st);
-      const zvys = zvyseniMap[st] || 0;
-      // Cíl dle varianty:
-      // Komplexní: příjem + zvýšení výdajů
-      // Standardní: zvýšené výdaje
-      const cilTarget = isVarK ? (D2.prijem + zvys) : vyd;
-      const pokryto = s.total >= cilTarget;
-      const mezera  = Math.max(cilTarget - s.total, 0);
+      const pokryto = s.total >= vyd;
+      const mezera  = Math.max(vyd - s.total, 0);
       const kapRaw  = Math.round(mezera * 12 * af2);
       const bc = pokryto ? '#A7F3D0' : '#FCA5A5';
       const hbg = pokryto ? '#F0FAF4' : '#FFF1F1';
@@ -3348,20 +3345,14 @@ function exportPDF(){
           <span style="color:${col||'#6B6560'}">${lbl}</span>
           <span style="font-weight:600;color:${col||'#1A1A1A'}">${fKc(val)}</span>
          </div>`;
-
-      // Výpočtový box — K varianta ukazuje příjem + zvýšení, S varianta výdaje
-      const cilLabel = isVarK ? `Cíl: příjem + navýšení výdajů` : `Výdaje domácnosti`;
+      // Výpočtový box — stejný pro všechny stupně
       const vypocetBox =
         `<div style="margin-top:8px;border:1px solid ${bc};border-radius:5px;overflow:hidden">
           <div style="background:${pokryto?'#166534':'#E3000F'};padding:3px 8px">
             <span style="font-size:7.5px;font-weight:700;color:#fff;text-transform:uppercase">Výpočet mezery — ${st}. stupeň</span>
           </div>
           <div style="padding:6px 8px;background:#fff">
-            ${isVarK ? `
-              ${cfR('Příjem klienta', D2.prijem, '#1D4ED8')}
-              ${cfR(`+ Zvýšení výdajů při ${st}. st. (${st==='I'?'+4 %':st==='II'?'+10 %':'+25 %'})`, Math.round(zvys), '#1D4ED8')}
-              ${cfR('= Cílová částka', Math.round(cilTarget), '#1D4ED8')}
-            ` : cfR('Výdaje domácnosti', cilTarget)}
+            ${cfR('Výdaje domácnosti', vyd)}
             ${cfR(`− Zachovaný příjem (${retPct} %)`, s.zach, '#166534')}
             ${s.duc>0 ? cfR('− Invalidní důchod', s.duc, '#166534') : ''}
             ${s.part>0 ? cfR('− Příjem partnera', s.part, '#166534') : ''}
@@ -3375,32 +3366,25 @@ function exportPDF(){
                   <span style="font-size:10px;font-weight:700;color:#fff">${fKc(mezera)}</span>
                  </div>
                  <div style="font-size:7px;color:#6B6560;margin-top:4px;line-height:1.6;padding:0 2px">
-                   ${fKc(mezera)} × 12 měs. × AF ${Math.round(af2*100)/100} = ${fKp2(kapRaw)}
+                   ${fKc(mezera)} × 12 měs. × AF ${Math.round(af2*100)/100} = ${fKp2(kapRaw)}${investRezerva2>0?' · −&nbsp;rezerva '+fKp2(investRezerva2):''}
                    <br>→ ${st==='I'?'PČ při I. st.':st==='II'?'Přírůstek při II. st.':'Přírůstek při III. st.'}: <strong style="color:#1A1A1A">${fKp2(invPC)}</strong>
                  </div>`
             }
           </div>
         </div>`;
-      // Součet kumulativní
+      // Součet kumulativní — stejný font jako "Celkem při III. st." v hlavičce
       const soucetBar = `
         <div style="margin-top:6px;background:#1A1A1A;border-radius:4px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:8px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.04em">Celkem vyplaceno při ${st}. st.</span>
-          <span style="font-size:14px;font-weight:700;color:#fff;letter-spacing:-.3px">${fKp2(invCelkem)}</span>
+          <span style="font-size:14px;font-weight:700;color:#fff;font-family:'DM Serif Display',serif;letter-spacing:-.3px">${fKp2(invCelkem)}</span>
         </div>`;
-      // Hlavička karty — K varianta ukazuje příjem jako cíl, S varianta výdaje
       return `<div style="border:1.5px solid ${bc};border-radius:6px;overflow:hidden">
         <div style="background:${hbg};padding:6px 10px;border-bottom:1px solid ${bc}">
           <div style="font-size:9.5px;font-weight:700;color:${hcol};text-transform:uppercase">${st}. stupeň invalidity</div>
-          ${isVarK
-            ? `<div style="font-size:7.5px;color:#1D4ED8;margin-top:1px;font-weight:600">Cíl: příjem ${fKc(D2.prijem)} + zvýšení výdajů ${fKc(Math.round(zvys))}</div>`
-            : `<div style="font-size:7.5px;color:#6B6560;margin-top:1px">${retPct} % příjmu zachováno · ${vydDesc}</div>`
-          }
+          <div style="font-size:7.5px;color:#6B6560;margin-top:1px">${retPct} % příjmu zachováno · ${vydDesc}</div>
         </div>
         <div style="padding:8px 10px">
-          ${isVarK
-            ? cfRow(`Cíl: příjem + zvýšení výdajů`, Math.round(cilTarget), '#1D4ED8')
-            : cfRow('Výdaje domácnosti', cilTarget)
-          }
+          ${cfRow('Výdaje domácnosti', vyd)}
           ${cfRow(`Zachovaný příjem (${retPct} %)`, s.zach, '#166534')}
           ${s.duc>0 ? cfRow('Invalidní důchod', s.duc, '#166534') : ''}
           ${s.part>0 ? cfRow('Příjem partnera', s.part, '#166534') : ''}
@@ -3432,7 +3416,7 @@ function exportPDF(){
         </div>
         <div style="margin-top:5px;font-size:7.5px;color:#6B6560;background:#F5F5F5;padding:4px 8px;border-radius:3px">
           Kumulativní plnění: při II. st. obdržíte PČ za I.+II. st. dohromady · při III. st. za všechny tři stupně.
-
+          ${investRezerva2>0?`<strong style="color:#1A6644"> Investiční rezerva ${fKp2(investRezerva2)} snižuje každou PČ (rezerva ${fKp2(D2.rezerva||0)} − nouzová rezerva 750 tis. Kč).</strong>`:''}
         </div>
 
       <!-- INVALIDITA DETAIL -->
@@ -3441,7 +3425,7 @@ function exportPDF(){
           <div style="width:24px;height:24px;border-radius:4px;background:#E3000F;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">INV</div>
           <div style="flex:1">
             <strong style="font-size:12px">Pojištění invalidity</strong>
-            <div style="font-size:9px;color:#6B6560">${isVarK2?'Cíl: příjem + zvýšení výdajů dle stupně':isVarZ2?'Základní krytí · 75 % výdajů domácnosti · 25 % nekryto':'I. st.: plné výdaje · II. a III.: výdaje bez hypo'} · kumulativní plnění</div>
+            <div style="font-size:9px;color:#6B6560">I. stupeň: plné výdaje · II. a III.: výdaje bez hypo · kumulativní plnění</div>
           </div>
           <div style="text-align:right">
             <div style="font-size:13px;font-weight:700">${fKp2(invCelkemIII)}</div>
@@ -3449,42 +3433,30 @@ function exportPDF(){
           </div>
         </div>
         <div style="padding:10px 13px">
-          <div style="font-size:9.5px;color:#6B6560;font-style:italic;border-left:2px solid ${isVarK2?'#1D4ED8':'#E3000F'};padding-left:8px;margin-bottom:10px;line-height:1.6">
-            ${isVarK2
-              ? '<strong style="color:#1D4ED8">Cíl pojistné ochrany:</strong> zachovat plný příjem klienta <strong>a zároveň</strong> pokrýt navýšené výdaje invalidity (asistence, pomůcky). Referenční čára = příjem + zvýšení výdajů dle stupně.'
-              : 'Výdaje domácnosti se při invaliditě zvyšují o náklady na zdravotní pomůcky a asistenci.'}
+          <div style="font-size:9.5px;color:#6B6560;font-style:italic;border-left:2px solid #E3000F;padding-left:8px;margin-bottom:10px;line-height:1.6">
+            Výdaje domácnosti se při invaliditě zvyšují o náklady na zdravotní pomůcky a asistenci.
             Kumulativní logika: při II. stupni klient obdrží PČ za I. + II. stupeň, při III. stupni všechny tři.
           </div>
           <!-- Graf 3 řádky -->
           <div style="margin-bottom:4px;font-size:8px;color:#6B6560;display:flex;justify-content:space-between">
-            <span>${isVarK2?'Dostupné zdroje vs. příjem + zvýšení výdajů dle stupně':'Dostupné zdroje vs. potřeba výdajů dle stupně invalidity'}</span>
+            <span>Dostupné zdroje vs. potřeba výdajů dle stupně invalidity</span>
             <span style="font-weight:700;color:#1A1A1A">Měřítko: ${fKp2(Math.round(maxScale))} Kč/měs</span>
           </div>
           ${['I','II','III'].map(st=>{
             const s = src(st);
-            const vydSt = st==='I'?vydI:st==='II'?vydII:vydIII;
-            const zvysSt = zvyseniMap[st] || 0;
-            // Referenční čára: K = příjem + zvýšení výdajů; S = výdaje
-            const refLine = isVarK ? (D2.prijem + zvysSt) : vydSt;
-            // Měřítko přes maximum ze všech referenčních čar
-            const pRef = pct(refLine);
+            const vyd = st==='I'?vydI:st==='II'?vydII:vydIII;
+            const pVyd = pct(vyd);
             const pZach = pct(s.zach);
             const pDuc = pct(s.duc);
             const pPart = pct(s.part);
-            const pokryto = s.total >= refLine;
-            const mezSt = Math.max(refLine - s.total, 0);
-            // Popis referenční čáry pod číslem stupně
-            const subDesc = isVarK
-              ? (st==='I'?`příjem+4% výd.`:st==='II'?`příjem+10% výd.`:`příjem+25% výd.`)
-              : (st==='I'?'výd.+4%':st==='II'?'bez hypo+10%':'bez hypo+25%');
+            const pokryto = s.total >= vyd;
             return `<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px">
-              <div style="width:80px;flex-shrink:0">
-                <div style="font-size:8px;font-weight:700;color:${!pokryto?'#E3000F':'#1A1A1A'}">${st}. stupeň</div>
-                <div style="font-size:7px;color:${isVarK?'#1D4ED8':'#6B6560'}">${subDesc}</div>
-                <div style="font-size:7px;font-weight:700;color:#1A1A1A">${fKp2(Math.round(refLine))}</div>
+              <div style="width:72px;flex-shrink:0">
+                <div style="font-size:8px;font-weight:700;color:${st==='III'&&!pokryto?'#E3000F':'#1A1A1A'}">${st}. stupeň</div>
+                <div style="font-size:7.5px;color:#6B6560">${st==='I'?'výd.+4%':st==='II'?'bez hypo+10%':'bez hypo+25%'}</div>
               </div>
               <div style="flex:1;position:relative">
-                <div style="position:absolute;left:${pRef}%;top:0;bottom:0;width:2px;background:${isVarK?'#1D4ED8':'#E3000F'};z-index:10"></div>
+                <div style="position:absolute;left:${pVyd}%;top:0;bottom:0;width:2px;background:#E3000F;z-index:10"></div>
                 <div style="height:22px;background:#F5F5F5;border-radius:3px;overflow:hidden;border:1px solid #D8D8D8;display:flex">
                   <div style="height:100%;width:${pZach}%;background:#1A1A1A;display:flex;align-items:center;overflow:hidden">
                     <span style="font-size:6.5px;font-weight:700;color:#fff;padding:0 3px;white-space:nowrap">${pZach>8?fKp2(Math.round(s.zach)):''}  </span>
@@ -3496,14 +3468,14 @@ function exportPDF(){
                     <span style="font-size:6px;color:#fff;padding:0 2px">Part.</span></div>`:''}
                 </div>
               </div>
-              <div style="width:58px;text-align:right;font-size:7.5px;font-weight:700;color:${pokryto?'#166534':'#E3000F'}">
-                ${pokryto?'✓ pokryto':'chybí '+fKp2(mezSt)}
+              <div style="width:55px;text-align:right;font-size:7.5px;font-weight:700;color:${pokryto?'#166534':'#E3000F'}">
+                ${pokryto?'✓ 0 Kč':fKp2(invCelkemIII-(st==='III'?0:st==='II'?invItems.slice(2).reduce((s,it)=>s+(it.a||0),0):invCelkemIII))}
               </div>
             </div>`;
           }).join('')}
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;padding-top:4px;border-top:1px solid #F0F0F0;font-size:8px;color:#6B6560">
             <span>■ Zachovaný příjem</span><span style="color:#444">■ Inv. důchod</span>${R_arg.maPartnera?'<span style="color:#777">■ Příjem partnera</span>':''}
-            <span style="color:${isVarK?'#1D4ED8':'#E3000F'}">| ${isVarK?'Příjem + zvýšení výdajů (cíl K)':'Výdaje (referenční čára)'}</span>
+            <span style="color:#E3000F">| Výdaje (referenční čára)</span>
           </div>
         </div>
       </div>
