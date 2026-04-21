@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Auth Portal Backend - Flask + SQLite
+Auth Portal Backend - Flask + SQLite v2
 Roles: admin, manazer, poradce
 """
 
