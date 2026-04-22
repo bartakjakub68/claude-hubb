@@ -2112,9 +2112,11 @@ NEWS_SOURCES = [
     {'url': 'https://www.financninoviny.cz/finance/rss/index_rss.php', 'source': 'Finanční noviny', 'category': 'finance'},
 ]
 
-MORTGAGE_KEYWORDS = ['hypotéka', 'hypotéky', 'hypoték', 'úvěr', 'úrokové sazby', 'sazba',
-                     'refinancování', 'ltv', 'dtv', 'dti', 'nemovitost', 'bydlení',
-                     'rpsn', 'cnb', 'česká národní banka', 'fixace', 'předhypoteční']
+MORTGAGE_KEYWORDS = ['hypotéka', 'hypotéky', 'hypoték', 'hypoteční', 'hypotece',
+                     'refinancování', 'ltv', 'dti', 'dsti', 'rpsn',
+                     'úvěr na bydlení', 'stavební spoření', 'fixace sazby',
+                     'zástavní', 'předhypoteční', 'meziúvěr',
+                     'úrokové sazby hypoték', 'sazby hypoték']
 
 def _parse_rss(source_cfg):
     """Stáhne a parsuje RSS feed, vrátí list článků."""
@@ -2167,6 +2169,7 @@ def _parse_rss(source_cfg):
 
 def _refresh_news(conn):
     """Stáhne všechny RSS zdroje a uloží do DB."""
+    conn.execute("DELETE FROM news_articles")
     all_articles = []
     for src in NEWS_SOURCES:
         all_articles.extend(_parse_rss(src))
@@ -2249,6 +2252,11 @@ def at_static(path):
 @app.route('/metodika')
 def metodika_index():
     return send_from_directory('public/metodika', 'index.html')
+
+@app.route('/novinky/')
+@app.route('/novinky')
+def novinky_index():
+    return send_from_directory('public/novinky', 'index.html')
 
 @app.route('/metodika/<path:path>')
 def metodika_static(path):
