@@ -1716,12 +1716,26 @@ def _met_extract_keywords(text):
     return ' '.join(result[:80])
 
 
-def _met_search_chunks(conn, variant, query, limit=8):
+def _met_stem(word):
+    """Jednoduchý stem — ořízne časté české přípony pro lepší shodu."""
+    w = word.lower()
+    for suffix in ('ích', 'ním', 'ního', 'nímu', 'ové', 'ovi', 'ech', 'emi',
+                   'ách', 'ami', 'ům', 'ou', 'ého', 'ému', 'ém', 'ím',
+                   'ký', 'ká', 'ké', 'kých', 'kému', 'kém',
+                   'ní', 'ná', 'né', 'ních', 'nímu',
+                   'ost', 'osti', 'ostí',
+                   'ům', 'ovi', 'ova', 'ovo'):
+        if w.endswith(suffix) and len(w) - len(suffix) >= 3:
+            return w[:-len(suffix)]
+    return w
+
+def _met_search_chunks(conn, variant, query, limit=15):
     """Keyword search v met_chunks — vrátí nejrelevantnější chunky.
     Metodické listy (doc_type='list') mají bonus skóre a přednost."""
     words = re.findall(r'[a-záčďéěíňóřšťúůýžA-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]{3,}', query)
     if not words:
         return []
+    stems = [_met_stem(w) for w in words]
     chunks = conn.execute('''
         SELECT c.*, d.doc_type
         FROM met_chunks c
@@ -1732,9 +1746,14 @@ def _met_search_chunks(conn, variant, query, limit=8):
     scored = []
     for ch in chunks:
         text_lower = ch['text'].lower() + ' ' + ch['keywords'].lower()
-        score = sum(1 for w in words if w.lower() in text_lower)
+        # Skóre: přesná shoda + stem shoda (půl bodu)
+        score = 0
+        for w, s in zip(words, stems):
+            if w.lower() in text_lower:
+                score += 1
+            elif s in text_lower:
+                score += 0.5
         if score > 0:
-            # Metodický list dostane bonus — zobrazí se před základní metodikou
             if ch['doc_type'] == 'list':
                 score += 100
             scored.append((score, dict(ch)))
@@ -1801,7 +1820,7 @@ def met_upload():
         return jsonify({'error': f'Chyba při čtení PDF: {e}'}), 500
 
     # Chunk: ~600 chars per chunk, respect page boundaries
-    CHUNK_SIZE = 600
+    CHUNK_SIZE = 1200
     chunks = []
     buf = ''
     buf_pages = []
