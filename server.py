@@ -1698,7 +1698,8 @@ def at_tts():
 
 # ─── Metodika ────────────────────────────────────────────────────────────────
 
-MET_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'data', 'met_pdfs')
+_data_root = os.path.dirname(DB_PATH) if os.path.dirname(DB_PATH) else os.path.join(os.path.dirname(__file__), 'data')
+MET_UPLOAD_DIR = os.path.join(_data_root, 'met_pdfs')
 os.makedirs(MET_UPLOAD_DIR, exist_ok=True)
 
 
