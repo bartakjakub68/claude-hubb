@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './useAuth.jsx';
 import {
   metGetDocuments, metUpload, metDeleteDocument,
   metGetExceptions, metAddException, metDeleteException,
-  metChat, metGetChats,
+  metChat, metGetChats, metResetChat,
 } from './api.js';
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -62,6 +62,12 @@ function ChatView({ variant, theme }) {
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
+  const reset = async () => {
+    if (!window.confirm('Smazat historii chatu?')) return;
+    await metResetChat(variant).catch(() => {});
+    setMessages([]);
   };
 
   return (
@@ -131,6 +137,17 @@ function ChatView({ variant, theme }) {
           onFocus={e => e.target.style.borderColor = theme.primary}
           onBlur={e => e.target.style.borderColor = theme.border}
         />
+        <button
+          onClick={reset}
+          title="Smazat historii chatu"
+          style={{
+            padding: '8px 12px', background: '#f5f5f5', color: '#666',
+            border: '1px solid #ddd', borderRadius: '8px', fontSize: '0.875rem',
+            cursor: 'pointer', whiteSpace: 'nowrap',
+          }}
+        >
+          🗑 Reset
+        </button>
         <button
           onClick={send}
           disabled={!input.trim() || loading}

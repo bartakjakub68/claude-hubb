@@ -49,3 +49,6 @@ export const metChat = (variant, question, history) =>
 
 export const metGetChats = (variant) =>
   fetch(`/api/met/chats?variant=${variant}`, { headers: hdr() }).then(ok);
+
+export const metResetChat = (variant) =>
+  fetch(`/api/met/chats?variant=${variant}`, { method: 'DELETE', headers: hdr() }).then(ok);

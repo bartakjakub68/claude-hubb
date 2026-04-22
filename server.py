@@ -2063,6 +2063,17 @@ def met_get_chats():
     return jsonify(result)
 
 
+@app.route('/api/met/chats', methods=['DELETE'])
+@require_auth()
+def met_delete_chats():
+    variant = request.args.get('variant', 'kb')
+    conn = get_db()
+    conn.execute("DELETE FROM met_chats WHERE variant=? AND user_id=?", (variant, request.user['id']))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+
 # ─── Statické soubory ─────────────────────────────────────────────────────────
 
 @app.route('/')
