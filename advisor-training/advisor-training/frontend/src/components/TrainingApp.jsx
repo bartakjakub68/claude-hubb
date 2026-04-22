@@ -876,29 +876,77 @@ PRVNÍ ZPRÁVU napiš TY – přivítej klienta.`;
   // ── MICRO LESSONS ──
   const LESSONS = [
     {id:"open-q",cat:"Komunikace",title:"Otevřené vs uzavřené otázky",body:"ŠPATNĚ: 'Máte spoření?' (ano/ne)\nDOBŘE: 'Jak aktuálně řešíte spoření?' (rozvíjí konverzaci)\n\nOtevřené otázky začínají: Jak, Co, Kde, Kdy, Proč, Povězte mi...\nPoužívejte je pro zjišťování potřeb. Uzavřené jen pro potvrzení.",skill:"active_listening",
-      scenario:"Jsi klient na schůzce s finančním poradcem. Na každou uzavřenou otázku (na kterou lze odpovědět ano/ne) odpověz jen 'Ano.' nebo 'Ne.' bez dalšího rozvíjení. Na otevřené otázky odpovídej ochotně a podrobně. Začni: 'Dobrý den, jsem rád že jste přišel.'"},
+      variants:[
+        {opener:"Dobrý den, přišel jsem se poradit o spoření.",persona:"Klient 35 let, OSVČ, skoupý na slova. Na uzavřené otázky odpovídá jen ano/ne. Na otevřené se rozhovoří o tom, že vydělává dobře ale nic neodkládá."},
+        {opener:"Zdravím, manželka mě sem poslala, prý bychom měli řešit finance.",persona:"Klient 42 let, trochu neochotný. Na uzavřené otázky je jednoslovný a mírně ironický. Na otevřené otázky se postupně rozhovoří o rodinné situaci."},
+        {opener:"Dobrý den, chtěla bych vědět co mám dělat s penězi co jsem zdědila.",persona:"Klientka 55 let, nervózní, nikdy se o finance moc nezajímala. Na uzavřené otázky odpovídá stručně a nejistě. Na otevřené otázky vypráví o situaci."},
+      ]},
     {id:"lace",cat:"Komunikace",title:"LACE model – aktivní naslouchání",body:"L = Listen (poslouchej bez přerušení)\nA = Acknowledge (potvrď: 'Rozumím...')\nC = Clarify (upřesni: 'Když říkáte X, myslíte...')\nE = Empathize (vcíti se: 'Chápu že to je náročné')\n\nPoužijte po každé důležité odpovědi klienta.",skill:"active_listening",
-      scenario:"Jsi klient který právě prošel rozvodem a řeší finanční situaci. Postupně odhaluj emocionálně náročné detaily. Pokud poradce nepotvrdí pochopení nebo neprokáže empatii, uzavři se a řekni 'To je složité.' Začni: 'Potřebuji probrat svoji situaci, je to trochu komplikované...'"},
+      variants:[
+        {opener:"Potřebuji probrat svoji situaci, je to trochu komplikované...",persona:"Klient po rozvodu, řeší rozdělení majetku a hypotéky. Emocionálně napjatý. Pokud poradce neprojeví empatii, uzavře se. Na uznání a zájem reaguje otevřením."},
+        {opener:"Přišel jsem protože nevím co dál. Firma mi nejde jak jsem čekal.",persona:"Podnikatel 40 let, pod finančním stresem. Potřebuje hlavně být vyslyšen. Pokud poradce skočí rovnou na řešení, zareaguje: 'Vy mě vůbec neposloucháte.'"},
+        {opener:"Dcera mi říkala ať přijdu, já ale nevím jestli to má smysl.",persona:"Senior 68 let, skeptický. Má špatnou zkušenost s poradcem. Na empatii a trpělivost reaguje postupným otevřením. Na unáhlenost se zavírá."},
+      ]},
     {id:"funnel",cat:"Komunikace",title:"Technika trychtýře",body:"Začněte široce: 'Jak vypadá Váš typický měsíc?'\nZužte: 'A co se týče spoření?'\nKonkrétně: 'Kolik měsíčně dáváte stranou?'\n\nOd obecného ke konkrétnímu. Klient se neuzavře.",skill:"rapport",
-      scenario:"Jsi klient který nerad prozrazuje konkrétní čísla hned. Na příliš konkrétní otázky na začátku odpovídej vyhýbavě ('to záleží...'). Na obecnější otázky odpovídej ochotněji. Začni: 'Tak nevím přesně co chci, přišel jsem se poradit.'"},
+      variants:[
+        {opener:"Tak nevím přesně co chci, přišel jsem se poradit.",persona:"Klient 30 let, první schůzka s poradcem. Na přímé konkrétní otázky reaguje 'To nevím...' nebo 'To záleží...'. Na obecné otázky o životní situaci se otevírá."},
+        {opener:"Chci investovat, ale nevím jak.",persona:"Klientka 45 let, má úspory ale neví co s nimi. Na otázku 'Kolik chcete investovat?' hned na začátku odpoví vyhýbavě. Na otázku o životních cílech a plánech ochotně mluví."},
+        {opener:"Kamarád mi říkal že bychom měli mít finanční plán.",persona:"Pár, mluví za oba (27 a 29 let). Na konkrétní otázky o číslech se zdráhají. Na otázky o plánech do budoucna (dítě, byt) se rozhovoří."},
+      ]},
     {id:"obj-partner",cat:"Námitky",title:"'Musím se poradit s partnerem'",body:"1. UZNEJ: 'Rozumím, je to důležité rozhodnutí pro oba.'\n2. ZJISTI: 'Co myslíte že partnera bude zajímat nejvíc?'\n3. NABÍDNI: 'Co kdybychom si domluvili schůzku společně?'\n\n80% případů = klient si není jistý. Zjistěte co konkrétně.",skill:"objection_handling",
-      scenario:"Jsi klient zájem o hypotéku. Po krátké diskuzi použij námitku 'Musím se poradit s manželkou, ona rozhoduje o financích.' Pokud poradce jen řekne OK nebo se rozloučí, buď zklamaný. Pokud správně zjistí co manželku zajímá a navrhne společnou schůzku, reaguj pozitivně. Začni: 'Přemýšlím o hypotéce na byt 4+1.'"},
+      variants:[
+        {opener:"Přemýšlím o hypotéce na byt 4+1, cca 6 milionů.",persona:"Klient 34 let. Po diskuzi: 'Musím se poradit s manželkou, ona spravuje rodinné finance.' Pokud poradce rezignuje, klient odejde. Pokud zjistí co manželku zajímá a navrhne společnou schůzku, klient souhlasí."},
+        {opener:"Zajímalo by mě penzijní spoření, slyšel jsem o DIPu.",persona:"Klient 38 let. Po vysvětlení: 'To zní dobře, ale radši to proberu s přítelkyní, nedělám taková rozhodnutí sám.' Čeká jestli poradce bude tlačit nebo pochopí."},
+        {opener:"Chtěla bych refinancovat hypotéku, platím 5,2%.",persona:"Klientka 41 let. Po analýze: 'Úspora je hezká, ale manžel by to musel taky vidět, on je na smlouvě.' Pokud poradce navrhne zapojit manžela, reaguje kladně."},
+      ]},
     {id:"obj-competitor",cat:"Námitky",title:"'U konkurence je to lepší'",body:"NEPTEJTE se na cenu. PTEJTE se na hodnotu.\n\n'Co přesně vám nabídli?' → pochopte situaci\n'A co vám na tom vyhovuje?' → zjistěte priority\n'Můžu vám ukázat jak to vypadá u nás s kompletním servisem?' → přidaná hodnota\n\nNikdy neříkejte že konkurence je špatná.",skill:"objection_handling",
-      scenario:"Jsi klient který dostal nabídku od Raiffeisenbank na hypotéku s úrokem 4,89%. Zmíni to jako námitku. Pokud se poradce ptá jen na cenu, říkej jen číslo. Pokud se ptá co ti na nabídce vyhovuje, prozraď že oceňuješ online správu a rychlé vyřízení. Začni: 'Mám tady nabídku z jiné banky, nevím jestli má cenu pokračovat.'"},
+      variants:[
+        {opener:"Mám tady nabídku z Raiffeisenbank, 4,89% fixace na 5 let.",persona:"Klient porovnává hypotéky. Na otázku 'co vám na té nabídce vyhovuje?' řekne že oceňuje online správu a rychlé vyřízení. Na přidanou hodnotu servisu reaguje zájmem."},
+        {opener:"Moje kamarádka říkala že u ČSOB má podmínky lepší.",persona:"Klientka 29 let, první hypotéka. Nemá konkrétní čísla, jen pocitový dojem. Pokud se poradce zeptá na detaily, přizná že to přesně neví. Lze s ní pracovat."},
+        {opener:"Pojišťovna XY mi nabídla životní pojistku o 300 korun levněji.",persona:"Klient 44 let, rozhoduje se hlavně podle ceny. Pokud se poradce ptá jen na cenu, klient zůstane u čísla. Pokud se zeptá na rozsah krytí a servis, klient přizná že to neporovnával."},
+      ]},
     {id:"obj-time",cat:"Námitky",title:"'Nemám čas / přijdu jindy'",body:"Rozlišujte: opravdu nemá čas vs vymlouvá se.\n\nOPRAVDU: 'Rozumím. Můžu vám to shrnout ve 3 minutách a detaily probereme příště?'\nVYMLOUVÁ SE: 'Co kdybychom vyřešili to nejdůležitější teď a zbytek naplánovali?'\n\nVždy domluvte KONKRÉTNÍ termín příštího kontaktu.",skill:"objection_handling",
-      scenario:"Jsi klient který po 5 minutách řekne 'Promiňte, zapomněl jsem na meeting, musím jít.' Pokud poradce rezignuje, odejdi. Pokud navrhne rychlé shrnutí nebo konkrétní termín příště, buď vstřícný a dohodněte se. Začni: 'Dobrý den, omlouvám se za zpoždění.'"},
+      variants:[
+        {opener:"Dobrý den, omlouvám se za zpoždění.",persona:"Klient skutečně zapomněl na meeting. Po 5 min: 'Promiňte, musím jít.' Pokud poradce navrhne rychlé shrnutí + konkrétní termín, klient souhlasí. Pokud rezignuje, klient odejde bez domluvy."},
+        {opener:"Zdravím, mám chvilku, co pro mě máte?",persona:"Klient se vymlouvá — ve skutečnosti nemá zájem. Na obecné nabídky reaguje 'Jo, přijdu jindy.' Pokud poradce zjistí co konkrétně klienta pálí a nabídne rychlé řešení, zájem vzroste."},
+        {opener:"Přišel jsem jen na rychlý dotaz ohledně penzijka.",persona:"Klient 52 let, přišel s jedním dotazem ale má za tím víc. Pokud poradce rychle odpoví a nechá ho odejít, příležitost je pryč. Pokud se zeptá co ho k tomu vedlo, odkryje větší potřebu."},
+      ]},
     {id:"cross-natural",cat:"Cross-sell",title:"Přirozený přechod na další potřeby",body:"ŠPATNĚ: 'A nechcete ještě pojistku?' (cpaní)\nDOBŘE: 'Když mluvíme o hypotéce – jak máte vyřešené pojištění nemovitosti?'\n\nKlíč: navazujte na to co klient řekl. Propojujte témata přirozeně.",skill:"cross_sell",
-      scenario:"Jsi klient který řeší hypotéku na dům. Zmíníš že jdeš stavět. Na přímou nabídku pojistky ('nechcete pojistku?') reaguj odmítavě. Na přirozené navazující otázky ('jak máte vyřešené pojištění stavby?') reaguj se zájmem. Začni: 'Schválili nám hypotéku, začínáme stavět na jaře.'"},
+      variants:[
+        {opener:"Schválili nám hypotéku, začínáme stavět na jaře.",persona:"Pár, budují rodinný dům. Na přímou nabídku pojistky reagují odmítavě. Na otázku 'jak máte vyřešené pojištění stavby?' reagují se zájmem a přiznají že o tom nepřemýšleli."},
+        {opener:"Refinancoval jsem hypotéku, ušetřím 2 000 měsíčně.",persona:"Klient 39 let, spokojený s refinancováním. Na přímé 'nechcete investovat ty úspory?' reaguje opatrně. Na navazující otázku co plánuje dělat s úsporou se přirozeně otevře."},
+        {opener:"Beru nové auto na leasing, potřebuji pojistit.",persona:"Klientka 33 let. Při řešení havarijního pojištění zmíní že mají s přítelem hypotéku. Pokud poradce přirozeně naváže na pojištění schopnosti splácet, reaguje pozitivně. Na přímé cpání ne."},
+      ]},
     {id:"cross-life",cat:"Cross-sell",title:"Životní události jako spouštěč",body:"Svatba → pojištění, společný účet\nDítě → spoření, pojištění, rodičovská\nHypotéka → pojištění nemovitosti, životní pojištění\nDůchod → penzijko, DIP, investice\n\nPtejte se na plány. Každá změna = příležitost.",skill:"cross_sell",
-      scenario:"Jsi klient 32 let. Při hovoru zmíníš že čekáš druhé dítě a přemýšlíte o větším bytě. Pokud se poradce zeptá na plány a životní situaci, ochotně rozvíjej. Pokud přejde rovnou na produkty bez zájmu o tvoji situaci, uzavři se. Začni: 'Přišel jsem aktualizovat smlouvu, od minula se toho dost změnilo.'"},
+      variants:[
+        {opener:"Přišel jsem aktualizovat smlouvu, od minula se toho dost změnilo.",persona:"Klient 32 let, druhé dítě na cestě, hledají větší byt. Pokud se poradce ptá na životní situaci, ochotně rozvíjí. Pokud jde rovnou na produkty, uzavře se."},
+        {opener:"Bereme se za 3 měsíce, přítelkyně říkala ať to nějak zrevidujeme.",persona:"Klient 28 let, první velká životní změna. Neví co potřebuje. Pokud se poradce zeptá na plány (byt, děti, příjmy), otevřeně mluví o budoucnosti."},
+        {opener:"Za rok odcházím do důchodu, nevím co s penzijkem.",persona:"Klientka 59 let. Velká životní změna = příležitost pro komplexní plán. Pokud poradce myslí jen na penzijko, ztrácí příležitost. Na otázky o celkové situaci reaguje ochotně."},
+      ]},
     {id:"dip-vs-dps",cat:"Produkty",title:"DIP vs DPS – kdy co doporučit",body:"DPS: státní příspěvek (max 340 Kč/měs), daňový odpočet do 24k/rok, od 18 let\nDIP: daňový odpočet do 36k/rok, zaměstnavatel do 50k/rok osvobozeno\n\nDoporučení: NEJDŘÍV DPS na max (1700 Kč/měs), PAK DIP.\nPro vysokopříjmové: DIP + DPS = až 60k/rok odpočet.",skill:"compliance",
-      scenario:"Jsi klient 38 let, příjem 85 000 Kč/měsíc, zaměstnavatel přispívá 1 000 Kč/měs na penzijko. Ptej se na rozdíly DIP vs DPS, co je pro tebe výhodnější a jak maximalizovat daňový odpočet. Pokud poradce doporučí jen jedno bez analýzy, ptej se proč ne oboje. Začni: 'Slyšel jsem o nějakém DIPu, nevím co to přesně je.'"},
+      variants:[
+        {opener:"Slyšel jsem o nějakém DIPu, nevím co to přesně je.",persona:"Klient 38 let, příjem 85 000 Kč/měs, zaměstnavatel přispívá 1 000 Kč. Pokud poradce doporučí jen jedno bez analýzy, ptá se 'a proč ne oboje?'. Na komplexní vysvětlení reaguje pozitivně."},
+        {opener:"Chci platit méně na daních, kamarád mi říkal něco o penzijku.",persona:"Klientka 44 let, příjem 55 000 Kč, nemá žádné penzijní spoření. Nerozumí rozdílu TF/DPS/DIP. Potřebuje jednoduché vysvětlení a jasné doporučení."},
+        {opener:"Firma mi nabídla příspěvek na DIP, mám to vzít?",persona:"Klient 31 let, zaměstnanec, firma přispěje 2 000 Kč/měs na DIP. Ptá se jestli má DPS zrušit a přejít jen na DIP nebo kombinovat. Správná odpověď: kombinovat."},
+      ]},
     {id:"tf-to-dps",cat:"Produkty",title:"Proč převést z TF na DPS",body:"Transformovaný fond: garantovaný ale nízký výnos (0-1%), nelze měnit strategii\nDPS: vyšší potenciální výnos (3-7%), volba strategie, státní příspěvek stejný\n\nRIZIKO: při převodu se ztrácí garance nespotřebovaných příspěvků.\nPro koho: mladší klienti (10+ let do důchodu).",skill:"compliance",
-      scenario:"Jsi klient 35 let s transformovaným fondem od roku 2010, příspěvek 500 Kč/měs. Ptej se jestli má smysl přejít na DPS. Pokud poradce nezmíní riziko ztráty garancí, zeptej se 'A je to bezpečné?'. Pokud vysvětlí výhody i rizika, reaguj pozitivně. Začni: 'Mám penzijko už 15 let, ale slyšel jsem že je lepší ho změnit.'"},
+      variants:[
+        {opener:"Mám penzijko už 15 let, ale slyšel jsem že je lepší ho změnit.",persona:"Klient 35 let, TF od 2010, 500 Kč/měs. Pokud poradce nezmíní ztrátu garancí, ptá se 'A je to bezpečné?'. Na úplné vysvětlení výhod i rizik reaguje kladně."},
+        {opener:"Mám u vás penzijko, přijde mi že mi moc nevydělává.",persona:"Klientka 48 let, TF s nízkým výnosem. Je opatrná — má za 17 let naspořeno a nechce přijít o nic. Potřebuje dobré vysvětlení proč změnit a co riskuje."},
+        {opener:"Chci převést penzijko, poradce z banky mi to doporučil.",persona:"Klient 29 let, TF od 22 let. Přichází s hotovým rozhodnutím. Poradce by měl vysvětlit co tím klient získá a ztratí — ne jen potvrdit rozhodnutí bez analýzy."},
+      ]},
     {id:"time-priority",cat:"Časový tlak",title:"Prioritizace za 30 vteřin",body:"Klient spěchá. Zeptejte se: 'Co je pro vás teď NEJDŮLEŽITĚJŠÍ vyřešit?'\nŘešte JEN to. Na zbytek řekněte: 'Na detaily se podíváme příště.'\n\n3 klíčové otázky místo 10:\n1. Co řešíte? 2. Co vás trápí? 3. Co očekáváte?",skill:"adaptation",
-      scenario:"Jsi klient který má jen 10 minut. Hned na začátku řekni že spěcháš. Pokud poradce začne dlouhé představování nebo pokládá mnoho otázek, připomni že nemáš čas. Pokud se zeptá co je nejdůležitější a drží se toho, spolupracuj. Začni: 'Dobrý den, mám opravdu jen chvilku, parkuju na zákazu.'"},
+      variants:[
+        {opener:"Dobrý den, mám opravdu jen chvilku, parkuju na zákazu.",persona:"Klient 40 let, má 5-7 minut. Na zdlouhavé úvody reaguje nervózně. Pokud poradce zjistí hlavní prioritu a řeší jen to, klient je spokojený a domluví další schůzku."},
+        {opener:"Rychlý dotaz — mám podepsat tuhle smlouvu nebo ne?",persona:"Klientka 36 let, drží v ruce smlouvu od pojišťovny. Spěchá na oběd. Pokud poradce začne od začátku, klient odejde. Pokud se zaměří na smlouvu a dá jasné doporučení, klient je vděčný."},
+        {opener:"Přišel jsem mezi meetingy, mám 15 minut.",persona:"Manažer 45 let, zvyklý na efektivitu. Nesnáší zbytečné řeči. Ocení když poradce jde rovnou k věci a navrhne strukturu: 'Co je priorita číslo jedna?'"},
+      ]},
     {id:"stress-client",cat:"Speciální",title:"Klient pod stresem – empatie first",body:"NIKDY nezačínejte produkty. VŽDY empatií.\n\n'Vidím že je toho na vás hodně. Chcete mi o tom říct víc?'\nPoslouchejte. Nechte klienta mluvit. Až bude připravený, nabídněte řešení.\n\nNěkteré schůzky nemají skončit prodejem. A to je OK.",skill:"rapport",
-      scenario:"Jsi klient který právě přišel o práci a má hypotéku. Jsi viditelně ve stresu. Pokud poradce hned nabízí produkty nebo řešení, uzavři se. Pokud projeví empatii a nechá tě mluvit, postupně se otevírej. Pokud se zeptá co tě nejvíc trápí, odpověz upřímně. Začni: 'Nevím ani jak začít... je toho moc.'"},
+      variants:[
+        {opener:"Nevím ani jak začít... je toho moc.",persona:"Klient 44 let, přišel o práci, má hypotéku. Ve stresu. Na produkty reaguje uzavřením. Na empatii a prostor mluvit se postupně otevírá a prozrazuje co konkrétně potřebuje řešit."},
+        {opener:"Omlouvám se, jsem trochu mimo dnes.",persona:"Klientka 38 let, nemoc v rodině, nestíhá práci ani finance. Přišla jen proto že měla schůzku naplánovanou. Potřebuje především pochopení, ne produkty."},
+        {opener:"Potřebuji pomoc, nevím co mám dělat.",persona:"Klient 51 let, rozvod v průběhu, finanční nejistota. Mluví rychle a nesourodě. Pokud poradce zpomalí, naslouchá a reflektuje co slyší, klient se zklidní a začne spolupracovat."},
+      ]},
   ];
 
   const getLessonForSkill = (skill) => LESSONS.filter(l => l.skill === skill);
@@ -916,13 +964,15 @@ PRVNÍ ZPRÁVU napiš TY – přivítej klienta.`;
 
   // ── LESSON PRACTICE ──
   const startLessonPractice = (lesson) => {
+    const variants = lesson.variants || [];
+    const variant = variants[Math.floor(Math.random() * variants.length)] || { opener: '', persona: '' };
     setShowLesson(null);
-    setLessonPractice({ lesson, msgs: [], input: '', loading: true, feedback: null });
+    setLessonPractice({ lesson, variant, msgs: [], input: '', loading: true, feedback: null });
     // AI klient pošle první zprávu
-    sendPracticeMsg(lesson, [], null);
+    sendPracticeMsg(lesson, variant, [], null);
   };
 
-  const sendPracticeMsg = async (lesson, msgs, userMsg) => {
+  const sendPracticeMsg = async (lesson, variant, msgs, userMsg) => {
     const updatedMsgs = userMsg ? [...msgs, { role: 'user', content: userMsg }] : msgs;
     setLessonPractice(p => ({ ...p, msgs: updatedMsgs, input: '', loading: true }));
 
@@ -931,7 +981,7 @@ PRVNÍ ZPRÁVU napiš TY – přivítej klienta.`;
 
     if (isLast) {
       // Požádej AI o feedback
-      const feedbackPrompt = `Byl jsi AI klient v tréninkovém role-play. Toto byl scénář: "${lesson.scenario}"\n\nZaměřená dovednost: "${lesson.title}"\n\nHistorie konverzace:\n${updatedMsgs.map(m => `${m.role === 'user' ? 'PORADCE' : 'KLIENT'}: ${m.content}`).join('\n')}\n\nZhodnoť výkon poradce v 3-4 větách. Zaměř se na: 1) Jak dobře aplikoval dovednost z lekce, 2) Co udělal dobře, 3) Co by mohl příště zlepšit. Buď konkrétní a konstruktivní.`;
+      const feedbackPrompt = `Byl jsi AI klient v tréninkovém role-play. Persona klienta: "${variant.persona}"\n\nZaměřená dovednost: "${lesson.title}"\n\nHistorie konverzace:\n${updatedMsgs.map(m => `${m.role === 'user' ? 'PORADCE' : 'KLIENT'}: ${m.content}`).join('\n')}\n\nZhodnoť výkon poradce v 3-4 větách. Zaměř se na: 1) Jak dobře aplikoval dovednost z lekce, 2) Co udělal dobře, 3) Co by mohl příště zlepšit. Buď konkrétní a konstruktivní.`;
       try {
         const data = await api({ max_tokens: 400, messages: [{ role: 'user', content: feedbackPrompt }] });
         const fb = data.content?.[0]?.text || 'Skvělá práce!';
@@ -942,11 +992,17 @@ PRVNÍ ZPRÁVU napiš TY – přivítej klienta.`;
       return;
     }
 
-    const system = `${lesson.scenario}\n\nDůležité: Jsi AI klient v krátkém tréninkovém cvičení (max ${MAX_PRACTICE_TURNS} výměn). Hraj přirozeně ale drž se scénáře. Odpovídej stručně (1-3 věty). Toto je cvičení zaměřené na dovednost: "${lesson.title}".`;
+    const system = `${variant.persona}\n\nDůležité: Jsi AI klient v krátkém tréninkovém cvičení (max ${MAX_PRACTICE_TURNS} výměn). Hraj přirozeně ale drž se své persony. Odpovídej stručně (1-3 věty). Toto je cvičení zaměřené na dovednost: "${lesson.title}".`;
     try {
-      const data = await api({ max_tokens: 150, system, messages: updatedMsgs.length ? updatedMsgs : [{ role: 'user', content: '[START]' }] });
+      // First message: use variant.opener directly, don't call API
+      if (!updatedMsgs.length && !userMsg) {
+        const newMsgs = [{ role: 'assistant', content: variant.opener }];
+        setLessonPractice(p => ({ ...p, msgs: newMsgs, loading: false }));
+        return;
+      }
+      const data = await api({ max_tokens: 150, system, messages: updatedMsgs });
       const reply = data.content?.[0]?.text || '...';
-      const newMsgs = updatedMsgs.length ? [...updatedMsgs, { role: 'assistant', content: reply }] : [{ role: 'assistant', content: reply }];
+      const newMsgs = [...updatedMsgs, { role: 'assistant', content: reply }];
       setLessonPractice(p => ({ ...p, msgs: newMsgs, loading: false }));
     } catch {
       setLessonPractice(p => ({ ...p, loading: false }));
@@ -1677,7 +1733,7 @@ JSON formát: {"questions":[{"q":"otázka","opts":["A","B","C","D"],"correct":0,
             </div>
             <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 12px"}}>{showLesson.title}</h3>
             <div style={{fontSize:13,color:T.textSoft,lineHeight:1.8,whiteSpace:"pre-line"}}>{showLesson.body}</div>
-            {showLesson.scenario&&<button onClick={()=>startLessonPractice(showLesson)} style={{marginTop:20,width:"100%",padding:"10px 0",background:T.accent,color:"#fff",border:"none",borderRadius:8,fontFamily:T.font,fontSize:13,fontWeight:700,cursor:"pointer"}}>🎯 Procvičit tuto dovednost →</button>}
+            {showLesson.variants?.length>0&&<button onClick={()=>startLessonPractice(showLesson)} style={{marginTop:20,width:"100%",padding:"10px 0",background:T.accent,color:"#fff",border:"none",borderRadius:8,fontFamily:T.font,fontSize:13,fontWeight:700,cursor:"pointer"}}>🎯 Procvičit tuto dovednost →</button>}
           </div>
         </div>}
 
@@ -1713,10 +1769,10 @@ JSON formát: {"questions":[{"q":"otázka","opts":["A","B","C","D"],"correct":0,
 
             {!lessonPractice.feedback&&<div style={{padding:"10px 14px",borderTop:`1px solid ${T.border}`,display:"flex",gap:8}}>
               <input value={lessonPractice.input||''} onChange={e=>setLessonPractice(p=>({...p,input:e.target.value}))}
-                onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&lessonPractice.input?.trim()&&!lessonPractice.loading){e.preventDefault();sendPracticeMsg(lessonPractice.lesson,lessonPractice.msgs,lessonPractice.input);}}}
+                onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&lessonPractice.input?.trim()&&!lessonPractice.loading){e.preventDefault();sendPracticeMsg(lessonPractice.lesson,lessonPractice.variant,lessonPractice.msgs,lessonPractice.input);}}}
                 placeholder="Vaše odpověď jako poradce..." disabled={lessonPractice.loading}
                 style={{flex:1,background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:7,padding:"8px 12px",color:T.text,fontFamily:T.font,fontSize:13,outline:"none"}}/>
-              <button onClick={()=>{if(lessonPractice.input?.trim()&&!lessonPractice.loading)sendPracticeMsg(lessonPractice.lesson,lessonPractice.msgs,lessonPractice.input);}}
+              <button onClick={()=>{if(lessonPractice.input?.trim()&&!lessonPractice.loading)sendPracticeMsg(lessonPractice.lesson,lessonPractice.variant,lessonPractice.msgs,lessonPractice.input);}}
                 disabled={!lessonPractice.input?.trim()||lessonPractice.loading}
                 style={{padding:"8px 14px",background:T.accent,color:"#fff",border:"none",borderRadius:7,fontFamily:T.font,fontSize:13,fontWeight:700,cursor:"pointer",opacity:(!lessonPractice.input?.trim()||lessonPractice.loading)?0.4:1}}>→</button>
             </div>}
@@ -1834,7 +1890,7 @@ JSON formát: {"questions":[{"q":"otázka","opts":["A","B","C","D"],"correct":0,
             </div>
             <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 12px"}}>{showLesson.title}</h3>
             <div style={{fontSize:13,color:T.textSoft,lineHeight:1.8,whiteSpace:"pre-line"}}>{showLesson.body}</div>
-            {showLesson.scenario&&<button onClick={()=>startLessonPractice(showLesson)} style={{marginTop:20,width:"100%",padding:"10px 0",background:T.accent,color:"#fff",border:"none",borderRadius:8,fontFamily:T.font,fontSize:13,fontWeight:700,cursor:"pointer"}}>🎯 Procvičit tuto dovednost →</button>}
+            {showLesson.variants?.length>0&&<button onClick={()=>startLessonPractice(showLesson)} style={{marginTop:20,width:"100%",padding:"10px 0",background:T.accent,color:"#fff",border:"none",borderRadius:8,fontFamily:T.font,fontSize:13,fontWeight:700,cursor:"pointer"}}>🎯 Procvičit tuto dovednost →</button>}
           </div>
         </div>}
       </div>
