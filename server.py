@@ -12,6 +12,9 @@ import json
 import time
 import base64
 import re
+import urllib.request
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify, send_from_directory, send_file
 
 app = Flask(__name__, static_folder='public')
@@ -268,6 +271,22 @@ def init_db():
             content TEXT NOT NULL,
             created_at TEXT DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS news_articles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source TEXT NOT NULL,
+            title TEXT NOT NULL,
+            url TEXT UNIQUE NOT NULL,
+            description TEXT DEFAULT '',
+            published_at TEXT DEFAULT '',
+            category TEXT DEFAULT 'finance',
+            fetched_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS news_meta (
+            klic TEXT PRIMARY KEY,
+            hodnota TEXT NOT NULL
+        );
     ''')
 
     # Migrace: doc_type sloupec do met_documents
@@ -319,6 +338,14 @@ def init_db():
         )
     else:
         c.execute("UPDATE apps SET url='/metodika/' WHERE nazev='Metodika'")
+
+    # Novinky
+    news_exists = c.execute("SELECT id FROM apps WHERE nazev='Novinky'").fetchone()
+    if not news_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Novinky', '/novinky/', '📰', 'Novinky ze světa hypoték a financí', 0)
+        )
 
     # Pojistná kalkulačka
     pk_exists = c.execute("SELECT id FROM apps WHERE nazev='Pojistná kalkulačka'").fetchone()
@@ -2070,6 +2097,132 @@ def met_delete_chats():
     conn = get_db()
     conn.execute("DELETE FROM met_chats WHERE variant=? AND user_id=?", (variant, request.user['id']))
     conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+
+# ─── Novinky (RSS agregátor) ──────────────────────────────────────────────────
+
+NEWS_SOURCES = [
+    {'url': 'https://www.hypoindex.cz/feed/', 'source': 'Hypoindex', 'category': 'hypoteky'},
+    {'url': 'https://www.finparada.cz/rss/clanky.aspx', 'source': 'Finparáda', 'category': 'hypoteky'},
+    {'url': 'https://www.cnb.cz/cs/rss/aktuality.xml', 'source': 'ČNB', 'category': 'hypoteky'},
+    {'url': 'https://www.e15.cz/rss', 'source': 'E15', 'category': 'finance'},
+    {'url': 'https://www.patria.cz/rss/zpravy.xml', 'source': 'Patria', 'category': 'finance'},
+    {'url': 'https://www.financninoviny.cz/finance/rss/index_rss.php', 'source': 'Finanční noviny', 'category': 'finance'},
+]
+
+MORTGAGE_KEYWORDS = ['hypotéka', 'hypotéky', 'hypoték', 'úvěr', 'úrokové sazby', 'sazba',
+                     'refinancování', 'ltv', 'dtv', 'dti', 'nemovitost', 'bydlení',
+                     'rpsn', 'cnb', 'česká národní banka', 'fixace', 'předhypoteční']
+
+def _parse_rss(source_cfg):
+    """Stáhne a parsuje RSS feed, vrátí list článků."""
+    articles = []
+    try:
+        req = urllib.request.Request(source_cfg['url'], headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            xml_data = resp.read()
+        root = ET.fromstring(xml_data)
+        ns = {'atom': 'http://www.w3.org/2005/Atom'}
+        # RSS 2.0
+        items = root.findall('.//item')
+        # Atom
+        if not items:
+            items = root.findall('.//atom:entry', ns) or root.findall('.//entry')
+        for item in items[:20]:
+            def txt(tag, alt=''):
+                el = item.find(tag)
+                if el is None:
+                    el = item.find(f'atom:{tag}', ns)
+                return (el.text or '').strip() if el is not None and el.text else alt
+            title = txt('title')
+            url = txt('link') or txt('guid')
+            # Atom link
+            if not url:
+                link_el = item.find('link') or item.find('atom:link', ns)
+                if link_el is not None:
+                    url = link_el.get('href', link_el.text or '')
+            desc = txt('description') or txt('summary')
+            # strip HTML tags from description
+            desc = re.sub(r'<[^>]+>', '', desc)[:300]
+            pub = txt('pubDate') or txt('published') or txt('updated')
+            if title and url:
+                # Prioritize mortgage-related articles
+                combined = (title + ' ' + desc).lower()
+                cat = source_cfg['category']
+                if any(kw in combined for kw in MORTGAGE_KEYWORDS):
+                    cat = 'hypoteky'
+                articles.append({
+                    'source': source_cfg['source'],
+                    'title': title,
+                    'url': url,
+                    'description': desc,
+                    'published_at': pub,
+                    'category': cat,
+                })
+    except Exception:
+        pass
+    return articles
+
+def _refresh_news(conn):
+    """Stáhne všechny RSS zdroje a uloží do DB."""
+    all_articles = []
+    for src in NEWS_SOURCES:
+        all_articles.extend(_parse_rss(src))
+    now = datetime.now(timezone.utc).isoformat()
+    for a in all_articles:
+        try:
+            conn.execute('''
+                INSERT OR IGNORE INTO news_articles (source, title, url, description, published_at, category, fetched_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (a['source'], a['title'], a['url'], a['description'], a['published_at'], a['category'], now))
+        except Exception:
+            pass
+    # Ponech jen posledních 500 článků
+    conn.execute('''
+        DELETE FROM news_articles WHERE id NOT IN (
+            SELECT id FROM news_articles ORDER BY fetched_at DESC, id DESC LIMIT 500
+        )
+    ''')
+    conn.execute("INSERT OR REPLACE INTO news_meta (klic, hodnota) VALUES ('last_refresh', ?)", (now,))
+    conn.commit()
+
+@app.route('/api/news', methods=['GET'])
+@require_auth()
+def get_news():
+    conn = get_db()
+    # Zkontroluj kdy byl posledni refresh (12 hodin)
+    meta = conn.execute("SELECT hodnota FROM news_meta WHERE klic='last_refresh'").fetchone()
+    needs_refresh = True
+    if meta:
+        try:
+            last = datetime.fromisoformat(meta['hodnota'])
+            if (datetime.now(timezone.utc) - last).total_seconds() < 43200:  # 12h
+                needs_refresh = False
+        except Exception:
+            pass
+    if needs_refresh:
+        _refresh_news(conn)
+    category = request.args.get('category', '')
+    if category:
+        rows = conn.execute('''
+            SELECT * FROM news_articles WHERE category=?
+            ORDER BY fetched_at DESC, id DESC LIMIT 100
+        ''', (category,)).fetchall()
+    else:
+        rows = conn.execute('''
+            SELECT * FROM news_articles
+            ORDER BY category='hypoteky' DESC, fetched_at DESC, id DESC LIMIT 100
+        ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/news/refresh', methods=['POST'])
+@require_auth(['admin'])
+def refresh_news():
+    conn = get_db()
+    _refresh_news(conn)
     conn.close()
     return jsonify({'ok': True})
 

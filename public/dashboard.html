@@ -117,6 +117,17 @@
       <div class="apps-grid fade-up fade-up-2" id="apps-grid">
         <div class="empty-state"><p>Načítám aplikace…</p></div>
       </div>
+
+      <!-- Novinky widget -->
+      <div class="fade-up fade-up-3" style="margin-top:32px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">📰 Novinky — Hypotéky & Finance</div>
+          <a id="news-more-link" href="/novinky/" style="font-size:0.78rem;color:var(--muted);text-decoration:none;display:none">Více novinek →</a>
+        </div>
+        <div id="news-widget" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+          <div style="color:var(--muted);font-size:0.85rem;padding:16px">Načítám novinky…</div>
+        </div>
+      </div>
     </div>
 
     <!-- ── TAB: Uživatelé ─────────────────────────────── -->
@@ -522,6 +533,7 @@ if (role !== 'poradce') {
 
 if (role === 'admin') loadAppsTable();
 loadApps();
+loadNews();
 
 // ── Tab switching ──────────────────────────────────────────────────────────────
 function showTab(name, btn) {
@@ -533,6 +545,25 @@ function showTab(name, btn) {
 }
 
 // ── Aplikace (dashboard grid) ──────────────────────────────────────────────────
+async function loadNews() {
+  try {
+    const res = await fetch('/api/news', { headers });
+    if (!res.ok) return;
+    const articles = await res.json();
+    const top3 = articles.slice(0, 3);
+    const widget = document.getElementById('news-widget');
+    if (!top3.length) { widget.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;padding:16px">Žádné novinky.</div>'; return; }
+    document.getElementById('news-more-link').style.display = 'block';
+    widget.innerHTML = top3.map(a => `
+      <a href="${escHtml(a.url)}" target="_blank" rel="noopener" style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 16px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow-sm);transition:box-shadow 0.15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='var(--shadow-sm)'">
+        <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:${a.category==='hypoteky'?'#C00':'#336'}">${a.category==='hypoteky'?'🏠 Hypotéky':'📈 Finance'} · ${escHtml(a.source)}</div>
+        <div style="font-size:0.875rem;font-weight:600;line-height:1.4;color:#1A1A1A">${escHtml(a.title)}</div>
+        ${a.description ? `<div style="font-size:0.78rem;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(a.description)}</div>` : ''}
+      </a>
+    `).join('');
+  } catch(e) {}
+}
+
 async function loadApps() {
   const res  = await fetch('/api/apps', { headers });
   const apps = await res.json();
