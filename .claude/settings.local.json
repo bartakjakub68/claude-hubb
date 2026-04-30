@@ -33,7 +33,8 @@
       "Bash(pip list:*)",
       "Bash(grep -v \"^\\\\s*//\")",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('scripts',{}\\)\\)\")",
-      "Bash(pip freeze:*)"
+      "Bash(pip freeze:*)",
+      "Bash(gh auth *)"
     ]
   }
 }
