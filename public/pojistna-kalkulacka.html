@@ -2128,10 +2128,11 @@ function runEngineForData(D, target){
     const davKRaw  = Math.ceil(Math.max(cílKpn - nemocenska, 0) / 30 / 50) * 50;
     const davSRaw  = Math.ceil(Math.max(cílSpn - nemocenska, 0) / 30 / 50) * 50;
     const davZRaw  = Math.ceil(davSRaw * 0.75 / 50) * 50;
-    // Mezera za celý rok PN (standardní varianta jako základ testu)
-    const mezeraRocne = Math.max(cílSpn - nemocenska, 0) * 12;
-    // Pokud rezerva pokryje 3 roky mezery + 6 měsíců výdajů → PN skutečně není třeba
-    if(D.rezerva >= mezeraRocne * 3 + pnNouzRezerva6m){
+    // Mezera za celý rok PN — počítáme pro KOMPLEXNÍ (worst case = nejvyšší cíl)
+    // Pokud i pro Komplexní rezerva pokryje 3 roky mezery + 6 měs. výdajů → PN není třeba
+    // (Standardní/Základní mají nižší cíl, takže pokud K je krytá rezervou, S i Z jsou taky)
+    const mezeraRocneK = Math.max(cílKpn - nemocenska, 0) * 12;
+    if(D.rezerva >= mezeraRocneK * 3 + pnNouzRezerva6m){
       pnSkipDueToRezerva = true;
     } else {
       // Přebytek rezervy nad 6× výdaje → denní krytí
@@ -3951,10 +3952,10 @@ function exportPDF(){
 
   try {
 
-  // Zjistit aktivní variantu
-  const activeTab = document.querySelector('#resultClient0 .vnav-tab.active, .tn-k.active, .tn-s.active, .tn-z.active');
+  // Zjistit aktivní variantu (čte se ze shared variant nav, který je viditelný v UI)
+  const activeTab = document.querySelector('#sharedVariantNav .vnav-tab.active');
   const activeKey = activeTab
-    ? (activeTab.classList.contains('tn-k')?'k':activeTab.classList.contains('tn-s')?'s':'z')
+    ? (activeTab.classList.contains('tn-k')?'k':activeTab.classList.contains('tn-z')?'z':'s')
     : 's';
 
   // Načíst data z engine (lastRecommendations + buildAndRender R objekt)
@@ -4556,14 +4557,15 @@ function exportPDF(){
   <title>Pojistná ochrana — ${varNames[activeKey]}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:12px;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .page{width:210mm;min-height:297mm;padding:13mm 13mm 18mm;position:relative;page-break-after:always}
-    .page2{width:210mm;min-height:297mm;padding:13mm 13mm 18mm;position:relative;page-break-after:always}
-    .page2:last-child,.page:last-child{page-break-after:auto}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:11.5px;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    /* Pevná A4 výška — každá .page je vždy přesně 1 stránka */
+    .page,.page2{width:210mm;height:297mm;padding:11mm 13mm 15mm;position:relative;page-break-after:always;overflow:hidden}
+    .page:last-child,.page2:last-child{page-break-after:auto}
     @media print{
       body{margin:0}
-      .page,.page2{page-break-after:always;break-after:page}
-      .page2:last-child,.page:last-child{page-break-after:auto;break-after:auto}
+      @page{size:A4;margin:0}
+      .page,.page2{page-break-after:always;break-after:page;height:297mm;overflow:hidden}
+      .page:last-child,.page2:last-child{page-break-after:auto;break-after:auto}
       [style*="page-break-inside:avoid"]{page-break-inside:avoid;break-inside:avoid}
       table{page-break-inside:avoid;break-inside:avoid}
       tr{page-break-inside:avoid;break-inside:avoid}
