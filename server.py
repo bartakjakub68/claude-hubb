@@ -352,8 +352,10 @@ def init_db():
     if not pk_exists:
         c.execute(
             "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
-            ('Pojistná kalkulačka', '/pojistna-kalkulator-v20.html', '🛡️', 'Kalkulačka pojistných částek', 4)
+            ('Pojistná kalkulačka', '/pojistna-kalkulacka.html', '🛡️', 'Kalkulačka pojistných částek', 4)
         )
+    else:
+        c.execute("UPDATE apps SET url='/pojistna-kalkulacka.html' WHERE nazev='Pojistná kalkulačka'")
 
     # Kalkulačka úvěrů
     ku_exists = c.execute("SELECT id FROM apps WHERE nazev='Kalkulačka úvěrů'").fetchone()
