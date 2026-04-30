@@ -32,6 +32,16 @@ def ensure_db_initialized():
     if not _db_initialized:
         init_db()
         _db_initialized = True
+
+@app.after_request
+def no_cache_html(response):
+    """Zakáže cachování HTML souborů — uživatelé vždy vidí aktuální verzi."""
+    ct = response.content_type or ''
+    if 'text/html' in ct:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
 JWT_SECRET = os.environ.get('JWT_SECRET', 'change-this-secret-in-production-2024')
 JWT_EXPIRY = 8 * 60 * 60  # 8 hodin
 
