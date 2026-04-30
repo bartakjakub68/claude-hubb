@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kalkulačka pojistné ochrany v20</title>
+<title>Kalkulačka pojistné ochrany v21.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -637,8 +637,8 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
         <div class="field">
           <div class="field-label"><span>Zůstatek hypotéky</span><strong id="hyp-val">0 Kč</strong></div>
           <div class="slider-wrap">
-            <input type="range" id="hyp-sl" min="0" max="15000000" step="100000" value="0" oninput="sync('hyp-sl','hyp-ni','hyp-val',1)">
-            <input type="text" class="num-input" id="hyp-ni" value="0" onchange="syncI('hyp-ni','hyp-sl','hyp-val',1)" onkeydown="if(event.key==='Enter')this.blur()">
+            <input type="range" id="hyp-sl" min="0" max="15000000" step="100000" value="0" oninput="sync('hyp-sl','hyp-ni','hyp-val',1);updateZpUverVisibility()">
+            <input type="text" class="num-input" id="hyp-ni" value="0" onchange="syncI('hyp-ni','hyp-sl','hyp-val',1);updateZpUverVisibility()" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="field">
@@ -845,6 +845,14 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
               <label>PN denní dávka (stávající)</label>
               <div class="slider-wrap" style="gap:6px"><input type="text" class="num-input sm" id="zp-pn" placeholder="0"><span style="font-size:11px;color:var(--ink4)">Kč/den</span></div>
             </div>
+            <div class="select-group">
+              <label>Trvalé následky úrazu (stáv.)</label>
+              <div class="slider-wrap" style="gap:6px"><input type="text" class="num-input sm" id="zp-tn" placeholder="0"><span style="font-size:11px;color:var(--ink4)">Kč</span></div>
+            </div>
+            <div class="select-group" id="zpUverGroup" style="display:none">
+              <label>Pojištění úvěru (stávající)</label>
+              <div class="slider-wrap" style="gap:6px"><input type="text" class="num-input sm" id="zp-uver" placeholder="0"><span style="font-size:11px;color:var(--ink4)">Kč</span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -871,6 +879,8 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
               <div class="select-group"><label>Inv. III. stupeň</label><div class="slider-wrap" style="gap:6px"><input type="text" class="num-input sm" id="p2-zp-inv3" placeholder="0"><span style="font-size:11px;color:var(--ink4)">Kč</span></div></div>
               <div class="select-group"><label>Závažná onemocnění</label><div class="slider-wrap" style="gap:6px"><input type="text" class="num-input sm" id="p2-zp-zo" placeholder="0"><span style="font-size:11px;color:var(--ink4)">Kč</span></div></div>
               <div class="select-group"><label>PN (denní dávka)</label><div class="slider-wrap" style="gap:6px"><input type="text" class="num-input sm" id="p2-zp-pn" placeholder="0"><span style="font-size:11px;color:var(--ink4)">Kč/den</span></div></div>
+              <div class="select-group"><label>Trvalé následky úrazu</label><div class="slider-wrap" style="gap:6px"><input type="text" class="num-input sm" id="p2-zp-tn" placeholder="0"><span style="font-size:11px;color:var(--ink4)">Kč</span></div></div>
+              <div class="select-group" id="p2-zpUverGroup" style="display:none"><label>Pojištění úvěru</label><div class="slider-wrap" style="gap:6px"><input type="text" class="num-input sm" id="p2-zp-uver" placeholder="0"><span style="font-size:11px;color:var(--ink4)">Kč</span></div></div>
             </div>
           </div>
         </div>
@@ -938,15 +948,15 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
 
   <!-- ═══ CONFRONTATION SECTION ═══ -->
   <div class="confront-section" id="confrontSection" style="display:none">
-    <div class="confront-title">Konfrontace pojistných částek</div>
-    <div class="confront-sub">Zadejte skutečně zvolené pojistné částky a porovnejte je s doporučením kalkulačky</div>
-    
+    <div class="confront-title">Konfrontace s Vaší stávající pojistkou</div>
+    <div class="confront-sub">Porovnání pokrytí riziko po riziku — co Vaše stávající pojistka řeší, a co naopak chybí</div>
+
     <!-- Client tabs for confrontation -->
     <div id="confrontClientTabs" class="client-tabs" style="display:none;margin-bottom:16px">
       <button class="client-tab active" onclick="switchConfrontClient(0)">Klient 1</button>
       <button class="client-tab" id="lblConfrontTab2" onclick="switchConfrontClient(1)">Partner/ka</button>
     </div>
-    
+
     <div id="confrontClient0">
       <div class="confront-grid" id="confrontGrid0"></div>
       <div id="confrontSummary0"></div>
@@ -955,9 +965,8 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
       <div class="confront-grid" id="confrontGrid1"></div>
       <div id="confrontSummary1"></div>
     </div>
-    
-    <button class="confront-btn" onclick="runConfront()">🔍 Vyhodnotit</button>
-    <button class="confront-btn" onclick="exportConfrontPDF()" style="margin-left:8px;background:var(--gold);color:var(--ink)">⬇ PDF konfrontace</button>
+
+    <button class="confront-btn" onclick="exportConfrontPDF()" style="margin-top:16px">⬇ Stáhnout konfrontační PDF</button>
   </div>
 
   <!-- Footer -->
@@ -967,24 +976,41 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
       Výsledky slouží jako podklad pro konzultaci s pojistným poradcem · Nejedná se o nabídku pojistného produktu
     </p>
     <div style="margin-top:10px;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap">
-      <span class="version-badge"><span class="version-dot"></span>v15.0 · Aktualizace 11. 3. 2026</span>
+      <span class="version-badge"><span class="version-dot"></span>v21.2 · Aktualizace 24. 4. 2026</span>
     </div>
     <details style="margin-top:10px;font-size:10px;color:var(--ink4);text-align:left;max-width:500px;margin-left:auto;margin-right:auto">
-      <summary style="cursor:pointer;font-weight:600;text-align:center">Changelog v15</summary>
+      <summary style="cursor:pointer;font-weight:600;text-align:center">Changelog v21</summary>
       <div style="margin-top:6px;line-height:1.7;padding:8px 12px;background:var(--cream);border-radius:var(--rx);border:1px solid var(--border)">
+        <strong>v21.2 — vizuální revize konfrontace (24. 4. 2026)</strong><br>
+        • <strong>Konfrontace:</strong> nový vizuální layout s progress bary a scénáři dopadu místo prosté tabulky<br>
+        • <strong>4 kategorie</strong> stavu: Kriticky chybí · Podpojištěn · Pokryto · Přepojištěn<br>
+        • <strong>Scénářové texty</strong> u smrti, invalidity, PN a úvěrového balíčku — popisují konkrétní finanční dopad pro klienta<br>
+        • <strong>Auto-vyhodnocení</strong> stávající pojistky z pole "Stávající pojistná ochrana" — klient nemusí znovu zadávat<br>
+        • <strong>Konfrontace se nezobrazí</strong>, pokud klient nemá žádnou stávající pojistku<br>
+        • <strong>PDF konfrontace</strong> — kompletně přepsáno: kompaktní A4 layout + 2. strana s metodikou výpočtu<br>
+        • <strong>Souhrnný blok</strong> s celkovým finančním dopadem ("druhá hypotéka") + sales hook<br>
+        <br>
+        <strong>v21.1 — refaktor logiky pro páry (24. 4. 2026)</strong><br>
+        • <strong>Komplexní smrt — pár:</strong> nově cíl = vlastní příjem klienta − vdovský¹ − sirotčí (NE odpočet partnerova příjmu, partner žije dál)<br>
+        • <strong>Standardní smrt — pár:</strong> cíl = podíl × výdaje × 0,80 − vdovský¹ − sirotčí<br>
+        • <strong>Základní smrt — pár:</strong> klient si sníží výdaje o 25 %, pak podíl × 0,75 × výdaje × 0,80 − vdovský¹ − sirotčí<br>
+        • <strong>Single bez dětí:</strong> všechny varianty = 100 000 Kč pohřeb (sjednoceno)<br>
+        • <strong>Standardní invalidita — popisek:</strong> sjednocen koeficient I. st. (5 %)<br>
+        • <strong>Základní invalidita:</strong> přepočítáno — výdaje × 0,75 PŘED aplikací koeficientu zvýšení (5/10/25 %)<br>
+        • <strong>Vdovský důchod¹:</strong> jen pro manžele s dětmi započítáván (pro páry s dětmi → trvalý). Manželé bez dětí = jen 1 rok, NEzapočítáván + poznámka v UI/PDF. Partneři/single = 0.<br>
+        <br>
+        <strong>v21 — přepočty metodiky (21. 4. 2026)</strong><br>
+        • <strong>Komplexní invalidita:</strong> cíl = příjem + zvýšené výdaje (I: +5 %, II: +10 %, III: +25 %, cap výdajů 80 k)<br>
+        • <strong>Komplexní smrt — single s dětmi:</strong> nová metodika 3,3 mil × 1,5 = 4,95 mil/dítě do 26 let, mezera × roky × 12 (klesající PČ)<br>
+        • <strong>Závažná onemocnění:</strong> pevná PČ 500 000 Kč (protonová léčba) — K a S; v Základní úplně odstraněno<br>
+        • <strong>Invalidita III. st.:</strong> odstraněno zajištění dětí (5k×roky do 26)<br>
+        • <strong>Rezerva:</strong> přebytek nad 750 k již NEODČÍTÁME od invalidity/smrti/ZO — jen od PN<br>
+        <br>
+        <strong>Dřívější (v15):</strong><br>
         • Oprava sazby procentní výměry: 1,5 % → 1,495 % (reforma 2026)<br>
         • Oprava multiplikátoru II. stupně inv.: 2/3 → 1/2<br>
-        • Přidána dopočtená doba do odhadu inv. důchodu<br>
-        • Progresivní daň 15/23 % (nahrazena solidární přirážka)<br>
-        • DVZ: oprava /30 → /365×12<br>
-        • Sirotčí důchod: dynamický výpočet (40 % procentní výměry)<br>
-        • Anuita místo perpetuity (invalidita, smrt, soběstačnost)<br>
-        • Nové: porovnávací tabulka variant<br>
-        • Nové: vizualizace příjmové mezery (graf)<br>
-        • Nové: sekce „Jak počítáme" s předpoklady<br>
-        • Nové: tooltips u klíčových polí<br>
-        • Nové: tmavý režim<br>
-        • Nové: badge verze + changelog
+        • Progresivní daň 15/23 %, DVZ /365×12, sirotčí 40 % vyměry<br>
+        • Anuita místo perpetuity<br>
       </div>
     </details>
   </div>
@@ -1206,6 +1232,8 @@ function getPartnerData(){
     zpInv3: pN(document.getElementById('p2-zp-inv3')?.value),
     zpZO:   pN(document.getElementById('p2-zp-zo')?.value),
     zpPN:   pN(document.getElementById('p2-zp-pn')?.value),
+    zpTN:   pN(document.getElementById('p2-zp-tn')?.value),
+    zpUver: pN(document.getElementById('p2-zp-uver')?.value),
   };
 }
 
@@ -1263,6 +1291,7 @@ function onUveryChange(){
     document.getElementById('uv-zajist-ne').classList.remove('active');
     document.getElementById('uverySplField').style.display = 'none';
   }
+  if(typeof updateZpUverVisibility === 'function') updateZpUverVisibility();
 }
 
 function setUveryZajisteno(zajisteno){
@@ -1273,9 +1302,10 @@ function setUveryZajisteno(zajisteno){
 }
 
 function onSplatkaChange(){
-  document.getElementById('zavazkyFields').style.display = spl > 0 ? 'block' : 'none';
+  const splVal = gni('spl-ni');
+  document.getElementById('zavazkyFields').style.display = splVal > 0 ? 'block' : 'none';
   // Pokud splátka 0, vynulovat závazky
-  if(spl <= 0){
+  if(splVal <= 0){
     document.getElementById('hyp-sl').value = 0;
     document.getElementById('hyp-ni').value = '0';
     document.getElementById('hyp-val').innerHTML = fK(0);
@@ -1286,9 +1316,24 @@ function onSplatkaChange(){
     document.getElementById('uv-ni').value = '0';
     document.getElementById('uv-val').innerHTML = fK(0);
   }
+  updateZpUverVisibility();
 }
 function onZPChange(){
   document.getElementById('zpSection').style.display=gs('maZP')==='ano'?'block':'none';
+  updateZpUverVisibility();
+}
+
+// Helper: zobrazí "Pojištění úvěru" pole jen pokud má klient nějakou splátku/úvěr
+function updateZpUverVisibility(){
+  const splVal = gni('spl-ni');
+  const hypVal = gni('hyp-ni');
+  const uvVal = gni('uv-ni');
+  const maUver = (splVal > 0) || (hypVal > 0) || (uvVal > 0);
+  const grp = document.getElementById('zpUverGroup');
+  if(grp) grp.style.display = maUver ? 'block' : 'none';
+  // Partner — předpokládá se stejná hypotéka/úvěr (sdílí), takže stejná podmínka
+  const grp2 = document.getElementById('p2-zpUverGroup');
+  if(grp2) grp2.style.display = maUver ? 'block' : 'none';
 }
 
 let ildpExact=false;
@@ -1427,10 +1472,10 @@ function pnDenniDavka(prijemCisty, vydaje, nemocenska, varianta){
 }
 
 // Zvýšené výdaje při invaliditě
-// I: +4%, II: +10%, III: +25%
+// I: +5%, II: +10%, III: +25%
 // Cap: pokud výdaje > 80 000, zvýšení = konstanta z 80 000
 function zvyseneVydaje(vydaje, stupen){
-  const pct = {I:0.04, II:0.10, III:0.25}[stupen];
+  const pct = {I:0.05, II:0.10, III:0.25}[stupen];
   const cap = 80000;
   const zvyseni = Math.min(vydaje, cap) * pct;
   return vydaje + zvyseni;
@@ -1590,6 +1635,8 @@ function calculate(){
     zpInv3: gni('zp-inv3'),
     zpZO:   gni('zp-zo'),
     zpPN:   gni('zp-pn'),
+    zpTN:   gni('zp-tn'),
+    zpUver: gni('zp-uver'),
   };
 
   runEngineForData(D, '');
@@ -1687,7 +1734,8 @@ function calculatePartner(P, D_main){
 function runEngineForData(D, target){
   const isOSVC  = D.tprace==='osvc';
   const isNezam  = D.tprace==='nezamestnany';
-  const maNem   = (!isOSVC && !isNezam) || D.dobrNem;
+  const isMD     = D.tprace==='rodicovska';
+  const maNem   = (!isOSVC && !isNezam && !isMD) || D.dobrNem;
   const ret     = RETENTION[D.obor]||{I:.55,II:.25,III:.05};
   const isManualni = ['remeslnik','stavba','ridic','hasic','vyska'].includes(D.obor);
   const rokiDD  = Math.max(65 - D.vek, 1);
@@ -1706,10 +1754,13 @@ function runEngineForData(D, target){
   const maZavisleOsoby = pocetD > 0 || (maPartnera && D.zavPart !== 'zadna');
   const mesicuRezervou = D.vydaje > 0 ? D.rezerva / D.vydaje : 99;
 
+  const isBezPracePomeru = isNezam || isMD; // bez pracovního poměru = nemůže mít PN
+
   // PN skipovat jen pokud partner pokryje výdaje A klient má nemocenskou (zaměstnanec)
   // V praxi: PN vždy doporučujeme — partner chrání rodinu, ne klientův příjem
+  // EXCEPT: nezaměstnaní a rodičovská — nemají co kompenzovat (žádný výdělek z práce)
   const partnerPokryjeVydaje = maPartnera && D.prijPart >= D.vydaje;
-  const pnNeniTreba = false; // PN vždy doporučujeme — partner chrání rodinu, ne klientův příjem
+  const pnNeniTreba = isBezPracePomeru;
 
   // Hospitalizace — zbytečná pokud single bez závislých s dostatečnou rezervou
   const hospNeniTreba = !maZavisleOsoby && !isOSVC && mesicuRezervou >= 6;
@@ -1738,7 +1789,7 @@ function runEngineForData(D, target){
   const investRezerva = Math.max(D.rezerva - nouzRezerva, 0);
 
   // Nemocenská — průměr za 12 měsíců PN (správný výpočet)
-  const nemocenska = vypocetNemocenske(D.prijem, isOSVC, D.dobrNem);
+  const nemocenska = isBezPracePomeru ? 0 : vypocetNemocenske(D.prijem, isOSVC, D.dobrNem);
 
   // Invalidní důchody
   function getInvDuc(stupen){
@@ -1767,46 +1818,53 @@ function runEngineForData(D, target){
   // ═══════════════════════════════════════
 
   function calcInvKapital(stupen, rezim){
-    // rezim: 'k' = Komplexní (100 % vlastního příjmu)
-    //        's' = Standardní (podíl výdajů dle příjmů)
-    //        'z' = Základní (75 % standardního)
+    // rezim: 'k' = Komplexní (příjem + % výdajů: I +5%, II +10%, III +25%)
+    //        's' = Standardní (podíl výdajů × koef zvýšení 5/10/25 %)
+    //        'z' = Základní (klient sníží výdaje o 25 %, pak podíl × koef zvýšení)
     const invDuc    = duc[stupen];
-    const partnerPr = maPartnera ? D.prijPart : 0;
 
-    // Manuální profese: po rekvalifikaci cap příjmu
-    const capPrijem = isManualni ? MANUALNI_CAP[stupen] : D.prijem;
-    const prijemEfektivni = Math.min(D.prijem, capPrijem);
+    // Manuální profese: cap se aplikuje POUZE na zachovaný příjem
+    // (předpoklad: po rekvalifikaci klient teoreticky nedosáhne na původní příjem)
+    // Cíl pojistky se ale počítá z PŮVODNÍHO příjmu — pojišťujeme reálnou potřebu klienta
+    const capPrijem = isManualni ? Math.min(D.prijem, MANUALNI_CAP[stupen]) : D.prijem;
     const zachPrijem = capPrijem * ret[stupen];
 
     // Podíl výdajů klienta dle poměru příjmů (1.0 pokud single)
     const podilK = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
-    const podilP = 1.0 - podilK;
 
-    // Výdajová základna dle stupně
-    const vydBase = stupen === 'I' ? D.vydaje : Math.max(D.vydaje - D.splatky, 0);
-    const vydZvys = zvyseneVydaje(vydBase, stupen);
+    // Výdajová báze:
+    //   I. stupeň: celé výdaje (včetně splátky hypotéky)
+    //   II./III. stupeň: výdaje bez splátky (hypotéka jde do úvěrového balíčku)
+    const vydBaseFull = stupen === 'I' ? D.vydaje : Math.max(D.vydaje - D.splatky, 0);
 
-    // ── Cíl dle režimu ──────────────────────────────────────
-    // K: 100 % vlastního příjmu (ne výdaje — každý pojištěn na svůj příjem)
-    // S: podíl výdajů dle příjmů (při příjmech 80:20 → klient kryje 80 % výdajů)
-    // Z: 75 % standardního cíle
     let cil;
     if(rezim === 'k'){
-      cil = prijemEfektivni; // přesně příjem, žádné max s výdaji
+      // KOMPLEXNÍ: cíl = PŮVODNÍ příjem + procento z výdajů (s capem 80k)
+      //   • příjem = vlastní původní příjem (BEZ capu manuální profese)
+      //   • příplatek = procento z výdajů (cap 80k):
+      //       I. stupeň: plné výdaje (klient ještě splácí hypotéku)
+      //       II./III. stupeň: výdaje BEZ splátky (hypo je krytá úvěrovým balíčkem)
+      const pctK = {I:0.05, II:0.10, III:0.25}[stupen];
+      const vydCap = Math.min(vydBaseFull, 80000);
+      const priplatekK = vydCap * pctK;
+      cil = D.prijem + priplatekK;
     } else if(rezim === 's'){
-      cil = vydZvys * podilK;
+      // STANDARDNÍ: cíl = podíl × výdaje × koef zvýšení (aditivní s capem 80k)
+      //   I. st: podíl × (výdaje + min(výdaje, 80k) × 5%)
+      //   II. st: podíl × (výdaje_bez_splátky + min(výdaje_bez_splátky, 80k) × 10%)
+      //   III. st: podíl × (výdaje_bez_splátky + min(výdaje_bez_splátky, 80k) × 25%)
+      cil = podilK * zvyseneVydaje(vydBaseFull, stupen);
     } else { // 'z'
-      cil = vydZvys * podilK * 0.75;
+      // ZÁKLADNÍ (v21.1): klient si sníží výdaje o 25 % → základ = 0,75 × výdaje
+      //   pak na to aplikujeme koeficient zvýšení (s capem 80k aplikovaným na sníženou bázi)
+      //   cíl = podíl × (0,75 × výdaje + min(0,75 × výdaje, 80k) × pct)
+      const vydBaseSnizene = vydBaseFull * 0.75;
+      cil = podilK * zvyseneVydaje(vydBaseSnizene, stupen);
     }
 
-    // ── Co partner přispěje ─────────────────────────────────
-    // K: partner do výpočtu NEVSTUPUJE — každý je pojištěn čistě na svůj příjem
-    //    bez ohledu na příjmy nebo výdaje partnera
-    // S/Z: každý kryje svůj díl výdajů — partner do klientovy mezery nezasahuje
-    let partnerPrEff = 0; // vždy 0 — partner nikdy nezasahuje do mezery klienta
-
-    const mezera = Math.max(cil - zachPrijem - invDuc - partnerPrEff, 0);
-    return {mezera, zachPrijem, invDuc, cil, prijemEfektivni, isManualni};
+    // Partner do mezery NEVSTUPUJE — každý je pojištěn na svou potřebu
+    const mezera = Math.max(cil - zachPrijem - invDuc, 0);
+    return {mezera, zachPrijem, invDuc, cil, prijemEfektivni: D.prijem, isManualni, priplatekK: rezim==='k' ? (Math.min(vydBaseFull, 80000) * {I:0.05,II:0.10,III:0.25}[stupen]) : 0};
   }
 
   // Absolutní kapitál pro každý stupeň (K, S, Z varianta)
@@ -1820,12 +1878,9 @@ function runEngineForData(D, target){
     kapZ[st] = {kap: rZ.mezera * 12 * afInv, ...rZ};
   }
 
-  // Odečíst investovatelnou rezervu PŘED monotónností
+  // Monotónnost: každý vyšší stupeň musí mít alespoň tolik jako nižší
+  // POZNÁMKA: Rezerva se od invalidity NEODEČÍTÁ (rezerva jen u PN)
   for(const kap of [kapK, kapS, kapZ]){
-    kap.I.kap   = Math.max(kap.I.kap   - investRezerva, 0);
-    kap.II.kap  = Math.max(kap.II.kap  - investRezerva, 0);
-    kap.III.kap = Math.max(kap.III.kap - investRezerva, 0);
-    // Monotónnost: každý vyšší stupeň musí mít alespoň tolik jako nižší
     kap.II.kap  = Math.max(kap.II.kap,  kap.I.kap);
     kap.III.kap = Math.max(kap.III.kap, kap.II.kap);
   }
@@ -1848,14 +1903,11 @@ function runEngineForData(D, target){
   const ADAPTACE_II  = 150000;
   const ADAPTACE_III = 400000;
 
-  // Zajištění dětí při invaliditě III. stupně (jen Standardní)
-  // 5 000 Kč/měs × 12 × roky do 26 (lineárně, bez AF)
-  let invDetiIII = 0;
-  D.children.forEach(child => {
-    const roky = Math.max(26 - child.vek, 0);
-    invDetiIII += 5000 * 12 * roky;
-  });
-  invDetiIII = pocetD > 0 ? Math.round(invDetiIII / 50000) * 50000 : 0;
+  // Zajištění dětí při invaliditě III. stupně — ODSTRANĚNO (v21)
+  // Důvod: náklad na dítě se invaliditou rodiče nemění, dítě je pokryto
+  // přes smrt rodiče (pojistná částka zohledňuje zátěž na dítě) a invalidní
+  // důchod + pojistné plnění pokryje výdaje domácnosti včetně dítěte.
+  const invDetiIII = 0;
 
   // Úvěrový balíček — dle pravidla 70/30
   // Komplexní: každý má celý balíček
@@ -1913,43 +1965,84 @@ function runEngineForData(D, target){
   // S rodinou — Standardní: základ = výdaje - hypo
   // Hypotéka vždy pojistit zvlášť
   // ═══════════════════════════════════════
+  // ═══════════════════════════════════════
+  // SIROTČÍ A VDOVSKÝ DŮCHOD (v21.1)
+  // Sirotčí: pro každého rodiče s dětmi (manžel/partner/single)
+  // Vdovský: JEN pro manžele (a registrované partnery)
+  //   • Manželé s dětmi → trvalý (počítáme do anuity v plné výši)
+  //   • Manželé bez dětí → jen 1 rok (NEPOČÍTÁME do anuity, ale poznámka v UI/PDF)
+  //   • Partneři / single → 0
+  // ═══════════════════════════════════════
   const ducIII_smrt = duc.III;
   const procVymZemr = Math.max(ducIII_smrt - CSSZ.zakladVymera, 0);
-  // Vdovský důchod pouze pro manžele a registrované partnery (ne nesezdané soužití)
+  // Plný měsíční vdovský (sólo, bez souběhu)
   const vdovDucSolo = maManzel ? Math.round(CSSZ.zakladVymera + procVymZemr * CSSZ.vdovskaPctVymery) : 0;
+  // Trvalý vdovský: jen manželé s dětmi (NEBO se závislým partnerem)
   const vdovDucTrva = maManzel && (pocetD > 0 || D.zavPart === 'plna');
-  const vdovDuc     = vdovDucTrva ? vdovDucSolo : Math.round(vdovDucSolo / 12);
+  // Vdovský započítaný do výpočtu — pokud trvalý, plný; jinak 0 (1 rok = jen poznámka)
+  const vdovDuc     = vdovDucTrva ? vdovDucSolo : 0;
+  // Příznak: máme-li manželství bez dětí (pro poznámku v UI o 1 roce)
+  const vdovDucPoznamka1Rok = maManzel && !vdovDucTrva && vdovDucSolo > 0;
   const sirotciProcVym = Math.max(procVymZemr * CSSZ.sirotciPctVymery, CSSZ.sirotciMinProc);
   const sirotciDuc  = Math.round(CSSZ.zakladVymera + sirotciProcVym);
 
   // Výdaje po smrti: snížení fixně 20 %
-  // Komplexní: základ = plné výdaje bez hypo (hypo je v úvěrovém balíčku)
-  // Standardní: základ = výdaje bez hypo
+  // Komplexní: NEPOUŽÍVÁME (Komplexní jede na příjem klienta, ne na výdaje)
+  // Standardní: základ = výdaje bez hypo (hypo je v úvěrovém balíčku)
   const vydPoSmrti = Math.round(Math.max(D.vydaje - D.splatky, 0) * 0.80);
 
-  let pc_smrt_k = 0, pc_smrt_s = 0;
+  let pc_smrt_k = 0, pc_smrt_s = 0, pc_smrt_z = 0;
   let stabilMesFinal = 0;
 
-  // Kapitalizace příjmové mezery jen pro PÁR
-  // Single (s dětmi i bez): pohřeb + úvěry + zajištění dětí — žádná kapitalizace
+  // Sdílené hodnoty pro výpočet
+  const sirotciCelk = pocetD * sirotciDuc;
+  const podilK = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
+
+  // ── Smrt mezery (per varianta) ───────────────────────────────────
+  // KOMPLEXNÍ (v21.1): pojistit vlastní příjem klienta
+  //   mezera = příjem − vdovský − sirotčí (NEodečítáme příjem partnera)
+  //   • single bez dětí → mezera = 0 (pohřeb 100k řeší builder)
+  //   • single s dětmi → samostatná logika "Zajištění dětí" (3,3M × 1,5)
+  //   • pár (manželé/partneři) → mezera = příjem − vdovský − sirotčí
+  let mezeraK = 0;
   if(maPartnera){
-    const sirotciCelk      = pocetD * sirotciDuc;
-    const prijmyPoSmrti    = D.prijPart + vdovDuc + sirotciCelk;
+    mezeraK = Math.max(D.prijem - vdovDuc - sirotciCelk, 0);
+  }
 
-    // K: výpadek příjmu klienta (partner nevstupuje do jeho příjmové mezery)
-    const mezeraK = Math.max(D.prijem - prijmyPoSmrti, 0);
+  // STANDARDNÍ (v21.1): pojistit podíl výdajů klienta
+  //   mezera = (podíl × výdaje_bez_splátky × 0,80) − vdovský − sirotčí
+  //   • single → podíl = 1.0 (klient kryje všechny výdaje)
+  //   • pár → podíl podle poměru příjmů
+  const vydPoSmrtiS = Math.round(Math.max(D.vydaje - D.splatky, 0) * 0.80 * podilK);
+  const mezeraS = Math.max(vydPoSmrtiS - vdovDuc - sirotciCelk, 0);
 
-    // S: výpadek podílu výdajů klienta dle poměru příjmů
-    const podilK = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
-    const vydPoSmrtiS = Math.round(Math.max(D.vydaje - D.splatky, 0) * 0.80 * podilK);
-    const mezeraS = Math.max(vydPoSmrtiS - prijmyPoSmrti * podilK, 0);
+  // ZÁKLADNÍ (v21.1): klient si sníží výdaje o 25 %, pak podíl × výdaje
+  //   mezera = (podíl × výdaje_bez_splátky × 0,80 × 0,75) − vdovský − sirotčí
+  const vydPoSmrtiZ = Math.round(Math.max(D.vydaje - D.splatky, 0) * 0.80 * podilK * 0.75);
+  const mezeraZ = Math.max(vydPoSmrtiZ - vdovDuc - sirotciCelk, 0);
 
-    const smrtHorizont = Math.min(rokiDD, 20);
-    const afSmrt = anuita(Math.max(realVynosInv, 0.01), smrtHorizont);
+  const smrtHorizont = Math.min(rokiDD, 20);
+  const afSmrt = anuita(Math.max(realVynosInv, 0.01), smrtHorizont);
 
-    pc_smrt_k = r50(Math.max(mezeraK * 12 * afSmrt - investRezerva, 0));
-    pc_smrt_s = r50(Math.max(mezeraS * 12 * afSmrt - investRezerva, 0));
+  // Kapitalizace mezer
+  if(maPartnera){
+    pc_smrt_k = r50(mezeraK * 12 * afSmrt);
+  }
+  pc_smrt_s = r50(mezeraS * 12 * afSmrt);
+  pc_smrt_z = r50(mezeraZ * 12 * afSmrt);
 
+  // ── Override: single BEZ dětí → 100k pohřeb ve všech variantách (v21.1) ─────
+  // Single s dětmi má vlastní logiku zajištění dětí (klesající PČ × 5k/měs)
+  // Single bez dětí nemá koho dlouhodobě zajišťovat → jen pohřeb a admin. náklady
+  const isSingleBezDeti = !maPartnera && pocetD === 0;
+  if(isSingleBezDeti){
+    pc_smrt_k = 100000;
+    pc_smrt_s = 100000;
+    pc_smrt_z = 100000;
+  }
+
+  // Stabilizační měsíce (zachováno pro páry)
+  if(maPartnera){
     let stab = 6;
     if(D.zavPart !== 'zadna') stab += 8;
     if(pocetD >= 1){ const nm = Math.min(...D.children.map(c=>c.vek)); stab += nm<4?18:nm<8?12:8; }
@@ -1958,27 +2051,42 @@ function runEngineForData(D, target){
     stabilMesFinal = stab;
   }
 
-  // Zajištění dětí při smrti — jen pro single (svobodný s dětmi)
-  // K: 5 000×12×roky do 26 · konstantní PČ
-  // S: 5 000×12×roky do 26 · klesající PČ + 400 000 Kč konstantní start
-  // Z: 5 000×12×roky do 19 · klesající PČ (jen do SŠ)
-  let pc_smrt_deti_k = 0; // Komplexní — konstantní, do 26
-  let pc_smrt_deti_s = 0; // Standardní — klesající, do 26
-  let pc_smrt_deti_z = 0; // Základní — klesající, do 19
-  // svobodný/rozvedený bez partnera = !maPartnera && !isSingle (má dítě)
-  // NEBO isSingle ale to nastane jen pokud pocetD===0, takže to nikdy netrefí
-  // Správná podmínka: nemá partnera (svobodný) a má děti
+  // Zajištění dětí při smrti (v21 — nová metodika)
+  // Komplexní (K): průměrná zátěž na dítě = 3,3 mil × 1,5 = 4,95 mil Kč do 26 let
+  //                Měsíční mezera = (4,95 mil / (26×12)) − sirotčí důchod ≈ 15 865 − sirotčí
+  //                Kapitál na dítě = mezera × 12 × roky_do_26 (klesající PČ)
+  //                Aplikováno POUZE u single s dětmi (pár má pokryto přes pc_smrt_k z příjmu)
+  // Standardní (S): původní logika — 5 000×12×roky do 26, klesající PČ (jen single)
+  //                 + 400 000 Kč konstantní start (pro single)
+  // Základní (Z): 5 000×12×roky do 19, klesající PČ (jen do SŠ, jen single)
+  const ZATEZ_DITE_CELKEM = 4950000;  // 3,3 mil × 1,5
+  const ZATEZ_MES = ZATEZ_DITE_CELKEM / (26 * 12); // ≈ 15 865 Kč/měs
+
+  // Mezera na jedno dítě (konstantní — po odečtení sirotčího důchodu)
+  const mezeraNaDite = Math.max(ZATEZ_MES - sirotciDuc, 0);
+
+  let pc_smrt_deti_k = 0; // Komplexní — KONSTANTNÍ PČ (mezera × 12 × 26 let na dítě)
+  let pc_smrt_deti_s = 0; // Standardní — původní 5k/měs × roky do 26 (jen single)
+  let pc_smrt_deti_z = 0; // Základní — původní 5k/měs × roky do 19 (jen single)
   const isSvobodnyBezPartnera = !maPartnera && (D.rstav==='svobodny'||D.rstav==='rozvedeny');
   const PC_SMRT_DETI_START_S = pocetD > 0 && isSvobodnyBezPartnera ? 400000 : 0;
+
+  // Komplexní: KONSTANTNÍ PČ — plný nárok bez ohledu na aktuální věk dítěte
+  // Předpoklad: budoucí potomek/sourozenec/další dítě → pokrytí na celé období dospívání
+  // PČ na 1 dítě = mezera × 12 × 26 let
+  if(pocetD > 0){
+    const pcNaDite = mezeraNaDite * 12 * 26;
+    pc_smrt_deti_k = Math.round(pcNaDite * pocetD / 50000) * 50000;
+  }
+
+  // Standardní a Základní: původní logika, jen pro single
   if(pocetD > 0 && isSvobodnyBezPartnera){
     D.children.forEach(child => {
       const rokyDo26 = Math.max(26 - child.vek, 0);
       const rokyDo19 = Math.max(19 - child.vek, 0);
-      pc_smrt_deti_k += 5000 * 12 * rokyDo26;
       pc_smrt_deti_s += 5000 * 12 * rokyDo26;
       pc_smrt_deti_z += 5000 * 12 * rokyDo19;
     });
-    pc_smrt_deti_k = Math.round(pc_smrt_deti_k / 50000) * 50000;
     pc_smrt_deti_s = Math.round(pc_smrt_deti_s / 50000) * 50000;
     pc_smrt_deti_z = Math.round(pc_smrt_deti_z / 50000) * 50000;
   }
@@ -1987,6 +2095,7 @@ function runEngineForData(D, target){
 
   const pc_smrt_k_net = Math.max(pc_smrt_k - (D.zpSmrt||0), 0);
   const pc_smrt_s_net = Math.max(pc_smrt_s - (D.zpSmrt||0), 0);
+  const pc_smrt_z_net = Math.max(pc_smrt_z - (D.zpSmrt||0), 0);
   // Úvěrový balíček je v inv.uverBalicek — smrt a hypo odstraněny z pc_smrt
   const pc_smrt_hyp   = 0;  // přesunuto do úvěrového balíčku
   const pc_smrt_uv    = 0;  // přesunuto do úvěrového balíčku
@@ -2036,19 +2145,12 @@ function runEngineForData(D, target){
   const skipPNfinal = skipPN || pnSkipDueToRezerva;
 
   // ═══════════════════════════════════════
-  // ZÁVAŽNÁ ONEMOCNĚNÍ — logika zachována
+  // ZÁVAŽNÁ ONEMOCNĚNÍ — pevných 500 000 Kč (v21)
+  // Protonová léčba rakoviny: 500 000 Kč
+  // Stejné pro Komplexní i Standardní; u Základní se riziko ZO NEZAŘAZUJE
+  // Rezerva se neodečítá (rezerva jen u PN)
   // ═══════════════════════════════════════
-  const anamMult = D.anamneza==='obe'?1.30:D.anamneza!=='zadna'?1.15:1.0;
-  const zoMes    = isOSVC ? 18 : 13;
-  const zoZaklad = D.vydaje * 0.7 * zoMes;
-  const rezPodilZO = isSingle ? 0.80 : (maZavisleOsoby ? 0.40 : 0.60);
-  const zoPoRez = Math.max(zoZaklad * anamMult - D.rezerva * rezPodilZO, 0);
-  let zoMinimum = 500000;
-  if(isOSVC) zoMinimum += 100000;
-  if(pocetD > 0) zoMinimum += 100000;
-  if(D.anamneza !== 'zadna') zoMinimum += 100000;
-  if(D.zavPart === 'plna') zoMinimum += 50000;
-  const pc_zo     = r50(Math.max(zoPoRez, zoMinimum));
+  const pc_zo     = 500000;
   const pc_zo_net = Math.max(pc_zo - (D.zpZO||0), 0);
 
   // ═══════════════════════════════════════
@@ -2061,12 +2163,10 @@ function runEngineForData(D, target){
   // ═══════════════════════════════════════
   // HOSPITALIZACE
   // ═══════════════════════════════════════
+  // Standardní varianta: fixně 500 Kč/den (Komplexní má 1000 Kč/den, Základní není)
   let davH = 0;
   if(!hospNeniTreba){
-    davH = 300;
-    if(isOSVC) davH = 500;
-    else if(pocetD>=1||D.zavPart!=='zadna') davH = 400;
-    if(pocetD>=2 && D.children.some(c=>c.vek<7)) davH = 500;
+    davH = 500;
   }
 
   // POŠKOZENÍ ÚRAZEM
@@ -2079,12 +2179,14 @@ function runEngineForData(D, target){
   const pc_sob = r50(sobMezera * 12 * anuita(Math.max(realVynosInv, 0.01), 10));
 
   const R = {
-    D, duc, ret, isManualni, isOSVC, maNem,
+    D, duc, ret, isManualni, isOSVC, maNem, isNezam, isMD, isBezPracePomeru,
     rokiDD, nomVynos, realVynos, realVynosInv, af, afInv,
     inv, maManzel, vdovDuc, sirotciDuc,
     isSingle, isSvobodnyBezPartnera, maPartnera, maManzel, maZavisleOsoby, skipPN: skipPNfinal, skipHosp: hospNeniTreba, celkoveZavazky,
     vydPoSmrti, vydBezSpl,
-    pc_smrt_k_net, pc_smrt_s_net, pc_smrt_deti_k, pc_smrt_deti_s, pc_smrt_deti_z, PC_SMRT_DETI_START_S,
+    pc_smrt_k_net, pc_smrt_s_net, pc_smrt_z_net, pc_smrt_deti_k, pc_smrt_deti_s, pc_smrt_deti_z, PC_SMRT_DETI_START_S,
+    ZATEZ_DITE_CELKEM, ZATEZ_MES, mezeraNaDite, // v21: zátěž na dítě 3,3M×1,5
+    vdovDucPoznamka1Rok, // v21.1: manželé bez dětí mají vdovský jen 1 rok
     pnCek, davK, davS, davZ, pnRezervaDenni, pnSkipDueToRezerva,
     pc_zo, pc_zo_net,
     pc_uraz, davH, pc_sob,
@@ -2108,8 +2210,11 @@ function buildAndRender(R, target){
     pnCek,davK,davS,davZ,pc_zo,pc_zo_net,
     pc_uraz,davH,pc_sob} = R;
 
-  // Komplexní varianta: skryjeme pokud příjem klienta < výdaje (pojistit na příjem = méně než výdaje)
-  const skipKomplex = D.prijem < D.vydaje;
+  // Komplexní varianta: skryjeme pokud klient nemá ani na svůj podíl výdajů
+  // Pro single: porovnáme s celými výdaji (podíl = 1.0)
+  // Pro páry: porovnáme s podílem výdajů (např. 50/50, 60/40)
+  const podilKomplex = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
+  const skipKomplex = D.prijem < D.vydaje * podilKomplex;
   const VK = skipKomplex ? null : buildKomplex(R);
   const VS = buildStandard(R);
   const VZ = buildZakladni(R);
@@ -2164,12 +2269,12 @@ function buildAndRender(R, target){
         • Inflace: ${(INFLACE*100).toFixed(1)} % p.a.<br>
         • Nominální výnos portfolia: ${(nomVynos*100).toFixed(1)} % p.a. (dle věku ${D.vek} let)<br>
         • Reálný výnos (po inflaci): ${(realVynos*100).toFixed(1)} % p.a.<br>
-        • Horizont do důchodu: ${rokiDD} let · Anuitní faktor: ${af.toFixed(2)}<br>
+        • Horizont do důchodu: ${rokiDD} let · Koeficient výplaty: ${af.toFixed(2)}<br>
         • Nemocenská (odhad): ${fKst(R.nemocenska)}/měs. (${R.isOSVC && !R.maNem ? 'OSVČ bez nem. poj. → 0 Kč' : 'prům. za 365denní PN (zákon č. 187/2006 Sb.) — náhrada mzdy + nem. ČSSZ'})<br>
         • Inv. důchod (odhad/ILDP): I. st. ${fKst(duc.I)}, II. st. ${fKst(duc.II)}, III. st. ${fKst(duc.III)}<br>
         ${R.maPartnera ? `• Vdovský důchod (odhad): ${fKst(R.vdovDucSolo)}/měs. sólo (bez souběhu vlastního důchodu partnera)${R.vdovDucTrva ? ' — počítáme jako trvalý (jsou děti / závislý partner)' : ' — po 1 roce vyprší, do výpočtu zahrnuto jen z části'}<br>` : ''}
         ${R.pocetD > 0 ? `• Sirotčí důchod (odhad): ${fKst(Math.round(CSSZ.zakladVymera + Math.max((Math.max(duc.III - CSSZ.zakladVymera, 0)) * CSSZ.sirotciPctVymery, CSSZ.sirotciMinProc)))}/měs. na dítě<br>` : ''}
-        • Kapitalizace: anuitní metoda (kapitál se čerpá do důchodu)<br>
+        • Kapitalizace: koeficient výplaty (kapitál se čerpá s úročením do důchodu)<br>
         • Efektivní rezerva: 60 % z ${fKst(D.rezerva)} = ${fKst(R.efRez)} (40 % jako nedotknutelná záchrana)<br>
         • Parametry ČSSZ platné pro rok ${CSSZ.rok} (Sdělení MPSV č. 397/2025 Sb.)<br>
         <span style="color:var(--ink4);font-size:10px;margin-top:4px;display:block">Procentní sazba: 1,5 %/rok poj. pro III. st. Dopočtená doba zahrnuta. Redukce OVZ: 99 % do 1. RH (reforma 2026). Daň: progresivní 15/23 %.</span>
@@ -2286,60 +2391,86 @@ function buildAndRender(R, target){
 // VARIANT BUILDERS
 // ═══════════════════════════════════════════════
 function buildKomplex(R){
-  const {D,inv,duc,isOSVC,isManualni,maNem,
-    pc_smrt_k_net,pc_smrt_deti_k,PC_SMRT_DETI_START_S,
-    pnCek,davK,pc_zo_net,pc_uraz,davH,pc_sob,
+  const {D,inv,duc,isOSVC,isManualni,maNem,isBezPracePomeru,isNezam,isMD,
+    pc_smrt_k_net,pc_smrt_deti_k,PC_SMRT_DETI_START_S,sirotciDuc,vdovDuc,vdovDucPoznamka1Rok,ZATEZ_MES,mezeraNaDite,
+    pnCek,davK,pc_zo_net,pc_uraz,davH,pc_sob,pocetD,
     isSingle,maPartnera,maManzel,maZavisleOsoby,skipPN,skipHosp,celkoveZavazky} = R;
 
-  // ── SMRT — Komplexní ──
-  // Logika: bez partnera = pohřeb + zajištění dětí | s partnerem = výpadek příjmu
+  // ── SMRT — Komplexní (v21.1) ──
+  // Single bez dětí: 100k pohřeb (override v enginu)
+  // Single s dětmi: zajištění dětí (3,3M × 1,5 − sirotčí, klesající PČ)
+  // Pár: pojistit vlastní příjem klienta − vdovský (jen manželé s dětmi) − sirotčí
+  //   • Manželé bez dětí: vdovský NEzapočítáván (jen 1 rok), poznámka v UI
+  //   • Partneři/single: vdovský NE, sirotčí ANO (pokud děti)
   const smrtItems = [];
-  if(!maPartnera){
-    // Svobodný (s dětmi i bez): pohřeb + zajištění dětí
-    if(celkoveZavazky<=0 && pc_smrt_deti_k<=0) smrtItems.push({n:'Minimální PČ',a:100000,t:'K',
-      d:'Pohřeb a administrativní náklady'});
-    if(pc_smrt_deti_k>0) smrtItems.push({n:'Zajištění dítěte — základ na hypotéku',a:pc_smrt_deti_k,t:'K',
-      d:'Tímto dáváte svému dítěti jistotu, že bude mít 10–15% základ na hypotéku. · 5 000 Kč/měs × 12 × roky do 26 let · konstantní PČ'});
+  const isSingleBezDeti = !maPartnera && pocetD === 0;
+  const sirotciCelk = pocetD * sirotciDuc;
+  if(isSingleBezDeti){
+    // Single bez dětí: jen 100k pohřeb
+    smrtItems.push({n:'Minimální PČ',a:100000,t:'K',
+      d:'Pohřeb a administrativní náklady — bez závazků a vyživovaných osob'});
+  } else if(!maPartnera){
+    // Single s dětmi: zajištění dětí
+    if(pc_smrt_deti_k>0){
+      const detiDesc = `Výpočet: průměrná zátěž na dítě 3,3 mil × 1,5 = 4,95 mil Kč do 26 let `
+        + `→ měsíční zátěž ${fKst(Math.round(ZATEZ_MES))}/měs. `
+        + `Sirotčí důchod (${fKst(sirotciDuc)}/měs) = základní výměra 4 900 Kč + 40 % procentní výměry `
+        + `z invalidního důchodu III. st. klienta (${fKst(duc.III)}/měs). `
+        + `Měsíční mezera: ${fKst(Math.round(ZATEZ_MES))} − ${fKst(sirotciDuc)} = ${fKst(Math.round(mezeraNaDite))}/měs × 12 měs × 26 let na dítě. `
+        + `Konstantní PČ — plný nárok bez ohledu na aktuální věk dítěte.`;
+      smrtItems.push({n:'Zajištění dětí',a:pc_smrt_deti_k,t:'K',d:detiDesc});
+    } else {
+      smrtItems.push({n:'Minimální PČ',a:100000,t:'K',d:'Pohřeb a administrativní náklady'});
+    }
   } else {
-    // Pár: kapitalizace výpadku příjmu
-    if(pc_smrt_k_net>0) smrtItems.push({n:'Vyrovnání výpadku příjmu',a:pc_smrt_k_net,t:'K',
-      d:'Kapitalizace výpadku příjmu klienta — příjem klienta vs. příjmy rodiny po jeho úmrtí (partner + vdovský důchod)'});
-    if(pc_smrt_k_net<=0) smrtItems.push({n:'Příjmy rodiny pokrývají výdaje',a:0,t:'K',
-      d:'Příjmy rodiny po úmrtí výdaje domácnosti pokrývají — výpadek příjmu nepojišťujeme'});
+    // Pár: kapitalizace výpadku vlastního příjmu klienta
+    const vdovskyPart = vdovDuc>0 ? `vdovský důchod ${fKst(vdovDuc)}/měs + ` : '';
+    const sirotciPart = sirotciCelk>0 ? `sirotčí důchod${pocetD>1?' ('+pocetD+' dětí)':''} ${fKst(sirotciCelk)}/měs` : '';
+    const podpora = vdovskyPart + sirotciPart;
+    const podporaText = podpora ? ` − ${podpora}` : '';
+    if(pc_smrt_k_net>0){
+      let desc = `Kapitalizace vlastního příjmu klienta (${fKst(D.prijem)}/měs)${podporaText}. Partner žije dál se svým příjmem — do výpočtu nevstupuje.`;
+      if(vdovDucPoznamka1Rok){
+        desc += ` Poznámka: vdovský důchod by pro manžele bez dětí trval pouze 1 rok — do výpočtu jej proto NEzapočítáváme.`;
+      }
+      smrtItems.push({n:'Vyrovnání výpadku příjmu',a:pc_smrt_k_net,t:'K',d:desc});
+    } else {
+      smrtItems.push({n:'Příjem zemřelého plně pokryt důchody',a:0,t:'K',
+        d:`Vdovský + sirotčí důchod plně pokrývají vlastní příjem klienta (${fKst(D.prijem)}/měs). Pojistka pro případ smrti pro Vás není nutná.`});
+    }
   }
 
-  // ── INVALIDITA — Komplexní: pojistit na příjem ──
-  function invDesc(st, data){
-    const zvys = {I:'+ 4 %',II:'+ 10 %',III:'+ 25 %'}[st];
-    return `Dorovnání na 100 % příjmu (${fKst(data.cil)}/měs) · výdaje ${zvys} · zachovaný příjem ${fKst(Math.round(data.zachPrijem))} · inv. důchod ${fKst(data.invDuc)} · mezera ${fKst(data.mezera)}/měs`;
-  }
+  // ── INVALIDITA — Komplexní (v21): cíl = příjem + {5 / 10 / 25} % výdajů ──
   const invItems = [
     {n:'I. stupeň', a:inv.K.I.pc, t:'K',
-      d:`Dorovnání na 100 % příjmu · plné výdaje + 4 % · zachovaný příjem ${fKst(Math.round(inv.K.I.zachPrijem))} · inv. důchod ${fKst(inv.K.I.invDuc)}`},
+      d:`Cíl = příjem + 5 % výdajů (${fKst(Math.round(inv.K.I.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.K.I.zachPrijem))} · inv. důchod ${fKst(inv.K.I.invDuc)} · mezera ${fKst(Math.round(inv.K.I.mezera))}/měs`},
     {n:'II. stupeň (přírůstek)', a:inv.K.II.pc, t:'K',
-      d:`Dorovnání příjmu · výdaje bez hypo + 10 % · celkem při II. stupni: ${fKst(inv.K.celkemII)}`},
+      d:`Cíl = příjem + 10 % výdajů (${fKst(Math.round(inv.K.II.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.K.II.zachPrijem))} · inv. důchod ${fKst(inv.K.II.invDuc)} · mezera ${fKst(Math.round(inv.K.II.mezera))}/měs · celkem při II. stupni: ${fKst(inv.K.celkemII)}`},
     {n:'Adaptace prostředí (II. st.)', a:inv.K.adaptII, t:'K',
       d:'Úpravy bydlení a pracovního prostředí při II. stupni invalidity'},
     {n:'III. stupeň (přírůstek)', a:inv.K.III.pc, t:'K',
-      d:`Dorovnání příjmu · výdaje bez hypo + 25 % · celkem při III. stupni: ${fKst(inv.K.celkemIII)}`},
+      d:`Cíl = příjem + 25 % výdajů (${fKst(Math.round(inv.K.III.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.K.III.zachPrijem))} · inv. důchod ${fKst(inv.K.III.invDuc)} · mezera ${fKst(Math.round(inv.K.III.mezera))}/měs · celkem při III. stupni: ${fKst(inv.K.celkemIII)}`},
     {n:'Adaptace bydlení (III. st.)', a:inv.K.adaptIII, t:'K',
       d:'Bezbariérové úpravy a kompenzační pomůcky při III. stupni invalidity'},
-    ...(inv.K.detiIII>0?[{n:'Zajištění dětí (III. st.)', a:inv.K.detiIII, t:'L',
-      d:'5 000 Kč/měs × 12 × roky do 26 let — klesající PČ'}]:[]),
-  ].filter(it=>it.a>0);
-  if(invItems.filter(it=>it.a>0).length===0) invItems.push({n:'Výdaje pokryty zachovaným příjmem a důchody',a:0,t:'K',d:'Kapitalizace mezery není nutná — rezerva a důchody výdaje pokryjí'});
+  ];
+  // Filtr: ponechat položky s PČ > 0, ALE u stupňů (I/II/III) ponechat i s PČ=0 jako "Pokryto"
+  const invItemsK = invItems.filter(it => {
+    if(it.a > 0) return true;
+    // Hlavní stupně (ne adaptace) — ponechat i s PČ=0 pro zobrazení "Pokryto"
+    return it.n.startsWith('I. stupeň') || it.n.startsWith('II. stupeň') || it.n.startsWith('III. stupeň');
+  });
 
   const risks = [
     {ico:'🕊️',ibg:'ri-gray',name:'Pojištění pro případ smrti',
-     desc:isSingle&&!maZavisleOsoby?'Splacení závazků':'Vyrovnání výpadku příjmu + splacení závazků',
+     desc:isSingle&&!maZavisleOsoby?'Splacení závazků':(maPartnera?'Vyrovnání výpadku příjmu':'Zajištění dětí + pohřeb'),
      prio:maZavisleOsoby?'c':'m', items:smrtItems},
     {ico:'🦽',ibg:'ri-red',name:'Pojištění invalidity',
-     desc:'Při invaliditě dorovnáme Váš příjem — čím těžší stupeň, tím vyšší výplata',
-     prio:'c', items:invItems},
+     desc:'Dorovnání na vlastní příjem + zvýšené výdaje (5 / 10 / 25 %)',
+     prio:'c', items:invItemsK},
     {ico:'🫀',ibg:'ri-red',name:'Závažná onemocnění',
-     desc:'Jednorázová výplata · protonová léčba rakoviny a další závažné diagnózy',prio:'c',
+     desc:'Protonová léčba rakoviny · jednorázová pojistná částka 500 000 Kč',prio:'c',
      items:[{n:'Závažná onemocnění',a:pc_zo_net,t:'K',
-       d:'Protonová léčba rakoviny 500 000 Kč · pokrytí výpadku příjmu a mimořádných nákladů po dobu léčby'}]},
+       d:'Protonová léčba rakoviny — pevná pojistná částka 500 000 Kč'}]},
   ];
 
   if(!skipPN){
@@ -2377,58 +2508,75 @@ function buildKomplex(R){
 
 
   const skipped = [];
-  if(skipPN) skipped.push('Pracovní neschopnost');
+  if(skipPN){
+    const duvod = isMD ? ' (rodičovská — bez nároku)' : isNezam ? ' (nezaměstnaný — bez nároku)' : '';
+    skipped.push('Pracovní neschopnost' + duvod);
+  }
   if(skipHosp) skipped.push('Hospitalizace');
   if(inv.uverBalicek <= 0) skipped.push('Úvěrový balíček (žádné úvěry)');
 
-  return {key:'k',name:'Komplexní',desc:'Maximální ochrana — pojištění na 100 % příjmu',badge:'Doporučeno',bc:'vb-k',risks,skipped};
+  return {key:'k',name:'Komplexní',desc:'Maximální ochrana — příjem + zvýšené výdaje při invaliditě',badge:'Doporučeno',bc:'vb-k',risks,skipped};
 }
 
 
 function buildStandard(R){
-  const {D,inv,duc,isOSVC,isManualni,
-    pc_smrt_s_net,pc_smrt_deti_s,PC_SMRT_DETI_START_S,
-    pnCek,davS,pc_zo_net,pc_uraz,davH,
+  const {D,inv,duc,isOSVC,isManualni,isBezPracePomeru,isNezam,isMD,
+    pc_smrt_s_net,pc_smrt_deti_s,PC_SMRT_DETI_START_S,sirotciDuc,vdovDuc,vdovDucPoznamka1Rok,
+    pnCek,davS,pc_zo_net,pc_uraz,davH,pocetD,
     isSingle,maPartnera,maManzel,maZavisleOsoby,skipPN,skipHosp,celkoveZavazky} = R;
 
-  // ── SMRT — standardní ──
+  // ── SMRT — Standardní (v21.1) ──
+  // Single bez dětí: 100k pohřeb (override v enginu)
+  // Single s dětmi: 5 000 × roky do 26 (klesající) + 400k start
+  // Pár: pokrytí podílu výdajů − vdovský (jen manželé s dětmi) − sirotčí
   const smrtItems = [];
-  if(!maPartnera){
-    // Svobodný (s dětmi i bez): pohřeb + zajištění dětí
-    if(celkoveZavazky<=0 && pc_smrt_deti_s<=0) smrtItems.push({n:'Minimální PČ',a:100000,t:'K',d:'Pohřeb a administrativní náklady'});
+  const isSingleBezDeti = !maPartnera && pocetD === 0;
+  const sirotciCelk = pocetD * sirotciDuc;
+  if(isSingleBezDeti){
+    smrtItems.push({n:'Minimální PČ',a:100000,t:'K',
+      d:'Pohřeb a administrativní náklady — bez závazků a vyživovaných osob'});
+  } else if(!maPartnera){
+    // Single s dětmi: zajištění + start
     if(pc_smrt_deti_s>0) smrtItems.push({n:'Zajištění dítěte — studium a start do života',a:pc_smrt_deti_s,t:'L',
       d:'Tímto dáváte svému dítěti možnost v klidu dostudovat, a i poté mu něco zbyde na vlastní bydlení. · 5 000 Kč/měs × 12 × roky do 26 let · klesající PČ'});
     if(PC_SMRT_DETI_START_S>0) smrtItems.push({n:'Start do vlastního života',a:PC_SMRT_DETI_START_S,t:'K',
       d:'Konstantní částka — zbyde dítěti i po škole jako základ na vlastní bydlení · 400 000 Kč'});
   } else {
-    // Pár: kapitalizace výpadku výdajů
-    if(pc_smrt_s_net>0) smrtItems.push({n:'Pokrytí výdajů rodiny',a:pc_smrt_s_net,t:'K',
-      d:'Výdaje bez hypo sníženy o 20 % po úmrtí · '+(maManzel?'vdovský důchod, sirotčí':'bez vdovského důchodu')+(D.prijPart>0?' · příjem '+(maManzel?'manžela/manželky':'partnera/partnerky'):'')+' · porovnáno s výdaji'});
-    if(pc_smrt_s_net<=0) smrtItems.push({n:'Příjmy rodiny pokrývají výdaje',a:0,t:'K',
-      d:'Příjmy rodiny po úmrtí výdaje domácnosti pokrývají'});
+    // Pár: kapitalizace mezery podílu výdajů
+    const vdovskyPart = vdovDuc>0 ? `vdovský důchod ${fKst(vdovDuc)}/měs + ` : '';
+    const sirotciPart = sirotciCelk>0 ? `sirotčí důchod${pocetD>1?' ('+pocetD+' dětí)':''} ${fKst(sirotciCelk)}/měs` : '';
+    const podpora = vdovskyPart + sirotciPart;
+    const podporaText = podpora ? ` − ${podpora}` : '';
+    if(pc_smrt_s_net>0){
+      let desc = `Pokrytí podílu výdajů klienta po jeho úmrtí (výdaje bez hypo × 80 % × podíl příjmů)${podporaText}.`;
+      if(vdovDucPoznamka1Rok){
+        desc += ` Poznámka: vdovský důchod by pro manžele bez dětí trval pouze 1 rok — do výpočtu jej proto NEzapočítáváme.`;
+      }
+      smrtItems.push({n:'Pokrytí výdajů rodiny',a:pc_smrt_s_net,t:'K',d:desc});
+    } else {
+      smrtItems.push({n:'Příjmy rodiny pokrývají výdaje',a:0,t:'K',
+        d:'Vdovský + sirotčí důchod plně pokryjí podíl klientových výdajů'});
+    }
   }
 
-  // ── INVALIDITA — Standardní: pojistit na výdaje ──
-  function invDescS(st, data){
-    const zvys = {I:'+ 4 %',II:'+ 10 %',III:'+ 25 %'}[st];
-    const manNote = isManualni && st==='I' ? ` · po rekvalifikaci předpokládáme příjem do ${fKst(MANUALNI_CAP.I)}/měs` : '';
-    return `Dorovnání na 100 % výdajů (${fKst(data.cil)}/měs) · zachovaný příjem ${fKst(Math.round(data.zachPrijem))} · inv. důchod ${fKst(data.invDuc)} · mezera ${fKst(data.mezera)}/měs${manNote}`;
-  }
+  // ── INVALIDITA — Standardní (v21): pojistit na podíl výdajů (zvýšené: I +5%, II +10%, III +25%) ──
   const invItems = [
     {n:'I. stupeň', a:inv.S.I.pc, t:'K',
-      d:`Dorovnání výdajů · plné výdaje + 4 % (${fKst(Math.round(inv.S.I.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.S.I.zachPrijem))} · inv. důchod ${fKst(inv.S.I.invDuc)}`},
+      d:`Cíl = podíl × výdaje + 5 % (${fKst(Math.round(inv.S.I.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.S.I.zachPrijem))} · inv. důchod ${fKst(inv.S.I.invDuc)} · mezera ${fKst(Math.round(inv.S.I.mezera))}/měs`},
     {n:'II. stupeň (přírůstek)', a:inv.S.II.pc, t:'K',
-      d:`Dorovnání výdajů bez hypo + 10 % · celkem při II. stupni: ${fKst(inv.S.celkemII)}`},
+      d:`Cíl = podíl × výdaje bez hypo + 10 % (${fKst(Math.round(inv.S.II.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.S.II.zachPrijem))} · inv. důchod ${fKst(inv.S.II.invDuc)} · mezera ${fKst(Math.round(inv.S.II.mezera))}/měs · celkem při II. stupni: ${fKst(inv.S.celkemII)}`},
     {n:'Adaptace prostředí (II. st.)', a:inv.S.adaptII, t:'K',
       d:'Úpravy bydlení a pracovního prostředí při II. stupni invalidity'},
     {n:'III. stupeň (přírůstek)', a:inv.S.III.pc, t:'K',
-      d:`Dorovnání výdajů bez hypo + 25 % · celkem při III. stupni: ${fKst(inv.S.celkemIII)}`},
+      d:`Cíl = podíl × výdaje bez hypo + 25 % (${fKst(Math.round(inv.S.III.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.S.III.zachPrijem))} · inv. důchod ${fKst(inv.S.III.invDuc)} · mezera ${fKst(Math.round(inv.S.III.mezera))}/měs · celkem při III. stupni: ${fKst(inv.S.celkemIII)}`},
     {n:'Adaptace bydlení (III. st.)', a:inv.S.adaptIII, t:'K',
       d:'Bezbariérové úpravy a kompenzační pomůcky při III. stupni invalidity'},
-    ...(inv.S.detiIII>0?[{n:'Zajištění dětí (III. st.)', a:inv.S.detiIII, t:'L',
-      d:'5 000 Kč/měs × 12 × roky do 26 let — klesající PČ'}]:[]),
-  ].filter(it=>it.a>0);
-  if(invItems.filter(it=>it.a>0).length===0) invItems.push({n:'Výdaje pokryty zachovaným příjmem a důchody',a:0,t:'K',d:'Kapitalizace mezery není nutná'});
+  ];
+  // Filtr: hlavní stupně ponechat i s PČ=0 (pro zobrazení "Pokryto" + výpočet)
+  const invItemsS = invItems.filter(it => {
+    if(it.a > 0) return true;
+    return it.n.startsWith('I. stupeň') || it.n.startsWith('II. stupeň') || it.n.startsWith('III. stupeň');
+  });
 
   const risks = [
     {ico:'🕊️',ibg:'ri-gray',name:'Pojištění pro případ smrti',
@@ -2436,10 +2584,10 @@ function buildStandard(R){
      prio:maZavisleOsoby?'c':'m', items:smrtItems},
     {ico:'🦽',ibg:'ri-red',name:'Pojištění invalidity',
      desc:'Pokryjeme výdaje domácnosti i bez Vašeho příjmu — čím těžší stupeň, tím vyšší výplata',
-     prio:'c', items:invItems},
-    {ico:'🫀',ibg:'ri-red',name:'Závažná onemocnění',desc:'Jednorázová výplata · protonová léčba rakoviny a další závažné diagnózy',prio:'c',
+     prio:'c', items:invItemsS},
+    {ico:'🫀',ibg:'ri-red',name:'Závažná onemocnění',desc:'Protonová léčba rakoviny · jednorázová pojistná částka 500 000 Kč',prio:'c',
      items:[{n:'Závažná onemocnění',a:pc_zo_net,t:'K',
-       d:'Protonová léčba rakoviny 500 000 Kč · pokrytí výpadku příjmu a mimořádných nákladů po dobu léčby'}]},
+       d:'Protonová léčba rakoviny — pevná pojistná částka 500 000 Kč'}]},
   ];
 
   if(!skipPN){
@@ -2479,7 +2627,10 @@ function buildStandard(R){
   }
 
   const skipped = ['Snížená soběstačnost'];
-  if(skipPN) skipped.push('Pracovní neschopnost');
+  if(skipPN){
+    const duvod = isMD ? ' (rodičovská — bez nároku)' : isNezam ? ' (nezaměstnaný — bez nároku)' : '';
+    skipped.push('Pracovní neschopnost' + duvod);
+  }
   if(skipHosp) skipped.push('Hospitalizace');
   if(uvStd <= 0) skipped.push('Úvěrový balíček (žádné úvěry)');
 
@@ -2488,40 +2639,59 @@ function buildStandard(R){
 
 
 function buildZakladni(R){
-  const {D,inv,isOSVC,
-    pc_smrt_s_net,pc_smrt_deti_z,
-    pnCek,davZ,pc_zo_net,
+  const {D,inv,isOSVC,isBezPracePomeru,isNezam,isMD,
+    pc_smrt_z_net,pc_smrt_deti_z,sirotciDuc,vdovDuc,vdovDucPoznamka1Rok,
+    pnCek,davZ,pc_zo_net,pocetD,
     isSingle,maPartnera,maManzel,maZavisleOsoby,skipPN,celkoveZavazky} = R;
 
-  // ── SMRT — základní: do SŠ ──
+  // ── SMRT — Základní (v21.1) ──
+  // Single bez dětí: 100k pohřeb (override v enginu)
+  // Single s dětmi: 5 000 × roky do 19 (klesající, jen do SŠ)
+  // Pár: pokrytí podílu × 75 % výdajů − vdovský − sirotčí
   const smrtItems = [];
-  if(!maPartnera){
-    // Svobodný (s dětmi i bez): pohřeb + zajištění dětí do SŠ
-    if(celkoveZavazky<=0 && pc_smrt_deti_z<=0) smrtItems.push({n:'Minimální PČ',a:100000,t:'K',d:'Pohřeb'});
+  const isSingleBezDeti = !maPartnera && pocetD === 0;
+  const sirotciCelk = pocetD * sirotciDuc;
+  if(isSingleBezDeti){
+    smrtItems.push({n:'Minimální PČ',a:100000,t:'K',d:'Pohřeb a administrativní náklady'});
+  } else if(!maPartnera){
     if(pc_smrt_deti_z>0) smrtItems.push({n:'Zajištění dítěte — dokončení SŠ',a:pc_smrt_deti_z,t:'L',
       d:'Dítě dostuduje střední školu, s vysokou školou se nepočítá. Zbyde částka na to, aby si zařídilo nájemní bydlení. · 5 000 Kč/měs × 12 × roky do 19 let · klesající PČ'});
   } else {
-    // Pár: 75 % standardního výpadku výdajů
-    if(pc_smrt_s_net>0) smrtItems.push({n:'Krytí podílu výdajů (75 %)',a:r50(pc_smrt_s_net*0.75),t:'K',
-      d:'75 % standardního doporučení — podíl výdajů klienta dle poměru příjmů'});
-    if(pc_smrt_s_net<=0) smrtItems.push({n:'Příjmy rodiny pokrývají výdaje',a:0,t:'K',
-      d:'Příjmy rodiny po úmrtí výdaje domácnosti pokrývají'});
+    // Pár: 75% snížení výdajů + vdovský + sirotčí
+    const vdovskyPart = vdovDuc>0 ? `vdovský důchod ${fKst(vdovDuc)}/měs + ` : '';
+    const sirotciPart = sirotciCelk>0 ? `sirotčí důchod ${fKst(sirotciCelk)}/měs` : '';
+    const podpora = vdovskyPart + sirotciPart;
+    const podporaText = podpora ? ` − ${podpora}` : '';
+    if(pc_smrt_z_net>0){
+      let desc = `Klient si sníží výdaje o 25 % → pokrytí 75 % podílu výdajů (výdaje bez hypo × 80 % × 75 % × podíl příjmů)${podporaText}.`;
+      if(vdovDucPoznamka1Rok){
+        desc += ` Poznámka: vdovský pro manžele bez dětí trvá jen 1 rok — NEzapočítáváme.`;
+      }
+      smrtItems.push({n:'Krytí podílu výdajů (sníženo o 25 %)',a:pc_smrt_z_net,t:'K',d:desc});
+    } else {
+      smrtItems.push({n:'Příjmy rodiny pokrývají výdaje',a:0,t:'K',
+        d:'Vdovský + sirotčí důchod plně pokryjí 75% podíl klientových výdajů'});
+    }
   }
 
-  // ── INVALIDITA — Základní: 75 % ze Standardní ──
+  // ── INVALIDITA — Základní (v21): klient sníží výdaje o 25 %, pak (5/10/25 %) ──
   const invItems = [
     {n:'I. stupeň', a:inv.Z.I.pc, t:'K',
-      d:`Dorovnání 75 % podílu výdajů (${fKst(Math.round(inv.Z.I.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.Z.I.zachPrijem))} · inv. důchod ${fKst(inv.Z.I.invDuc)}`},
+      d:`Cíl = podíl × (výdaje × 0,75) + 5 % (${fKst(Math.round(inv.Z.I.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.Z.I.zachPrijem))} · inv. důchod ${fKst(inv.Z.I.invDuc)} · mezera ${fKst(Math.round(inv.Z.I.mezera))}/měs`},
     {n:'II. stupeň (přírůstek)', a:inv.Z.II.pc, t:'K',
-      d:`75 % podílu výdajů bez hypo + 10 % · celkem při II. stupni: ${fKst(inv.Z.celkemII)}`},
+      d:`Cíl = podíl × (výdaje bez hypo × 0,75) + 10 % (${fKst(Math.round(inv.Z.II.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.Z.II.zachPrijem))} · inv. důchod ${fKst(inv.Z.II.invDuc)} · mezera ${fKst(Math.round(inv.Z.II.mezera))}/měs · celkem při II. stupni: ${fKst(inv.Z.celkemII)}`},
     {n:'Adaptace prostředí (II. st.)', a:inv.Z.adaptII, t:'K',
       d:'Úpravy prostředí při II. stupni invalidity (75 % standardní)'},
     {n:'III. stupeň (přírůstek)', a:inv.Z.III.pc, t:'K',
-      d:`75 % podílu výdajů bez hypo + 25 % · celkem při III. stupni: ${fKst(inv.Z.celkemIII)}`},
+      d:`Cíl = podíl × (výdaje bez hypo × 0,75) + 25 % (${fKst(Math.round(inv.Z.III.cil))}/měs) · zachovaný příjem ${fKst(Math.round(inv.Z.III.zachPrijem))} · inv. důchod ${fKst(inv.Z.III.invDuc)} · mezera ${fKst(Math.round(inv.Z.III.mezera))}/měs · celkem při III. stupni: ${fKst(inv.Z.celkemIII)}`},
     {n:'Adaptace bydlení (III. st.)', a:inv.Z.adaptIII, t:'K',
       d:'Bezbariérové úpravy při III. stupni (75 % standardní)'},
-  ].filter(it=>it.a>0);
-  if(invItems.filter(it=>it.a>0).length===0) invItems.push({n:'Výdaje pokryty zachovaným příjmem a důchody',a:0,t:'K',d:'Kapitalizace mezery není nutná'});
+  ];
+  // Filtr: hlavní stupně ponechat i s PČ=0 (pro zobrazení "Pokryto" + výpočet)
+  const invItemsZ = invItems.filter(it => {
+    if(it.a > 0) return true;
+    return it.n.startsWith('I. stupeň') || it.n.startsWith('II. stupeň') || it.n.startsWith('III. stupeň');
+  });
 
   const risks = [
     {ico:'🕊️',ibg:'ri-gray',name:'Pojištění pro případ smrti',
@@ -2529,10 +2699,8 @@ function buildZakladni(R){
      prio:'c', items:smrtItems},
     {ico:'🦽',ibg:'ri-red',name:'Pojištění invalidity',
      desc:'75 % standardní varianty · pouze kritická rizika',
-     prio:'c', items:invItems},
-    {ico:'🫀',ibg:'ri-red',name:'Závažná onemocnění',desc:'Jednorázová výplata · protonová léčba rakoviny a další závažné diagnózy',prio:'c',
-     items:[{n:'Závažná onemocnění',a:pc_zo_net,t:'K',
-       d:'Protonová léčba rakoviny 500 000 Kč · pokrytí výpadku příjmu a mimořádných nákladů po dobu léčby'}]},
+     prio:'c', items:invItemsZ},
+    // Závažná onemocnění (v21): v Základní variantě NEZAŘAZENO
   ];
 
   if(!skipPN && davZ > 0){
@@ -2557,8 +2725,11 @@ function buildZakladni(R){
      ]});
   }
 
-  const skipped = ['TN od 0,001 %','Hospitalizace','Poškození úrazem','Snížená soběstačnost','Zproštění'];
-  if(skipPN || davZ === 0) skipped.push('Pracovní neschopnost');
+  const skipped = ['Závažná onemocnění','TN od 0,001 %','Hospitalizace','Poškození úrazem','Snížená soběstačnost','Zproštění'];
+  if(skipPN || davZ === 0){
+    const duvod = isMD ? ' (rodičovská — bez nároku)' : isNezam ? ' (nezaměstnaný — bez nároku)' : '';
+    skipped.push('Pracovní neschopnost' + duvod);
+  }
   if(inv.uverBalicekZakl <= 0) skipped.push('Úvěrový balíček (žádné úvěry)');
 
   return {key:'z',name:'Nutné minimum',desc:'⚠️ Nedostatečná ochrana — nutno snížit výdaje o 25 %',badge:'⚠️ Minimum',bc:'vb-z',risks,skipped,isMinimum:true};
@@ -2579,10 +2750,10 @@ function renderVariant(v, key, R, pfx){
     if(fixedPrio.some(n=>r.name.includes(n.split(' ')[0]))) return r.prio;
     // Úvěrový balíček — vždy kritické
     if(r.name==='Úvěrový balíček') return 'c';
-    // PČ = 0 a dávka = 0 nebo symbolická (≤200 Kč/den) → Pokryto
+    // PČ = 0 a dávka = 0 → Pokryto (skutečně nemá co krýt)
+    // (Dříve se "malá dávka ≤200" považovala za Pokryto — odstraněno, protože i 100 Kč/den je reálná dávka)
     const vsePokryto = tot===0 && dav===0;
-    const malaDavka = dav>0 && dav<=200 && tot===0;
-    if(vsePokryto || malaDavka) return 'x';
+    if(vsePokryto) return 'x';
     // PN dle výše dávky
     if(tot===0 && dav>0) return dav>500?'c':'m';
     // Smrt, invalidita, ZO — dle výše PČ
@@ -2721,16 +2892,20 @@ function swVBoth(k){
     const k2Key = (k==='k' && !vc2?.innerHTML?.trim()) ? 's' : k;
     document.getElementById(`vc2-${k2Key}`)?.classList.add('active');
   }
-  // Konfrontace dostupná pro K i S (ne pro Z)
+  // Konfrontace dostupná pro K i S (ne pro Z) — A jen pokud má klient/partner stávající pojistku
   const cs = document.getElementById('confrontSection');
-  if(cs) cs.style.display = (k==='s'||k==='k') ? 'block' : 'none';
+  const hasZP0 = !!(lastRecommendations[0] && lastRecommendations[0].R && lastRecommendations[0].R.D && lastRecommendations[0].R.D.maZP);
+  const hasZP1 = !!(hasPartner && lastRecommendations[1] && lastRecommendations[1].R && lastRecommendations[1].R.D && lastRecommendations[1].R.D.maZP);
+  const hasAnyZP = hasZP0 || hasZP1;
+  const showCs = (k==='s'||k==='k') && hasAnyZP;
+  if(cs) cs.style.display = showCs ? 'block' : 'none';
   // Překreslit konfrontaci dle nové aktivní varianty
-  if(k==='s'||k==='k'){
+  if(showCs){
     // Přestavět doporučení z nové varianty
     if(lastRecommendations[0]) storeRecommendation(lastRecommendations[0].R, '');
     if(hasPartner && lastRecommendations[1]) storeRecommendation(lastRecommendations[1].R, 'p2');
-    buildConfrontGrid(0);
-    if(hasPartner && lastRecommendations[1]) buildConfrontGrid(1);
+    // Použít stejnou helper funkci jako showConfrontation pro konzistenci
+    updateConfrontationLayout(hasZP0, hasZP1);
   }
   // Zarovnat výšky karet po přepnutí
   setTimeout(equalizeRiskCards, 50);
@@ -2772,7 +2947,8 @@ function storeRecommendation(R, pfx){
   // Konfrontace vychází z aktivní varianty (K nebo S)
   const activeTab = document.querySelector('#sharedVariantNav .vnav-tab.active');
   const activeKey = activeTab ? (activeTab.classList.contains('tn-k') ? 'k' : 's') : 's';
-  const skipKomplex = R.D.prijem < R.D.vydaje;
+  const podilKomplex = R.D.vydajePodil !== undefined ? R.D.vydajePodil : 1.0;
+  const skipKomplex = R.D.prijem < R.D.vydaje * podilKomplex;
   const VK = (!skipKomplex) ? buildKomplex(R) : null;
   const VS = buildStandard(R);
   const Vactive = (activeKey === 'k' && VK) ? VK : VS;
@@ -2785,7 +2961,7 @@ function storeRecommendation(R, pfx){
     if(fixed.some(n=>risk.name.startsWith(n))) return risk.prio;
     if(risk.name==='Úvěrový balíček') return 'c';
     if(tot===0&&dav===0) return 'x';
-    if(dav>0&&dav<=200&&tot===0) return 'x';
+    // POZN: dříve "malaDavka ≤ 200 = Pokryto" — odstraněno, i 100 Kč/den je reálná dávka
     if(tot===0&&dav>0) return dav>500?'c':'m';
     if(tot>=1000000) return 'c';
     if(tot>0) return 'h';
@@ -2817,81 +2993,650 @@ function storeRecommendation(R, pfx){
 
 function showConfrontation(){
   // Konfrontace dostupná pro K i S variantu (ne pro Z)
+  // A jen pokud má KLIENT (nebo partner) zadané stávající pojištění
   const activeTab = document.querySelector('.vnav-tab.active');
   const activeKey = activeTab
     ? (activeTab.classList.contains('tn-s') ? 's' : activeTab.classList.contains('tn-k') ? 'k' : 'z')
     : 's';
-  document.getElementById('confrontSection').style.display = (activeKey==='s'||activeKey==='k') ? 'block' : 'none';
-  
-  // Build confrontation grid for client 0
-  buildConfrontGrid(0);
-  
-  // Client 1 if exists
-  if(hasPartner && lastRecommendations[1]){
-    buildConfrontGrid(1);
-    document.getElementById('confrontClientTabs').style.display = 'flex';
-    document.getElementById('confrontClient1').style.display = 'none';
-  } else {
-    document.getElementById('confrontClientTabs').style.display = 'none';
+
+  // Detekce: má klient (nebo partner) stávající pojistku?
+  const hasZP0 = !!(lastRecommendations[0] && lastRecommendations[0].R && lastRecommendations[0].R.D && lastRecommendations[0].R.D.maZP);
+  const hasZP1 = !!(hasPartner && lastRecommendations[1] && lastRecommendations[1].R && lastRecommendations[1].R.D && lastRecommendations[1].R.D.maZP);
+  const hasAnyZP = hasZP0 || hasZP1;
+
+  // Konfrontace se nezobrazuje pro Základní variantu ani když nikdo nemá stávající pojistku
+  const showSection = (activeKey==='s'||activeKey==='k') && hasAnyZP;
+  document.getElementById('confrontSection').style.display = showSection ? 'block' : 'none';
+  if(!showSection) return;
+
+  // Přerendrovat gridy a aktualizovat viditelnost záložek/klientů
+  updateConfrontationLayout(hasZP0, hasZP1);
+}
+
+// Helper: rebuild grids + nastav viditelnost záložek a klientů 0/1 dle hasZP0/hasZP1
+function updateConfrontationLayout(hasZP0, hasZP1){
+  // Build grids — JEN pro klienty kteří mají ZP
+  if(hasZP0) buildConfrontGrid(0);
+  if(hasZP1) buildConfrontGrid(1);
+  if(hasZP0) evaluateConfront(0);
+  if(hasZP1) evaluateConfront(1);
+
+  // Záložky a viditelnost
+  const tabs = document.getElementById('confrontClientTabs');
+  const c0 = document.getElementById('confrontClient0');
+  const c1 = document.getElementById('confrontClient1');
+  const tabBtns = tabs ? tabs.querySelectorAll('.client-tab') : [];
+
+  if(hasZP0 && hasZP1){
+    // Oba mají pojistku → záložky viditelné, default Klient
+    if(tabs) tabs.style.display = 'flex';
+    c0.style.display = 'block';
+    c1.style.display = 'none';
+    if(tabBtns[0]) tabBtns[0].classList.add('active');
+    if(tabBtns[1]) tabBtns[1].classList.remove('active');
+  } else if(hasZP0 && !hasZP1){
+    // Jen klient → schovat záložky, ukázat klienta
+    if(tabs) tabs.style.display = 'none';
+    c0.style.display = 'block';
+    c1.style.display = 'none';
+  } else if(!hasZP0 && hasZP1){
+    // Jen partner → schovat záložky, ukázat partnera
+    if(tabs) tabs.style.display = 'none';
+    c0.style.display = 'none';
+    c1.style.display = 'block';
   }
 }
 
 function switchConfrontClient(idx){
+  // Pouze pokud má daný klient ZP — jinak se klik ignoruje
+  const hasZP = idx === 0
+    ? !!(lastRecommendations[0] && lastRecommendations[0].R && lastRecommendations[0].R.D && lastRecommendations[0].R.D.maZP)
+    : !!(hasPartner && lastRecommendations[1] && lastRecommendations[1].R && lastRecommendations[1].R.D && lastRecommendations[1].R.D.maZP);
+  if(!hasZP) return;
   document.getElementById('confrontClient0').style.display = idx===0 ? 'block' : 'none';
   document.getElementById('confrontClient1').style.display = idx===1 ? 'block' : 'none';
   document.querySelectorAll('#confrontClientTabs .client-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
 }
 
+// ── Konfrontace v21.2 — vizuální revize ────────────────────────────────────
+// Helper: mapuje stávající PČ klienta (z formuláře R.D.zpXxx) na položky doporučení (rec.items)
+// Klient v UI vyplnil 6 polí: zpSmrt, zpInv1, zpInv2, zpInv3, zpZO, zpPN
+// V rec.items máme řadu položek (i víc na jedno riziko — adaptace, přírůstky)
+// Strategie: vrátit MAPOVÁNÍ jméno→stávající PČ
+//
+// POZN k invaliditě: doporučení v rec.items jsou PŘÍRŮSTKY (II přírůstek = nad I).
+// Ale klient v reálu obdrží KUMULATIVNĚ (II. stupeň = vyplata I + II).
+// Klasifikace proto musí být KUMULATIVNÍ. Funkce vrací {ownVal, isInvIncrement, stupen}
+// kde isInvIncrement=true znamená, že buildConfrontGrid musí použít kumulativní cíl/stávající.
+function getOwnPC(it, D){
+  if(!D) return {ownVal:0};
+  const n = it.name || '';
+  const rn = it.riskName || '';
+  // Smrt — všechny položky pod "Pojištění pro případ smrti"
+  if(rn.indexOf('smrti') >= 0){
+    if(n.indexOf('výpadku') >= 0 || n.indexOf('Pokrytí výdajů') >= 0
+       || n.indexOf('Minimální PČ') >= 0 || n.indexOf('Krytí podílu') >= 0){
+      return {ownVal: D.zpSmrt || 0};
+    }
+    return {ownVal: 0}; // Zajištění dětí — neaplikujeme stávající ZP
+  }
+  // Invalidita — KUMULATIVNĚ (klient v reálu obdrží součet zpInv1+...+zpInvN)
+  if(rn.indexOf('invalidity') >= 0){
+    if(n.indexOf('I. stupeň') === 0 || n === 'I. stupeň'){
+      return {ownVal: D.zpInv1 || 0, isInvIncrement: true, stupen: 'I'};
+    }
+    if(n.indexOf('II. stupeň') === 0){
+      // Vrátíme stávající KUMULATIVNĚ pro II. stupeň
+      return {ownVal: D.zpInv2 || 0, isInvIncrement: true, stupen: 'II'};
+    }
+    if(n.indexOf('III. stupeň') === 0){
+      return {ownVal: D.zpInv3 || 0, isInvIncrement: true, stupen: 'III'};
+    }
+    return {ownVal: 0}; // adaptace, zajištění dětí — neřešíme
+  }
+  // ZO
+  if(rn.indexOf('Závažná onemocnění') >= 0) return {ownVal: D.zpZO || 0};
+  // PN
+  if(rn.indexOf('neschopnost') >= 0) return {ownVal: D.zpPN || 0};
+  // Úvěrový balíček, TN, hosp., poškození úrazem, soběstačnost — klient nezadává zvlášť
+  return {ownVal: 0};
+}
+
+// Helper: klasifikace stavu položky vzhledem ke stávající PČ
+function classifyConfront(ownVal, recVal, isOptional){
+  if(recVal === 0) return {key:'na', label:'—', color:'#9E9E9E', bg:'#F5F5F5'};
+  const pct = ownVal / recVal;
+  if(pct >= 1.20) return {key:'over', label:'Přepojištěn', color:'#0C447C', bg:'#E6F1FB'};
+  if(pct >= 0.85) return {key:'ok',   label:'Pokryto',    color:'#166534', bg:'#DCFCE7'};
+  if(pct >= 0.50) return {key:'warn', label:'Podpojištěn', color:'#854F0B', bg:'#FEF3C7'};
+  if(isOptional)  return {key:'warn', label:'Podpojištěn', color:'#854F0B', bg:'#FEF3C7'};
+  return {key:'crit', label:'Kriticky chybí', color:'#A32D2D', bg:'#FDEAEA'};
+}
+
+// Helper: scénářový text pro hlavní rizika
+// Vrátí {title, body} nebo null pokud scénář není
+function getConfrontScenario(it, ownVal, recVal, R, status){
+  const rn = it.riskName || '';
+  const n = it.name || '';
+  if(status.key === 'ok' || status.key === 'na') return null;
+
+  const fK = v => v.toLocaleString('cs-CZ');
+  const fKpV = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
+  const D = R && R.D ? R.D : {};
+  const af = (R && R.afSmrt) || 14;
+  const afInv = (R && R.afInv) || af;
+  const horiz = Math.min(R && R.rokiDD || 30, 20);
+
+  // Smrt — jen u hlavního řádku
+  if(rn.indexOf('smrti') >= 0 && (n.indexOf('výpadku') >= 0 || n.indexOf('Pokrytí výdajů') >= 0 || n.indexOf('Krytí podílu') >= 0)){
+    if(status.key === 'over'){
+      const navic = ownVal - recVal;
+      return {
+        title: 'Možná platíte za zbytečně vysokou pojistku',
+        body: `Vaše stávající krytí je o <strong>${fKpV(navic)} vyšší</strong>, než potřebujete. Zvažte revizi smlouvy — pravděpodobně platíte víc, než by stačilo.`,
+        color:'#0C447C', bg:'#E6F1FB', accent:'#85B7EB'
+      };
+    }
+    const mezeraKap = recVal - ownVal;
+    const mezeraMes = Math.round(mezeraKap / (12 * af));
+    return {
+      title: 'Co Vám hrozí, pokud to necháte tak',
+      body: `Po Vašem úmrtí by rodině chybělo <strong>${fK(mezeraMes)} Kč/měs po dobu ${horiz} let</strong>. Partner by musel z vlastního příjmu doplácet — celkem <strong>${fKpV(mezeraKap)} navíc</strong>. Bez nové pojistky se rodina pravděpodobně zadluží nebo prodá byt.`,
+      color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+    };
+  }
+
+  // Invalidita — jen u hlavních stupňů (ne adaptace, ne zajištění dětí)
+  if(rn.indexOf('invalidity') >= 0 && (n.indexOf('III. stupeň') === 0 || n.indexOf('II. stupeň') === 0 || n.indexOf('I. stupeň') === 0)){
+    if(status.key === 'over'){
+      const navic = ownVal - recVal;
+      const stLabel = n.indexOf('III')===0?'III. stupně':n.indexOf('II')===0?'II. stupně':'I. stupně';
+      return {
+        title: 'Možná platíte za zbytečně vysokou pojistku',
+        body: `Vaše stávající krytí ${stLabel} je o <strong>${fKpV(navic)} vyšší</strong>, než potřebujete. Zvažte revizi smlouvy.`,
+        color:'#0C447C', bg:'#E6F1FB', accent:'#85B7EB'
+      };
+    }
+    const mezeraKap = recVal - ownVal;
+    const mezeraMes = Math.round(mezeraKap / (12 * afInv));
+    if(n.indexOf('III. stupeň') === 0){
+      return {
+        title: 'Scénář: cévní příhoda nebo vážná nemoc s trvalými následky',
+        body: `Invalidní důchod + Vaše stávající pojistka rozprostřená do důchodu by Vám nestačily na výdaje. <strong>Chybí Vám ${fK(mezeraMes)} Kč měsíčně až do důchodu</strong> = riskujete prodej majetku nebo dlouhodobé zadlužení.`,
+        color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+      };
+    }
+    if(n.indexOf('II. stupeň') === 0){
+      return {
+        title: 'Scénář: vážnější zdravotní problém v produktivním věku',
+        body: `Při středně těžké invaliditě byste sice ještě mohl částečně pracovat, ale s nižším výdělkem. <strong>Chybí Vám ${fK(mezeraMes)} Kč měsíčně</strong> — typicky desetiletí, kdy splácíte hypotéku a zajišťujete děti.`,
+        color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+      };
+    }
+    return {
+      title: 'Scénář: dlouhodobé zdravotní omezení',
+      body: `Při lehké invaliditě byste přišel o část pracovního výkonu. <strong>Chybí Vám ${fK(mezeraMes)} Kč měsíčně</strong> až do důchodu.`,
+      color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+    };
+  }
+
+  // PN
+  if(rn.indexOf('neschopnost') >= 0){
+    if(status.key === 'over'){
+      return {
+        title: 'Vyšší dávka, než potřebujete',
+        body: `Vaše stávající denní dávka je vyšší než doporučení (${ownVal} vs. ${recVal} Kč/den). Pokud platíte za nadbytečnou částku, zvažte revizi.`,
+        color:'#0C447C', bg:'#E6F1FB', accent:'#85B7EB'
+      };
+    }
+    const denMezera = recVal - ownVal;
+    const mesicMezera = denMezera * 30;
+    const sestMesMezera = mesicMezera * 6;
+    return {
+      title: 'Scénář: 6 měsíců nemoci',
+      body: `Při dlouhodobé nemoci by Vám chybělo <strong>${fK(denMezera)} Kč/den = ${fK(mesicMezera)} Kč/měs</strong>. Za 6 měsíců nemoci to dělá <strong>${fK(sestMesMezera)} Kč nedostatku</strong> — museli byste sahat do rezerv nebo úvěrů.`,
+      color:'#854F0B', bg:'#FEF3C7', accent:'#FCD34D'
+    };
+  }
+
+  // Úvěrový balíček
+  if(rn.indexOf('Úvěrový') >= 0){
+    if(status.key === 'over'){
+      const navic = ownVal - recVal;
+      return {
+        title: 'Krytí úvěrů je vyšší, než potřebujete',
+        body: `Vaše stávající krytí je o <strong>${fKpV(navic)} vyšší</strong>, než zůstatek hypotéky a úvěrů. Zvažte revizi.`,
+        color:'#0C447C', bg:'#E6F1FB', accent:'#85B7EB'
+      };
+    }
+    const zbyva = recVal - ownVal;
+    return {
+      title: 'Co Vám hrozí, pokud to necháte tak',
+      body: `Po Vašem úmrtí (nebo invaliditě II./III. st.) zbývá <strong>${fKpV(zbyva)} nesplacené hypotéky a úvěrů</strong>. Banka si splátku vymáhá dál — rodina by musela buď prodat nemovitost, nebo doplácet měsíčně. Pojistka úvěru je při hypotéce <strong>kritická</strong>.`,
+      color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+    };
+  }
+
+  return null;
+}
+
+// Nová verze pro konfrontaci v21.3 — bere přímo scenarioKey
+function buildConfScenario(key, ownVal, recVal, R, status){
+  if(!status || status.key === 'ok' || status.key === 'na') return null;
+
+  const fK = v => Math.round(v).toLocaleString('cs-CZ');
+  const fKpV = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
+  const D = R && R.D ? R.D : {};
+  const af = (R && R.afSmrt) || 14;
+  const afInv = (R && R.afInv) || af;
+  const horiz = Math.min(R && R.rokiDD || 30, 20);
+
+  // SMRT
+  if(key === 'smrt'){
+    if(status.key === 'over'){
+      const navic = ownVal - recVal;
+      return {
+        title: 'Možná platíte za zbytečně vysokou pojistku',
+        body: `Vaše stávající krytí je o <strong>${fKpV(navic)} vyšší</strong>, než potřebujete. Zvažte revizi smlouvy — pravděpodobně platíte víc, než by stačilo.`,
+        color:'#0C447C', bg:'#E6F1FB', accent:'#85B7EB'
+      };
+    }
+    const mezeraKap = recVal - ownVal;
+    const mezeraMes = Math.round(mezeraKap / (12 * af));
+    return {
+      title: 'Co Vám hrozí, pokud to necháte tak',
+      body: `Po Vašem úmrtí by rodině chybělo <strong>${fK(mezeraMes)} Kč/měs po dobu ${horiz} let</strong>. Bez nové pojistky se rodina pravděpodobně zadluží nebo prodá byt.`,
+      color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+    };
+  }
+
+  // INV I/II/III
+  if(key === 'invI' || key === 'invII' || key === 'invIII'){
+    if(status.key === 'over'){
+      const navic = ownVal - recVal;
+      const stLabel = key==='invIII'?'III. stupně':key==='invII'?'II. stupně':'I. stupně';
+      return {
+        title: 'Možná platíte za zbytečně vysokou pojistku',
+        body: `Vaše stávající krytí ${stLabel} je o <strong>${fKpV(navic)} vyšší</strong>, než potřebujete. Zvažte revizi smlouvy.`,
+        color:'#0C447C', bg:'#E6F1FB', accent:'#85B7EB'
+      };
+    }
+    const mezeraKap = recVal - ownVal;
+    const mezeraMes = Math.round(mezeraKap / (12 * afInv));
+    if(key === 'invIII'){
+      return {
+        title: 'Scénář: cévní příhoda nebo vážná nemoc s trvalými následky',
+        body: `Invalidní důchod + Vaše stávající pojistka rozprostřená do důchodu by Vám nestačily na výdaje. <strong>Chybí Vám ${fK(mezeraMes)} Kč měsíčně až do důchodu</strong> = riskujete prodej majetku nebo dlouhodobé zadlužení.`,
+        color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+      };
+    }
+    if(key === 'invII'){
+      return {
+        title: 'Scénář: vážnější zdravotní problém v produktivním věku',
+        body: `Při středně těžké invaliditě byste sice ještě mohl částečně pracovat, ale s nižším výdělkem. <strong>Chybí Vám ${fK(mezeraMes)} Kč měsíčně</strong> — typicky desetiletí, kdy splácíte hypotéku a zajišťujete děti.`,
+        color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+      };
+    }
+    return {
+      title: 'Scénář: dlouhodobé zdravotní omezení',
+      body: `Při lehké invaliditě byste přišel o část pracovního výkonu. <strong>Chybí Vám ${fK(mezeraMes)} Kč měsíčně</strong> až do důchodu.`,
+      color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+    };
+  }
+
+  // PN
+  if(key === 'pn'){
+    if(status.key === 'over'){
+      return {
+        title: 'Vyšší dávka, než potřebujete',
+        body: `Vaše stávající denní dávka je vyšší než doporučení (${ownVal} vs. ${recVal} Kč/den). Pokud platíte za nadbytečnou částku, zvažte revizi.`,
+        color:'#0C447C', bg:'#E6F1FB', accent:'#85B7EB'
+      };
+    }
+    const denMezera = recVal - ownVal;
+    const mesicMezera = denMezera * 30;
+    const sestMesMezera = mesicMezera * 6;
+    return {
+      title: 'Scénář: 6 měsíců nemoci',
+      body: `Při dlouhodobé nemoci by Vám chybělo <strong>${fK(denMezera)} Kč/den = ${fK(mesicMezera)} Kč/měs</strong>. Za 6 měsíců nemoci to dělá <strong>${fK(sestMesMezera)} Kč nedostatku</strong> — museli byste sahat do rezerv nebo úvěrů.`,
+      color:'#854F0B', bg:'#FEF3C7', accent:'#FCD34D'
+    };
+  }
+
+  // ÚVĚROVÝ BALÍČEK
+  if(key === 'uver'){
+    if(status.key === 'over'){
+      const navic = ownVal - recVal;
+      return {
+        title: 'Krytí úvěrů je vyšší, než potřebujete',
+        body: `Vaše stávající krytí je o <strong>${fKpV(navic)} vyšší</strong>, než zůstatek hypotéky a úvěrů. Zvažte revizi.`,
+        color:'#0C447C', bg:'#E6F1FB', accent:'#85B7EB'
+      };
+    }
+    const zbyva = recVal - ownVal;
+    return {
+      title: 'Co Vám hrozí, pokud to necháte tak',
+      body: `Po Vašem úmrtí (nebo invaliditě II./III. st.) zbývá <strong>${fKpV(zbyva)} nesplacené hypotéky a úvěrů</strong>. Banka splátku vymáhá dál — rodina by musela buď prodat nemovitost, nebo doplácet měsíčně. Pojistka úvěru je při hypotéce <strong>kritická</strong>.`,
+      color:'#A32D2D', bg:'#FFF1F1', accent:'#E3000F'
+    };
+  }
+
+  return null;
+}
+
 function buildConfrontGrid(clientIdx){
   const rec = lastRecommendations[clientIdx];
   if(!rec) return;
-  
+
   const gridEl = document.getElementById('confrontGrid'+clientIdx);
-  const prioLabel = {c:'🔴 Kritická rizika',h:'🟡 Důležitá rizika',m:'🔵 Doporučená rizika',o:'⚪ Volitelná rizika'};
-  const prioOrder = ['c','h','m','o'];
-  
-  // Seskupit položky dle priority
-  const byPrio = {c:[],h:[],m:[],o:[]};
-  rec.items.forEach((it,i) => {
-    const p = ['c','h','m','o'].includes(it.prio) ? it.prio : 'o';
-    byPrio[p].push({...it, idx:i});
-  });
+  const sumEl  = document.getElementById('confrontSummary'+clientIdx);
+  const D = rec.R && rec.R.D;
+  if(!D) return;
 
-  let html = `<div class="confront-row cr-head">
-    <div>Riziko</div>
-    <div style="text-align:right">Doporučeno</div>
-    <div>Vaše PČ</div>
-    <div>Hodnocení</div>
-  </div>`;
+  // ════════════════════════════════════════════════════════════════
+  // KONFRONTACE — vlastní seznam přesně rizik, které klient zadává
+  // v sekci "Stávající pojistná ochrana"
+  //
+  // 1. Smrt
+  // 2. Invalidita I (kumul.)
+  // 3. Invalidita II (kumul. + adaptace prostředí)
+  // 4. Invalidita III (kumul. + adaptace bydlení)
+  // 5. PN denní dávka
+  // 6. Závažná onemocnění
+  // 7. Trvalé následky úrazu
+  // 8. Úvěrový balíček (jen pokud má klient úvěr)
+  // ════════════════════════════════════════════════════════════════
 
-  prioOrder.forEach(prio => {
-    const group = byPrio[prio];
-    if(!group.length) return;
-    const isOptional = prio === 'm' || prio === 'o'; // tyto nevstupují do %
-    html += `<div style="background:${prio==='c'?'#FFF1F1':prio==='h'?'#FFFDF0':prio==='m'?'#F0F4FF':'#FAFAFA'};padding:4px 14px;border-radius:var(--rx);margin:8px 0 4px;font-size:10px;font-weight:700;color:${prio==='c'?'#c0392b':prio==='h'?'#b8922a':prio==='m'?'#1e4a8a':'#6b6560'};display:flex;align-items:center;gap:8px">
-      ${prioLabel[prio]}${isOptional ? '<span style="font-size:9px;font-weight:400;margin-left:4px">— vstupuje do PDF, ale nevpočítává se do % celkového krytí</span>' : ''}
-    </div>`;
-    group.forEach(it => {
-      const i = it.idx;
-      const recStr = it.type === 'D' ? it.recommended + ' Kč/den' : fK(it.recommended);
-      const defVal = it.recommended > 0 ? it.recommended : '';
-      // Checkboxy jen pro m a o (doporučená a volitelná)
-      const checkHtml = isOptional
-        ? `<input type="checkbox" id="crchk${clientIdx}-${i}" checked
-             onchange="confrontCheckChange(${clientIdx},${i})"
-             style="width:15px;height:15px;cursor:pointer;accent-color:var(--gold);flex-shrink:0"
-             title="Odškrtnutím vyloučíte toto riziko z PDF i z doporučení">`
-        : `<span style="width:15px;flex-shrink:0"></span>`;
-      html += `<div class="confront-row" id="cr${clientIdx}-${i}" style="${isOptional?'opacity:1;transition:opacity .2s':''}">
-        <div class="cr-name" style="display:flex;align-items:flex-start;gap:6px">${checkHtml}<div>${it.name}<small>${it.riskName}</small></div></div>
-        <div class="cr-rec">${recStr}</div>
-        <div class="cr-input"><input type="text" id="cri${clientIdx}-${i}" value="${defVal}" placeholder="0" data-type="${it.type}" style="color:var(--ink3);" oninput="this.style.color='var(--ink)'"></div>
-        <div class="cr-status" id="crs${clientIdx}-${i}">—</div>
-      </div>`;
+  function findRiskTotal(riskNamePart, includeAll){
+    let total = 0;
+    rec.items.forEach(it => {
+      if((it.riskName || '').indexOf(riskNamePart) < 0) return;
+      if(it.type === 'D') return;
+      if(!includeAll && (it.prio === 'm' || it.prio === 'o')) return;
+      total += it.recommended || 0;
     });
+    return total;
+  }
+  function findRiskDen(riskNamePart){
+    const it = rec.items.find(x => (x.riskName||'').indexOf(riskNamePart) >= 0 && x.type === 'D');
+    return it ? it.recommended : 0;
+  }
+
+  // Pre-pass: kumulativní cíle invalidity + adaptace
+  let invKumulRec = {I:0, II:0, III:0};
+  let adaptII = 0, adaptIII = 0;
+  rec.items.forEach(it => {
+    const rn = it.riskName || '';
+    const n = it.name || '';
+    if(rn.indexOf('invalidity') < 0) return;
+    if(n.indexOf('I. stupeň') === 0 || n === 'I. stupeň'){
+      invKumulRec.I += it.recommended || 0;
+    } else if(n.indexOf('II. stupeň') === 0){
+      invKumulRec.II += it.recommended || 0;
+    } else if(n.indexOf('III. stupeň') === 0){
+      invKumulRec.III += it.recommended || 0;
+    } else if(n.indexOf('Adaptace prostředí') >= 0){
+      adaptII += it.recommended || 0;
+    } else if(n.indexOf('Adaptace bydlení') >= 0){
+      adaptIII += it.recommended || 0;
+    }
   });
-  
-  gridEl.innerHTML = html;
+  // Kumulativní cíle (s adaptacemi přičteými do II/III)
+  const invI_cil   = invKumulRec.I;
+  const invII_cil  = invKumulRec.I + invKumulRec.II + adaptII;
+  const invIII_cil = invKumulRec.I + invKumulRec.II + invKumulRec.III + adaptII + adaptIII;
+
+  // Cíle pro ostatní rizika
+  const smrtCil = findRiskTotal('smrti', false);
+  const zoCil   = findRiskTotal('Závažná', true);
+  const pnCil   = findRiskDen('neschopnost');
+  const tnCil   = findRiskTotal('Trvalé', true);
+  const uverCil = findRiskTotal('Úvěrový', true);
+
+  // Má klient nějaký úvěr? (splátka, hypotéka, nebo úvěr)
+  const maUver = ((D.splatky||0) > 0) || ((D.hyp||0) > 0) || ((D.uvery||0) > 0);
+
+  // Postavit položky — pevný seznam pro konfrontaci
+  const confItems = [
+    { name:'Pojištění pro případ smrti', riskName:'Vyrovnání výpadku příjmu',
+      recommended: smrtCil, ownVal: D.zpSmrt || 0, type:'K', prio:'c',
+      kategorie:'klicova', _scenarioKey:'smrt' },
+    { name:'Invalidita I. stupeň (kumul.)', riskName:'Lehká invalidita',
+      recommended: invI_cil, ownVal: D.zpInv1 || 0, type:'K', prio:'c',
+      kategorie:'klicova', _scenarioKey:'invI' },
+    { name:'Invalidita II. stupeň (kumul.)', riskName:'Středně těžká + adaptace prostředí',
+      recommended: invII_cil, ownVal: D.zpInv2 || 0, type:'K', prio:'c',
+      kategorie:'klicova', _scenarioKey:'invII' },
+    { name:'Invalidita III. stupeň (kumul.)', riskName:'Těžká + adaptace bydlení',
+      recommended: invIII_cil, ownVal: D.zpInv3 || 0, type:'K', prio:'c',
+      kategorie:'klicova', _scenarioKey:'invIII' },
+    { name:'Pracovní neschopnost', riskName:'Denní dávka při dlouhodobé nemoci',
+      recommended: pnCil, ownVal: D.zpPN || 0, type:'D', prio:'h',
+      kategorie:'klicova', _scenarioKey:'pn' },
+    { name:'Závažná onemocnění', riskName:'Protonová léčba, kritické nemoci',
+      recommended: zoCil, ownVal: D.zpZO || 0, type:'K', prio:'h',
+      kategorie:'doplnkova' },
+    { name:'Trvalé následky úrazu', riskName:'Úraz s trvalými následky',
+      recommended: tnCil, ownVal: D.zpTN || 0, type:'K', prio:'h',
+      kategorie:'doplnkova' },
+  ];
+  if(maUver){
+    confItems.push({
+      name:'Úvěrový balíček', riskName:'Splacení hypotéky a úvěrů',
+      recommended: uverCil, ownVal: D.zpUver || 0, type:'K', prio:'c',
+      kategorie:'klicova', _scenarioKey:'uver'
+    });
+  }
+
+  // Klasifikace + scénář pro každou položku
+  const items = confItems.map(it => {
+    const status = classifyConfront(it.ownVal, it.recommended, false);
+    let scenario = null;
+    if(it.kategorie === 'klicova' && it._scenarioKey){
+      scenario = buildConfScenario(it._scenarioKey, it.ownVal, it.recommended, rec.R, status);
+    }
+    return {...it, status, scenario, isOptional: false};
+  });
+
+  // Spočítat počty stavů (jen kritická + důležitá rizika; doporučené/volitelné ignorujeme)
+  const counts = {crit:0, warn:0, ok:0, over:0};
+  let critRisks = []; // pro souhrnný banner
+
+  items.forEach(it => {
+    if(it.isOptional) return;
+    if(it.recommended === 0) return;
+    if(it.status.key === 'crit'){ counts.crit++; critRisks.push(it.name); }
+    else if(it.status.key === 'warn') counts.warn++;
+    else if(it.status.key === 'ok') counts.ok++;
+    else if(it.status.key === 'over') counts.over++;
+  });
+
+  // ── Celkový finanční dopad — MAXIMUM jednotlivé mezery ──
+  // Nejhorší riziko = nejvyšší jednotlivá mezera v celé kalkulaci
+  // Důvod: v jednom okamžiku nastane jeden scénář (smrt NEBO invalidita NEBO ZO)
+  // Sčítat by bylo dvojitě (např. invalidita I+II+III), proto bereme jen maximum
+  let totalGap = 0;
+  let dominantRiziko = '';
+  items.forEach(it => {
+    if(it.isOptional) return;
+    if(it.recommended === 0) return;
+    if(it.type === 'D') return; // PN má vlastní logiku (denní dávka)
+    const mez = Math.max(it.recommended - it.ownVal, 0);
+    if(mez > totalGap){
+      totalGap = mez;
+      dominantRiziko = it.name + ' · ' + (it.riskName || '');
+    }
+  });
+
+  // Měsíční dopad — z dominantního rizika
+  const af = (rec.R && rec.R.afSmrt) || 14;
+  let totalGapMes = totalGap > 0 ? Math.round(totalGap / (12 * af)) : 0;
+
+  // Render — TOP STATS karty
+  const fK = v => v.toLocaleString('cs-CZ');
+  const fKp = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
+
+  // Aktivní varianta — pro popisek
+  const variantName = rec.activeKey === 'k' ? 'Komplexní' : rec.activeKey === 'z' ? 'Nutné minimum' : 'Standardní';
+
+  const topStats = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+      <div style="background:#FDEAEA;border:1px solid #F5ACAF;border-radius:6px;padding:10px;text-align:center">
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:#A32D2D;line-height:1">${counts.crit}</div>
+        <div style="font-size:10px;color:#A32D2D;text-transform:uppercase;font-weight:700;margin-top:2px">Kriticky chybí</div>
+      </div>
+      <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:6px;padding:10px;text-align:center">
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:#854F0B;line-height:1">${counts.warn}</div>
+        <div style="font-size:10px;color:#854F0B;text-transform:uppercase;font-weight:700;margin-top:2px">Podpojištěn</div>
+      </div>
+      <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:6px;padding:10px;text-align:center">
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:#166534;line-height:1">${counts.ok}</div>
+        <div style="font-size:10px;color:#166534;text-transform:uppercase;font-weight:700;margin-top:2px">Pokryto</div>
+      </div>
+      <div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:6px;padding:10px;text-align:center">
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:#0C447C;line-height:1">${counts.over}</div>
+        <div style="font-size:10px;color:#0C447C;text-transform:uppercase;font-weight:700;margin-top:2px">Přepojištěn</div>
+      </div>
+    </div>`;
+
+  // Banner — souhrn dopadu
+  // Dominantní riziko (= s nejvyšší mezerou) jako popisek scénáře
+  let scenarioLabel = '';
+  if(totalGap > 0 && dominantRiziko){
+    // Zkrátit text — vezmeme jen riskName (bez "I. stupeň" prefixu)
+    const parts = dominantRiziko.split(' · ');
+    const rn = parts[parts.length - 1] || '';
+    if(rn.indexOf('smrti') >= 0) scenarioLabel = 'při Vašem úmrtí';
+    else if(rn.indexOf('invalidity') >= 0){
+      // přesný stupeň
+      const stupenMatch = parts[0].match(/(I+)\.\s*stupeň/);
+      const st = stupenMatch ? stupenMatch[1] : 'III';
+      const stLabel = st === 'I' ? 'při lehké invaliditě' : st === 'II' ? 'při středně těžké invaliditě' : 'při těžké invaliditě (III. stupeň)';
+      scenarioLabel = stLabel;
+    }
+    else if(rn.indexOf('Závažná') >= 0) scenarioLabel = 'při závažném onemocnění';
+    else if(rn.indexOf('Úvěrový') >= 0) scenarioLabel = 'při potřebě splatit úvěry';
+    else scenarioLabel = '';
+  }
+
+  let banner = '';
+  if(counts.crit > 0 || (counts.warn > 0 && totalGap > 100000)){
+    banner = `
+      <div style="background:#FFF1F1;border-left:3px solid #E3000F;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:4px">⚠️ Vaše stávající pojistka kryje rizika nedostatečně</div>
+        <div style="font-size:12px;color:#444;line-height:1.6">V nejhorším scénáři${scenarioLabel?` (${scenarioLabel})`:''} by Vám chybělo <strong style="color:#A32D2D">${fKp(totalGap)}</strong> ${totalGapMes>0?`— což znamená <strong>${fK(totalGapMes)} Kč/měsíc</strong> nedostatku po dobu ${Math.min(rec.R&&rec.R.rokiDD||30, 20)} let.`:''}</div>
+      </div>`;
+  } else if(counts.crit === 0 && counts.warn === 0){
+    banner = `
+      <div style="background:#F0FDF4;border-left:3px solid #166534;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:4px">✅ Vaše stávající pojistka je dobře nastavená</div>
+        <div style="font-size:12px;color:#444;line-height:1.6">Klíčová rizika jsou pokryta. ${counts.over>0?'V některých rizikách máte rezervu navíc — zvažte revizi smlouvy, pravděpodobně platíte víc, než je potřeba.':''}</div>
+      </div>`;
+  }
+
+  // Karty rizik — rozdělení na "klíčová se scénářem" vs. "doplňková kompaktně"
+  const klicova = items.filter(it => !it.isOptional && it.recommended > 0 && it.scenario);
+  const doplnkova = items.filter(it => !it.isOptional && it.recommended > 0 && !it.scenario);
+
+  function renderKlicovaKarta(it){
+    const recStr = it.type === 'D' ? `${it.recommended} Kč/den` : fKp(it.recommended);
+    const ownStr = it.type === 'D' ? `${it.ownVal} Kč/den` : fKp(it.ownVal);
+    const ownColor = it.status.key === 'over' ? '#0C447C' : it.status.key === 'ok' ? '#166534' : it.status.key === 'crit' ? '#A32D2D' : '#854F0B';
+    const pct = it.recommended > 0 ? Math.min(Math.round(it.ownVal / it.recommended * 100), 100) : 0;
+    const barColor = it.status.key === 'over' ? '#85B7EB' : it.status.key === 'ok' ? '#86EFAC' : it.status.key === 'crit' ? '#A32D2D' : '#FCD34D';
+    const showBar = it.type !== 'D';
+    return `
+      <div style="background:#FAFAF8;border:1px solid #E5E0D5;border-radius:8px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#1A1A1A">${it.name}</div>
+            <div style="font-size:11px;color:#6B6560">${it.riskName}</div>
+          </div>
+          <div style="background:${it.status.bg};color:${it.status.color};font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.05em">${it.status.label}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:${showBar?'8':'10'}px">
+          <div>
+            <div style="font-size:10px;color:#6B6560;text-transform:uppercase;font-weight:700">Vaše stávající</div>
+            <div style="font-size:18px;font-weight:700;color:${ownColor};margin-top:2px">${ownStr}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#6B6560;text-transform:uppercase;font-weight:700">Naše doporučení</div>
+            <div style="font-size:18px;font-weight:700;color:#1A6644;margin-top:2px">${recStr}</div>
+          </div>
+        </div>
+        ${showBar?`<div style="background:#E5E0D5;border-radius:4px;height:10px;overflow:hidden;position:relative;margin-bottom:10px">
+          <div style="background:${barColor};width:${pct}%;height:100%;border-radius:4px"></div>
+          <div style="position:absolute;right:8px;top:0;height:100%;display:flex;align-items:center;font-size:9px;color:${ownColor};font-weight:700">${pct} % pokryto</div>
+        </div>`:''}
+        <div style="background:white;border:1px solid ${it.scenario.accent};border-radius:6px;padding:10px 12px">
+          <div style="font-size:10px;color:${it.scenario.color};font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${it.scenario.title}</div>
+          <div style="font-size:12px;color:#1A1A1A;line-height:1.55">${it.scenario.body}</div>
+        </div>
+      </div>`;
+  }
+
+  function renderDoplnkovaRadek(it){
+    const recStr = it.type === 'D' ? `${it.recommended} Kč/den` : fKp(it.recommended);
+    const ownStr = it.type === 'D' ? `${it.ownVal} Kč/den` : (it.ownVal>0?fKp(it.ownVal):'—');
+    const ownColor = it.status.key === 'over' ? '#0C447C' : it.status.key === 'ok' ? '#166534' : it.status.key === 'crit' ? '#A32D2D' : '#854F0B';
+    return `
+      <tr style="border-bottom:1px solid #E5E0D5">
+        <td style="padding:8px 10px"><strong>${it.name}</strong><br><span style="font-size:10px;color:#6B6560">${it.riskName}</span></td>
+        <td style="padding:8px 10px;text-align:right;color:${ownColor}">${ownStr} / <span style="color:#1A6644">${recStr}</span></td>
+        <td style="padding:8px 10px;text-align:right;width:110px"><span style="background:${it.status.bg};color:${it.status.color};padding:2px 8px;border-radius:8px;font-size:9px;font-weight:700;text-transform:uppercase">${it.status.label}</span></td>
+      </tr>`;
+  }
+
+  let klicovaHtml = '';
+  if(klicova.length > 0){
+    klicovaHtml = `
+      <div style="font-size:11px;color:#6B6560;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin:14px 0 8px">Klíčová rizika — detail dopadu</div>
+      ${klicova.map(renderKlicovaKarta).join('')}`;
+  }
+
+  let doplnkovaHtml = '';
+  if(doplnkova.length > 0){
+    doplnkovaHtml = `
+      <div style="font-size:11px;color:#6B6560;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin:18px 0 8px">Doplňková rizika — bez detailního scénáře</div>
+      <div style="background:#FAFAF8;border:1px solid #E5E0D5;border-radius:8px;padding:6px;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          ${doplnkova.map(renderDoplnkovaRadek).join('')}
+        </table>
+      </div>`;
+  }
+
+  // Souhrnný blok dole
+  let footerSummary = '';
+  if(counts.crit > 0 || counts.warn > 0){
+    const horizDle = Math.min(rec.R&&rec.R.rokiDD||30, 20);
+    footerSummary = `
+      <div style="background:#1A1A1A;border-radius:8px;padding:18px;margin-top:18px">
+        <div style="font-size:11px;color:#A8A8A0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Souhrnný finanční dopad podpojištění</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <div style="font-family:'DM Serif Display',Georgia,serif;font-size:30px;color:white;line-height:1">${fKp(totalGap)}</div>
+            <div style="font-size:11px;color:#D4D4D2;margin-top:4px">celkový nedostatek během ${horizDle} let</div>
+          </div>
+          <div>
+            <div style="font-family:'DM Serif Display',Georgia,serif;font-size:30px;color:#FCA5A5;line-height:1">${fK(totalGapMes)} Kč</div>
+            <div style="font-size:11px;color:#D4D4D2;margin-top:4px">měsíčně po dobu ${horizDle} let</div>
+          </div>
+        </div>
+        <div style="background:#3A3A38;border-radius:6px;padding:12px 14px">
+          <div style="font-size:13px;color:white;font-weight:600;line-height:1.55">💡 Vaše stávající pojistka neřeší klíčová rizika dostatečně. Doporučujeme <strong>nahradit ji komplexní ochranou</strong>, která pokryje všechny hlavní situace za vyrovnanou cenu.</div>
+        </div>
+      </div>`;
+  }
+
+  // Sub-titulek pod hlavním titulkem konfrontace (informace o variantě)
+  const subInfo = `<div style="font-size:11px;color:#6B6560;margin-bottom:14px">Porovnání proti variantě <strong style="color:#1A1A1A">${variantName}</strong> — Vaše stávající pojistka vs. naše doporučení.</div>`;
+
+  gridEl.innerHTML = subInfo + topStats + banner + klicovaHtml + doplnkovaHtml + footerSummary;
+  if(sumEl) sumEl.innerHTML = ''; // prázdný — souhrn je už v gridu
+
+  // Uložit pro PDF
+  rec.confrontResults = items;
+  rec.confrontSummary = {totalGap, totalGapMes, counts, variantName, scenarioLabel, dominantRiziko};
 }
 
 function confrontCheckChange(clientIdx, rowIdx){
@@ -2906,244 +3651,289 @@ function runConfront(){
 }
 
 function evaluateConfront(clientIdx){
-  const rec = lastRecommendations[clientIdx];
-  if(!rec) return;
-  
-  let totalRec = 0, totalOwn = 0; // jen kritická (c) a důležitá (h)
-  let critCount = 0, warnCount = 0, okCount = 0, overCount = 0;
-  const results = [];
-  
-  rec.items.forEach((it, i) => {
-    const inputEl = document.getElementById('cri'+clientIdx+'-'+i);
-    const statusEl = document.getElementById('crs'+clientIdx+'-'+i);
-    
-    const isOptional = it.prio === 'm' || it.prio === 'o';
-    // Zkontrolovat checkbox — unchecked = vyloučit z výsledků i PDF
-    const chkEl = isOptional ? document.getElementById('crchk'+clientIdx+'-'+i) : null;
-    const isChecked = !chkEl || chkEl.checked;
-    
-    if(!inputEl) return;
-    const ownVal = pN(inputEl.value);
-    const recVal = it.recommended;
-    
-    // Do % celkového krytí počítáme jen kritická (c) a důležitá (h)
-    const countInTotal = !isOptional && it.type !== 'D' && isChecked;
-    if(countInTotal){ totalRec += recVal; totalOwn += ownVal; }
-    
-    let status, cssClass;
-    if(!isChecked){
-      status = '—'; cssClass = '';
-      if(statusEl){ statusEl.textContent = status; statusEl.className = 'cr-status'; }
-      results.push({...it, ownVal, status, cssClass, mesicniDeficit:0, excluded:true});
-      return;
-    }
-    if(recVal === 0){
-      status = '—'; cssClass = '';
-    } else {
-      const pct = recVal > 0 ? ownVal / recVal : 1;
-      const isSmallRec = (it.type !== 'D' && recVal < 500000);
-      if(pct >= 1.2){ status = '✅ Nad doporučením'; cssClass = 'cr-over'; overCount++; }
-      else if(pct >= 0.85){ status = '✅ OK'; cssClass = 'cr-ok'; okCount++; }
-      else if(pct >= 0.50 || isSmallRec){ status = '⚠️ Podpojištěno'; cssClass = 'cr-warn'; warnCount++; }
-      else {
-        // Volitelná/doporučená max "podpojištěno" — ne kritické
-        if(isOptional){ status = '⚠️ Podpojištěno'; cssClass = 'cr-warn'; warnCount++; }
-        else { status = '🔴 Kritické'; cssClass = 'cr-crit'; critCount++; }
-      }
-    }
-    
-    if(statusEl){ statusEl.textContent = status; statusEl.className = 'cr-status ' + cssClass; }
-
-    let mesicniDeficit = 0;
-    if(recVal > 0 && ownVal < recVal){
-      const af = (lastRecommendations[clientIdx].afInv) || 14;
-      mesicniDeficit = it.type === 'D'
-        ? Math.round((recVal - ownVal) * 30)
-        : Math.round((recVal - ownVal) / (12 * af));
-    }
-
-    results.push({...it, ownVal, status, cssClass, mesicniDeficit, excluded:false});
-  });
-  
-  const summaryEl = document.getElementById('confrontSummary'+clientIdx);
-  const totalPct = totalRec > 0 ? Math.round(totalOwn / totalRec * 100) : 0;
-  
-  let summaryClass, summaryText;
-  if(critCount > 0){
-    summaryClass = 'cr-crit';
-    summaryText = `🔴 <strong>${critCount} rizik${critCount>1?'':'o'} kriticky podpojištěn${critCount>1?'ých':'é'}</strong> — klient je výrazně ohrožen. Celkové krytí kritických rizik na ${totalPct} %.`;
-  } else if(warnCount > 0){
-    summaryClass = 'cr-warn';
-    summaryText = `⚠️ <strong>${warnCount} rizik${warnCount>1?'':'o'} podpojištěn${warnCount>1?'ých':'é'}</strong> — doporučujeme navýšit. Celkové krytí kritických rizik na ${totalPct} %.`;
-  } else {
-    summaryClass = 'cr-ok';
-    summaryText = `✅ <strong>Pojistná ochrana je dostatečná</strong> — kritická rizika pokryta na ≥85 %. Celkové krytí na ${totalPct} %.`;
-  }
-  
-  summaryEl.innerHTML = `<div class="confront-summary ${summaryClass}">${summaryText}</div>`;
-  
-  lastRecommendations[clientIdx].confrontResults = results;
-  lastRecommendations[clientIdx].confrontSummary = {totalPct, critCount, warnCount, okCount, overCount};
+  // v21.2: vše dělá buildConfrontGrid (vykreslí UI a uloží confrontResults pro PDF)
+  buildConfrontGrid(clientIdx);
 }
 
 function exportConfrontPDF(){
   const btn = document.querySelector('.confront-btn[onclick="exportConfrontPDF()"]');
   if(btn){ btn.textContent='⏳ Připravuji...'; btn.disabled=true; }
 
+  // v21.2: rebuild grid (uloží i confrontResults pro PDF)
+  buildConfrontGrid(0);
+  if(hasPartner && lastRecommendations[1] && lastRecommendations[1].R && lastRecommendations[1].R.D && lastRecommendations[1].R.D.maZP){
+    buildConfrontGrid(1);
+  }
+
   const rec = lastRecommendations[0];
-  if(!rec){
-    alert('Nejprve spusťte výpočet v kalkulačce a pak klikněte Vyhodnotit.');
-    if(btn){ btn.textContent='⬇ PDF konfrontace'; btn.disabled=false; }
-    return;
-  }
-  // Pokud ještě nebylo vyhodnoceno, spustit evaluaci automaticky
-  if(!rec.confrontResults){
-    evaluateConfront(0);
-    if(hasPartner && lastRecommendations[1]) evaluateConfront(1);
-  }
-  // Pokud stále nejsou výsledky (žádné položky zadány), upozornit
-  if(!rec.confrontResults || rec.confrontResults.length===0){
-    alert('Zadejte prosím stávající pojistné částky a klikněte Vyhodnotit.');
-    if(btn){ btn.textContent='⬇ PDF konfrontace'; btn.disabled=false; }
+  if(!rec || !rec.confrontResults){
+    alert('Nejprve spusťte výpočet v kalkulačce.');
+    if(btn){ btn.textContent='⬇ Stáhnout konfrontační PDF'; btn.disabled=false; }
     return;
   }
 
-  const cs = rec.confrontSummary || {};
   const date = new Date().toLocaleDateString('cs-CZ');
   const profileEl = document.getElementById('profileCard');
-  const pname = profileEl?.querySelector('.profile-name')?.textContent || '';
   const psub = profileEl?.querySelector('.profile-sub')?.textContent || '';
 
-  // Barva souhrnu
-  const sumColor = cs.critCount>0?'#E3000F':cs.warnCount>0?'#B45309':'#166534';
-  const sumBg = cs.critCount>0?'#FDEAEA':cs.warnCount>0?'#FEF3C7':'#F0FDF4';
-  const sumBorder = cs.critCount>0?'#F5ACAF':cs.warnCount>0?'#FCD34D':'#86EFAC';
-  const sumIcon = cs.critCount>0?'🔴':cs.warnCount>0?'⚠️':'✅';
-  const sumText = cs.critCount>0
-    ? `${cs.critCount} rizik kriticky podpojištěno — klient je výrazně ohrožen`
-    : cs.warnCount>0
-      ? `${cs.warnCount} rizik podpojištěno — doporučujeme navýšit`
-      : 'Pojistná ochrana je dostatečná';
+  const fK  = v => v.toLocaleString('cs-CZ');
+  const fKp = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
 
-  // Řádky tabulky — seskupené dle priority, excluded přeskočit
-  const fKpdf = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
-  
-  function buildPdfRows(results){
-    const prioOrder = ['c','h','m','o'];
-    const prioLabel = {c:'Kritická rizika',h:'Důležitá rizika',m:'Doporučená rizika',o:'Volitelná rizika'};
-    const prioBg    = {c:'#FDEAEA',h:'#FEF3C7',m:'#EFF6FF',o:'#F5F5F5'};
-    const prioCol   = {c:'#E3000F',h:'#B45309',m:'#1D4ED8',o:'#6B6560'};
-    let out = '';
-    prioOrder.forEach(prio => {
-      const group = results.filter(it => (it.prio===prio) && !it.excluded);
-      if(!group.length) return;
-      const isOptional = prio==='m'||prio==='o';
-      out += `<tr><td colspan="5" style="padding:5px 10px 3px;background:${prioBg[prio]};border-top:1px solid #E0E0E0">
-        <span style="font-size:8px;font-weight:700;color:${prioCol[prio]};text-transform:uppercase;letter-spacing:.05em">${prioLabel[prio]}</span>
-        ${isOptional?'<span style="font-size:7.5px;color:#9E9E9E;margin-left:6px">— nevstupuje do % celkového krytí</span>':''}
-      </td></tr>`;
-      group.forEach(it => {
-        const recStrF = it.type==='D' ? it.recommended+' Kč/den' : fKpdf(it.recommended);
-        const ownStrF = it.type==='D' ? (it.ownVal>0?it.ownVal+' Kč/den':'—') : (it.ownVal>0?fKpdf(it.ownVal):'—');
-        const pct = it.recommended>0 ? Math.round(it.ownVal/it.recommended*100) : null;
-        const pctStr = pct!=null ? pct+'%' : '—';
-        const pctColor = pct==null?'#9E9E9E':pct>=85?'#166534':pct>=50?'#B45309':'#E3000F';
-        const statusColor = it.cssClass==='cr-ok'?'#166534':it.cssClass==='cr-over'?'#1D4ED8':it.cssClass==='cr-warn'?'#B45309':it.cssClass==='cr-crit'?'#E3000F':'#6B6560';
-        const statusBg2 = it.cssClass==='cr-ok'?'#F0FDF4':it.cssClass==='cr-over'?'#EFF6FF':it.cssClass==='cr-warn'?'#FEF3C7':it.cssClass==='cr-crit'?'#FDEAEA':'#F5F5F5';
-        const mesicniDeficit = it.mesicniDeficit || 0;
-        const defHtml = mesicniDeficit>0
-          ? `<div style="font-size:8px;color:#E3000F;font-weight:700;margin-top:2px">chybí ${mesicniDeficit.toLocaleString('cs-CZ')} Kč/měs</div>`
-          : (it.cssClass==='cr-ok'||it.cssClass==='cr-over')&&it.ownVal>0
-            ? '<div style="font-size:8px;color:#166534;font-weight:600;margin-top:2px">✓ pokryto</div>'
-            : '';
-        out += `<tr>
-          <td style="padding:6px 10px;border-bottom:1px solid #F0F0F0">
-            <div style="font-size:10.5px;font-weight:700;color:#1A1A1A">${it.name}</div>
-            <div style="font-size:8.5px;color:#6B6560">${it.riskName}</div>
-          </td>
-          <td style="padding:6px 10px;border-bottom:1px solid #F0F0F0;font-size:10.5px;font-weight:700;text-align:right;white-space:nowrap">${recStrF}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #F0F0F0;text-align:right">
-            <div style="font-size:10.5px;font-weight:700;color:${it.ownVal>0?'#1A1A1A':'#9E9E9E'};white-space:nowrap">${ownStrF}</div>
-            ${defHtml}
-          </td>
-          <td style="padding:6px 10px;border-bottom:1px solid #F0F0F0;text-align:center;white-space:nowrap">
-            <span style="font-size:9.5px;font-weight:700;color:${isOptional?'#9E9E9E':pctColor}">${isOptional?'—':pctStr}</span>
-          </td>
-          <td style="padding:6px 10px;border-bottom:1px solid #F0F0F0;text-align:center">
-            <span style="background:${statusBg2};color:${statusColor};padding:2px 6px;border-radius:3px;font-size:8px;font-weight:700;white-space:nowrap">${it.status||'—'}</span>
+  // Vykreslení jedné stránky (klient nebo partner)
+  function buildClientPages(rec, pageNum, totalPages){
+    const cs = rec.confrontSummary || {};
+    const counts = cs.counts || {crit:0,warn:0,ok:0,over:0};
+    const items = rec.confrontResults || [];
+    const variantName = cs.variantName || 'Standardní';
+    const D = rec.R && rec.R.D;
+    const horizDle = Math.min(rec.R && rec.R.rokiDD || 30, 20);
+    const vekStr = D ? `${D.vek} let` : '';
+    const tpStr = D && D.tprace ? ({zamestnanec:'Zaměstnanec',osvc:'OSVČ',sro:'OSVČ s.r.o.',rodicovska:'Rodičovská',nezamestnany:'Nezaměstnaný'}[D.tprace] || '') : '';
+    const klientLabel = pageNum === 1 ? 'Klient' : 'Partner/ka';
+
+    // Klíčová rizika (se scénářem) vs. doplňková (kompaktně v tabulce)
+    const klicova = items.filter(it => !it.isOptional && it.recommended > 0 && it.scenario);
+    const doplnkova = items.filter(it => !it.isOptional && it.recommended > 0 && !it.scenario);
+
+    // Banner barvy
+    const totalGap = cs.totalGap || 0;
+    const totalGapMes = cs.totalGapMes || 0;
+
+    function topStatsHtml(){
+      return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+        <div style="background:#FDEAEA;border:1px solid #F5ACAF;border-radius:5px;padding:8px;text-align:center">
+          <div style="font-family:Georgia,serif;font-size:22px;color:#A32D2D;line-height:1">${counts.crit}</div>
+          <div style="font-size:8px;color:#A32D2D;text-transform:uppercase;font-weight:700;margin-top:2px">Kriticky chybí</div>
+        </div>
+        <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:5px;padding:8px;text-align:center">
+          <div style="font-family:Georgia,serif;font-size:22px;color:#854F0B;line-height:1">${counts.warn}</div>
+          <div style="font-size:8px;color:#854F0B;text-transform:uppercase;font-weight:700;margin-top:2px">Podpojištěn</div>
+        </div>
+        <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:5px;padding:8px;text-align:center">
+          <div style="font-family:Georgia,serif;font-size:22px;color:#166534;line-height:1">${counts.ok}</div>
+          <div style="font-size:8px;color:#166534;text-transform:uppercase;font-weight:700;margin-top:2px">Pokryto</div>
+        </div>
+        <div style="background:#E6F1FB;border:1px solid #85B7EB;border-radius:5px;padding:8px;text-align:center">
+          <div style="font-family:Georgia,serif;font-size:22px;color:#0C447C;line-height:1">${counts.over}</div>
+          <div style="font-size:8px;color:#0C447C;text-transform:uppercase;font-weight:700;margin-top:2px">Přepojištěn</div>
+        </div>
+      </div>`;
+    }
+
+    function bannerHtml(){
+      const scLab = cs.scenarioLabel || '';
+      if(counts.crit > 0 || (counts.warn > 0 && totalGap > 100000)){
+        return `<div style="background:#FFF1F1;border-left:3px solid #E3000F;border-radius:0 4px 4px 0;padding:9px 12px;margin-bottom:14px">
+          <div style="font-size:10px;color:#1A1A1A;line-height:1.55">V nejhorším scénáři${scLab?` (${scLab})`:''} by Vám chybělo <strong style="color:#A32D2D">${fKp(totalGap)}</strong> ${totalGapMes>0?`= <strong>${fK(totalGapMes)} Kč/měs po dobu ${horizDle} let</strong>.`:''}</div>
+        </div>`;
+      }
+      if(counts.crit === 0 && counts.warn === 0){
+        return `<div style="background:#F0FDF4;border-left:3px solid #166534;border-radius:0 4px 4px 0;padding:9px 12px;margin-bottom:14px">
+          <div style="font-size:10px;color:#1A1A1A;line-height:1.55"><strong>Vaše stávající pojistka je dobře nastavená.</strong> Klíčová rizika jsou pokryta.${counts.over>0?' V některých rizikách máte rezervu navíc — zvažte revizi smlouvy.':''}</div>
+        </div>`;
+      }
+      return '';
+    }
+
+    function klicovaKartaHtml(it){
+      const recStr = it.type === 'D' ? `${it.recommended} Kč/den` : fKp(it.recommended);
+      const ownStr = it.type === 'D' ? `${it.ownVal} Kč/den` : fKp(it.ownVal);
+      const ownColor = it.status.key === 'over' ? '#0C447C' : it.status.key === 'ok' ? '#166534' : it.status.key === 'crit' ? '#A32D2D' : '#854F0B';
+      const pct = it.recommended > 0 ? Math.min(Math.round(it.ownVal / it.recommended * 100), 999) : 0;
+      const barColor = it.status.key === 'over' ? '#85B7EB' : it.status.key === 'ok' ? '#86EFAC' : it.status.key === 'crit' ? '#A32D2D' : '#FCD34D';
+      const barW = Math.min(pct, 100);
+      const showBar = it.type !== 'D';
+      const borderColor = it.status.key === 'over' ? '#85B7EB' : it.status.key === 'ok' ? '#86EFAC' : it.status.key === 'crit' ? '#F5ACAF' : '#FCD34D';
+      const headerBg = it.status.key === 'over' ? '#E6F1FB' : it.status.key === 'ok' ? '#F0FDF4' : it.status.key === 'crit' ? '#FDEAEA' : '#FEF3C7';
+
+      return `<div style="border:1.5px solid ${borderColor};border-radius:5px;overflow:hidden;margin-bottom:8px;page-break-inside:avoid">
+        <div style="background:${headerBg};padding:5px 10px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:10px;font-weight:700;color:#1A1A1A;text-transform:uppercase">${it.name} · <span style="color:#6B6560;font-weight:400;text-transform:none">${it.riskName}</span></div>
+          <div style="background:${it.status.color};color:white;font-size:8px;font-weight:700;padding:2px 8px;border-radius:8px;text-transform:uppercase">${it.status.label}</div>
+        </div>
+        <div style="padding:8px 10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;margin-bottom:${showBar?'6':'8'}px;align-items:end">
+            <div>
+              <div style="font-size:8px;color:#6B6560;text-transform:uppercase;font-weight:700">Vaše stávající</div>
+              <div style="font-size:13px;font-weight:700;color:${ownColor};margin-top:1px">${ownStr}</div>
+            </div>
+            <div>
+              <div style="font-size:8px;color:#6B6560;text-transform:uppercase;font-weight:700">Doporučení</div>
+              <div style="font-size:13px;font-weight:700;color:#1A6644;margin-top:1px">${recStr}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:8px;color:#6B6560;text-transform:uppercase;font-weight:700">Pokrytí</div>
+              <div style="font-size:13px;font-weight:700;color:${ownColor};margin-top:1px">${pct} %</div>
+            </div>
+          </div>
+          ${showBar?`<div style="background:#E5E0D5;border-radius:3px;height:6px;overflow:hidden;margin-bottom:8px">
+            <div style="background:${barColor};width:${barW}%;height:100%;border-radius:3px"></div>
+          </div>`:''}
+          <div style="background:${it.scenario.bg};border-left:2px solid ${it.scenario.accent};padding:6px 10px">
+            <div style="font-size:8px;color:${it.scenario.color};font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">${it.scenario.title}</div>
+            <div style="font-size:10px;color:#1A1A1A;line-height:1.55">${it.scenario.body}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function doplnkovaRadekHtml(it){
+      const recStr = it.type === 'D' ? `${it.recommended} Kč/den` : fKp(it.recommended);
+      const ownStr = it.type === 'D' ? (it.ownVal>0?`${it.ownVal} Kč/den`:'—') : (it.ownVal>0?fKp(it.ownVal):'—');
+      const ownColor = it.status.key === 'over' ? '#0C447C' : it.status.key === 'ok' ? '#166534' : it.status.key === 'crit' ? '#A32D2D' : it.status.key === 'warn' ? '#854F0B' : '#6B6560';
+      const labelShort = {crit:'KRITICKY',warn:'PODPOJ.',ok:'✓ POKRYTO',over:'PŘEPOJ.',na:'—'}[it.status.key] || '—';
+      return `<tr style="border-bottom:1px solid #F0EBDF">
+        <td style="padding:6px 8px"><strong>${it.name}</strong></td>
+        <td style="padding:6px 8px;text-align:right"><span style="color:${ownColor}">${ownStr}</span> / <span style="color:#1A6644;font-weight:600">${recStr}</span></td>
+        <td style="padding:6px 8px;text-align:right;width:90px"><span style="background:${it.status.bg};color:${it.status.color};padding:2px 8px;border-radius:8px;font-size:8px;font-weight:700">${labelShort}</span></td>
+      </tr>`;
+    }
+
+    function footerSummaryHtml(){
+      if(counts.crit === 0 && counts.warn === 0) return '';
+      return `<div style="background:#1A1A1A;border-radius:6px;padding:14px 16px;margin-top:12px;page-break-inside:avoid">
+        <div style="font-size:9px;color:#A8A8A0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Souhrnný finanční dopad podpojištění</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <div style="font-family:Georgia,serif;font-size:24px;color:white;line-height:1">${fKp(totalGap)}</div>
+            <div style="font-size:9px;color:#D4D4D2;margin-top:3px">celkový nedostatek během ${horizDle} let</div>
+          </div>
+          <div>
+            <div style="font-family:Georgia,serif;font-size:24px;color:#FCA5A5;line-height:1">${fK(totalGapMes)} Kč</div>
+            <div style="font-size:9px;color:#D4D4D2;margin-top:3px">měsíčně po dobu ${horizDle} let</div>
+          </div>
+        </div>
+        <div style="background:#3A3A38;border-radius:5px;padding:10px 12px;margin-top:10px">
+          <div style="font-size:11px;color:white;font-weight:600;line-height:1.5">💡 Vaše stávající pojistka neřeší klíčová rizika dostatečně. Doporučujeme <strong>nahradit ji komplexní ochranou</strong>, která pokryje všechny hlavní situace za vyrovnanou cenu.</div>
+        </div>
+      </div>`;
+    }
+
+    // Strana 1 — přehled
+    const page1 = `<div class="page">
+      <div style="border-bottom:2px solid #1A1A1A;padding-bottom:14px;margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <div>
+            <div style="font-family:Georgia,serif;font-size:22px;color:#1A1A1A">Konfrontace pojistné ochrany</div>
+            <div style="font-size:10px;color:#6B6560;margin-top:4px;text-transform:uppercase;letter-spacing:.06em">${klientLabel} · ${vekStr}${tpStr?' · '+tpStr:''} · ${date}</div>
+          </div>
+          <div style="background:#FDEAEA;color:#A32D2D;padding:6px 12px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase">${variantName} varianta</div>
+        </div>
+      </div>
+
+      ${topStatsHtml()}
+      ${bannerHtml()}
+
+      ${klicova.length>0?`<div style="font-family:Georgia,serif;font-size:13px;color:#1A1A1A;margin-bottom:8px;border-bottom:1px solid #E5E0D5;padding-bottom:5px">Klíčová rizika — detail dopadu</div>
+      ${klicova.map(klicovaKartaHtml).join('')}`:''}
+
+      ${doplnkova.length>0?`<div style="font-family:Georgia,serif;font-size:12px;color:#1A1A1A;margin:14px 0 6px;border-bottom:1px solid #E5E0D5;padding-bottom:4px">Doplňková rizika</div>
+      <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:14px">
+        <thead><tr style="background:#FAFAF8;border-bottom:1px solid #E5E0D5">
+          <th style="padding:5px 8px;text-align:left;color:#6B6560;font-size:8px;text-transform:uppercase">Riziko</th>
+          <th style="padding:5px 8px;text-align:right;color:#6B6560;font-size:8px;text-transform:uppercase">Stávající / Doporučení</th>
+          <th style="padding:5px 8px;text-align:right;color:#6B6560;font-size:8px;text-transform:uppercase;width:90px">Stav</th>
+        </tr></thead>
+        <tbody>${doplnkova.map(doplnkovaRadekHtml).join('')}</tbody>
+      </table>`:''}
+
+      ${footerSummaryHtml()}
+
+      <div class="footer">
+        <span>Orientační výpočet · Není nabídkou pojistného produktu · Parametry ČSSZ 2026</span>
+        <span>${pageNum*2-1} / ${totalPages*2}</span>
+      </div>
+    </div>`;
+
+    // Strana 2 — metodika
+    const sirotciDuc = (rec.R && rec.R.sirotciDuc) || 0;
+    const vdovDuc = (rec.R && rec.R.vdovDuc) || 0;
+    const af = (rec.R && rec.R.afSmrt) || 14;
+    const realVynos = ((rec.R && rec.R.realVynos) || 0.055) * 100;
+    const ducIII = (rec.R && rec.R.duc && rec.R.duc.III) || 0;
+
+    function metodikaRadekKlicova(it){
+      if(it.type === 'D'){
+        const denMezera = Math.max(it.recommended - it.ownVal, 0);
+        const mesicMezera = denMezera * 30;
+        return `<tr style="border-bottom:1px solid #F0EBDF">
+          <td style="padding:6px 8px"><strong>${it.name}</strong></td>
+          <td style="padding:6px 8px;font-size:9px;color:#6B6560;line-height:1.55">
+            Mezera: ${it.recommended} − ${it.ownVal} = <strong>${denMezera} Kč/den</strong> = ${fK(mesicMezera)} Kč/měs
           </td>
         </tr>`;
-      });
-    });
-    return out;
+      }
+      const mezeraKap = Math.max(it.recommended - it.ownVal, 0);
+      const mezeraMes = Math.round(mezeraKap / (12 * af));
+      return `<tr style="border-bottom:1px solid #F0EBDF">
+        <td style="padding:6px 8px"><strong>${it.name}</strong></td>
+        <td style="padding:6px 8px;font-size:9px;color:#6B6560;line-height:1.55">
+          Mezera kapitálu: ${fKp(it.recommended)} − ${fKp(it.ownVal)} = <strong>${fKp(mezeraKap)}</strong><br>
+          Měsíční dopad: ${fKp(mezeraKap)} ÷ (12 měs × KV ${af.toFixed(2)}) = <strong>${fK(mezeraMes)} Kč/měs</strong> po dobu ${horizDle} let
+        </td>
+      </tr>`;
+    }
+
+    const page2 = `<div class="page">
+      <div style="border-bottom:2px solid #1A1A1A;padding-bottom:14px;margin-bottom:18px">
+        <div style="font-family:Georgia,serif;font-size:18px;color:#1A1A1A">Metodika výpočtu konfrontace</div>
+        <div style="font-size:10px;color:#6B6560;margin-top:3px;text-transform:uppercase;letter-spacing:.06em">${klientLabel} · jak jsme vypočítali finanční dopad</div>
+      </div>
+
+      <div style="background:#F5F5F5;border-radius:5px;padding:10px 14px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:#1A1A1A;margin-bottom:6px">Vstupní parametry</div>
+        <div style="font-size:10px;color:#6B6560;line-height:1.7">
+          • Reálný výnos investic (po inflaci): <strong>${realVynos.toFixed(1)} % p.a.</strong><br>
+          • Koeficient výplaty pro horizont ${horizDle} let: <strong>KV = ${af.toFixed(2)}</strong> <span style="color:#9CA3AF">(říká, kolikrát se měsíční potřeba vejde do potřebného kapitálu při výplatě s úročením)</span><br>
+          • Inflace: 2,5 % ročně${(rec.R&&rec.R.pocetD>0)?`<br>
+          • Sirotčí důchod (vypočtený): <strong>${fK(sirotciDuc)} Kč/měs</strong> (§ 50 zákona 155/1995 Sb.)`:''}
+          ${vdovDuc>0?`<br>• Vdovský důchod (vypočtený): <strong>${fK(vdovDuc)} Kč/měs</strong>`:''}
+        </div>
+      </div>
+
+      <div style="font-family:Georgia,serif;font-size:13px;color:#1A1A1A;margin-bottom:8px;border-bottom:1px solid #E5E0D5;padding-bottom:5px">Výpočet mezery — riziko po riziku</div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px">
+        <thead><tr style="background:#FAFAF8;border-bottom:1px solid #E5E0D5">
+          <th style="padding:5px 8px;text-align:left;color:#6B6560;font-size:8px;text-transform:uppercase">Riziko</th>
+          <th style="padding:5px 8px;text-align:left;color:#6B6560;font-size:8px;text-transform:uppercase">Výpočet dopadu</th>
+        </tr></thead>
+        <tbody>${klicova.filter(it => it.status.key === 'crit' || it.status.key === 'warn').map(metodikaRadekKlicova).join('')}</tbody>
+      </table>
+
+      <div style="background:#F5F5F5;border-radius:5px;padding:10px 14px;font-size:9px;color:#6B6560;line-height:1.7">
+        <strong style="color:#1A1A1A">Poznámka k metodice:</strong> Mezičásti kapitálu (rozdíl Vaší stávající a doporučené pojistné částky) jsou převedeny na <strong>měsíční dopad</strong> pomocí koeficientu výplaty — kapitál ÷ (12 měs × KV) = částka, kterou by si bylo třeba měsíčně doplatit po dobu výplaty pojistného plnění. To umožňuje srovnat různá rizika v jednotném finančním měřítku.<br><br>
+        Pro denní dávku (PN) je dopad počítán jako rozdíl × 30 dní = měsíční ztráta při dlouhodobé nemoci.${(rec.R&&rec.R.pocetD>0)||vdovDuc>0?`<br><br>
+        ${(rec.R&&rec.R.pocetD>0)?'Sirotčí ':''}${(rec.R&&rec.R.pocetD>0)&&vdovDuc>0?'a vdovský':vdovDuc>0?'Vdovský':''} důchod ${(rec.R&&rec.R.pocetD>0)&&vdovDuc>0?'jsou':'je'} vypočten${(rec.R&&rec.R.pocetD>0)&&vdovDuc>0?'y':''} dynamicky z příjmu klienta dle aktuálních pravidel ČSSZ 2026 a ${(rec.R&&rec.R.pocetD>0)&&vdovDuc>0?'jsou součástí':'je součástí'} cíle u rizika smrti (snižují potřebnou pojistnou částku).`:''}
+      </div>
+
+      <div class="footer">
+        <span>Orientační výpočet · Není nabídkou pojistného produktu · Parametry ČSSZ 2026</span>
+        <span>${pageNum*2} / ${totalPages*2}</span>
+      </div>
+    </div>`;
+
+    return page1 + page2;
   }
-  const rows = buildPdfRows(rec.confrontResults);
+
+  // Sestavit stránky pro klienta (a partnera, pokud existuje)
+  const hasZP1 = !!(hasPartner && lastRecommendations[1] && lastRecommendations[1].R && lastRecommendations[1].R.D && lastRecommendations[1].R.D.maZP);
+  const totalPages = hasZP1 ? 2 : 1;
+  let pages = buildClientPages(rec, 1, totalPages);
+  if(hasZP1){
+    pages += buildClientPages(lastRecommendations[1], 2, totalPages);
+  }
 
   const html = `<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8">
   <title>Konfrontace pojistné ochrany</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .page{width:210mm;min-height:297mm;padding:13mm 13mm 18mm;position:relative}
-    @media print{body{margin:0}.page{padding:13mm 13mm 18mm}}
-  </style></head><body><div class="page">
-
-  <!-- Header -->
-  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:8px;border-bottom:3px solid #E3000F;margin-bottom:14px">
-    <div>
-      <div style="font-size:18px;font-weight:700;letter-spacing:-.4px">Konfrontace pojistné ochrany</div>
-      <div style="font-size:9.5px;color:#6B6560;text-transform:uppercase;letter-spacing:.08em;margin-top:2px">Porovnání stávajícího pojištění s doporučením</div>
-    </div>
-    <div style="text-align:right;font-size:10px;color:#6B6560">${date}</div>
-  </div>
-
-  <!-- Profil -->
-  <div style="background:#1A1A1A;border-radius:5px;padding:11px 15px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
-    <div>
-      <div style="font-size:14px;font-weight:700;color:#fff">${pname}</div>
-      <div style="font-size:9.5px;color:rgba(255,255,255,.5)">${psub}</div>
-    </div>
-    <div style="text-align:right">
-      <div style="font-size:10px;color:rgba(255,255,255,.6)">Celkové krytí</div>
-      <div style="font-size:20px;font-weight:700;color:${sumColor}">${cs.totalPct||0} %</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.5)">doporučené PČ</div>
-    </div>
-  </div>
-
-  <!-- Souhrn -->
-  <div style="background:${sumBg};border:1.5px solid ${sumBorder};border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
-    <span style="font-size:20px">${sumIcon}</span>
-    <div>
-      <div style="font-size:12px;font-weight:700;color:${sumColor}">${sumText}</div>
-      <div style="font-size:10px;color:#4A4A4A;margin-top:2px">
-        ✅ OK: ${cs.okCount||0} · ⚠️ Podpojištěno: ${cs.warnCount||0} · 🔴 Kritické: ${cs.critCount||0} · Nad doporučením: ${cs.overCount||0}
-      </div>
-    </div>
-  </div>
-
-  <!-- Tabulka -->
-  <table style="width:100%;border-collapse:collapse">
-    <thead>
-      <tr style="border-bottom:1.5px solid #1A1A1A">
-        <th style="padding:6px 10px;font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:#6B6560;font-weight:700;text-align:left">Riziko</th>
-        <th style="padding:6px 10px;font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:#6B6560;font-weight:700;text-align:right">Doporučeno</th>
-        <th style="padding:6px 10px;font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:#6B6560;font-weight:700;text-align:right">Stávající · Měs. deficit</th>
-        <th style="padding:6px 10px;font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:#6B6560;font-weight:700;text-align:center">Krytí</th>
-        <th style="padding:6px 10px;font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:#6B6560;font-weight:700;text-align:center">Hodnocení</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
-
-  <!-- Patička -->
-  <div style="position:absolute;bottom:9mm;left:13mm;right:13mm;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #D8D8D8;padding-top:5px">
-    <div style="font-size:7px;color:#9E9E9E;flex:1;padding-right:16px;line-height:1.4">
-      Orientační výpočet · Porovnání vychází ze Standardní varianty (pojistit výdaje) · Měsíční deficit = chybějící částka/měsíc při dané PČ · Parametry ČSSZ 2026
-    </div>
-    <div style="font-size:9px;font-weight:700;color:#1A1A1A">${hasPartner ? "1 / 4" : "1 / 1"}</div>
-  </div>
-
-  </div></body></html>`;
+    body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:11px;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .page{width:210mm;min-height:297mm;padding:18mm 18mm 24mm;position:relative;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+    .footer{position:absolute;bottom:12mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:8px;color:#6B6560;border-top:1px solid #E5E0D5;padding-top:6px}
+    @media print{body{margin:0}.page{padding:18mm 18mm 24mm}}
+  </style></head><body>${pages}</body></html>`;
 
   // Stáhnout jako soubor (Blob)
   const blob2 = new Blob([html],{type:'text/html;charset=utf-8'});
@@ -3152,12 +3942,14 @@ function exportConfrontPDF(){
   a2.href=url2; a2.download='konfrontace-pojisteni.html';
   document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
   setTimeout(()=>URL.revokeObjectURL(url2), 5000);
-  if(btn){ setTimeout(()=>{btn.textContent='⬇ PDF konfrontace';btn.disabled=false;},1500); }
+  if(btn){ setTimeout(()=>{btn.textContent='⬇ Stáhnout konfrontační PDF';btn.disabled=false;},1500); }
 }
 
 function exportPDF(){
   const btn = document.querySelector('.pdf-btn');
-  btn.textContent='⏳ Připravuji...'; btn.disabled=true;
+  if(btn){ btn.textContent='⏳ Připravuji...'; btn.disabled=true; }
+
+  try {
 
   // Zjistit aktivní variantu
   const activeTab = document.querySelector('#resultClient0 .vnav-tab.active, .tn-k.active, .tn-s.active, .tn-z.active');
@@ -3169,13 +3961,15 @@ function exportPDF(){
   const rec = lastRecommendations[0];
   if(!rec){
     alert('Nejprve spusťte výpočet pojistné ochrany — vyplňte formulář a klikněte Spočítat.');
-    btn.textContent='⬇ Stáhnout jako PDF'; btn.disabled=false; return;
+    if(btn){ btn.textContent='⬇ Stáhnout jako PDF'; btn.disabled=false; }
+    return;
   }
   const R = rec.R;
   const D = R.D;
 
   // Sestavit aktivní variantu z builderu
-  const skipKomplex = D.prijem < D.vydaje;
+  const podilKomplex = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
+  const skipKomplex = D.prijem < D.vydaje * podilKomplex;
   const VK = (activeKey==='k' && !skipKomplex) ? buildKomplex(R) : null;
   const VS = buildStandard(R);
   const VZ = buildZakladni(R);
@@ -3290,7 +4084,7 @@ function exportPDF(){
     if(fixed.some(n=>r.name.startsWith(n))) return r.prio;
     if(r.name==='Úvěrový balíček') return 'c';
     if(tot===0&&dav===0) return 'x';
-    if(dav>0&&dav<=200&&tot===0) return 'x';
+    // POZN: u PN dříve dávka ≤ 200 Kč = "Pokryto", odstraněno (i 100 Kč/den je reálná dávka)
     if(tot===0&&dav>0) return dav>500?'c':'m';
     if(tot>=1000000) return 'c';
     if(tot>0) return 'h';
@@ -3356,6 +4150,7 @@ function exportPDF(){
     const D2 = R_arg.D;
     const duc2 = R_arg.duc;
     const af2 = R_arg.af || 14;
+    const afInv2 = R_arg.afInv || R_arg.af || 14; // anuita pro invaliditu (jiný horizont než smrt)
     const isOSVC2 = D2.tprace==='osvc'||D2.tprace==='sro';
     const fKc = v => Math.round(v).toLocaleString('cs-CZ') + ' Kč';
     const fKp2 = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
@@ -3374,13 +4169,31 @@ function exportPDF(){
       return {zach, duc, part, total: zach+duc+part, ret: ret[st]};
     };
 
-    // Smrt helpery
+    // Smrt helpery (v21.1: sjednoceno s engine logikou)
+    // Komplexní: cíl = vlastní příjem klienta − vdovský − sirotčí
+    // Standardní: cíl = podíl × výdaje bez splátky × 0,80 − vdovský − sirotčí
+    // Základní: cíl = podíl × výdaje bez splátky × 0,80 × 0,75 − vdovský − sirotčí
+    // Příjem partnera se NEODČÍTÁ — partner žije dál, jeho příjem nesouvisí s pojistkou klienta
     const investRezerva2 = Math.max((D2.rezerva||0) - 750000, 0);
     const vdovDuc2       = R_arg.vdovDuc || 0;
-    const partnerPr2     = R_arg.maPartnera ? (D2.prijPart||0) : 0;
+    const partnerPr2     = 0; // v21.1: partner se neodčítá
     const sirotciCelk2   = (R_arg.pocetD||0) * (R_arg.sirotciDuc||0);
-    const vydPoSmrti2    = R_arg.vydPoSmrti || 0;
-    const smrtMezera2    = Math.max(vydPoSmrti2 - vdovDuc2 - partnerPr2 - sirotciCelk2, 0);
+    const podilSmrti2    = D2.vydajePodil !== undefined ? D2.vydajePodil : 1.0;
+    const vydBezSpl2     = Math.max(D2.vydaje - D2.splatky, 0);
+    let vydPoSmrti2, smrtCilLabel2;
+    if(activeKey === 'k'){
+      vydPoSmrti2 = D2.prijem;
+      smrtCilLabel2 = 'Vlastní příjem klienta (cíl)';
+    } else if(activeKey === 'z'){
+      vydPoSmrti2 = Math.round(vydBezSpl2 * 0.80 * podilSmrti2 * 0.75);
+      smrtCilLabel2 = `Podíl výdajů × 0,75 (klient si sníží výdaje o 25 %)`;
+    } else { // 's'
+      vydPoSmrti2 = Math.round(vydBezSpl2 * 0.80 * podilSmrti2);
+      smrtCilLabel2 = podilSmrti2 < 1.0
+        ? `Podíl výdajů klienta (${Math.round(podilSmrti2*100)} % výdajů × 80 %)`
+        : 'Výdaje rodiny po úmrtí (80 % z výdajů bez splátky)';
+    }
+    const smrtMezera2    = Math.max(vydPoSmrti2 - vdovDuc2 - sirotciCelk2, 0);
     const smrtHorizont2  = Math.min(R_arg.rokiDD||30, 20);
     const afSmrt2        = anuita(Math.max(R_arg.realVynosInv||0.055, 0.01), smrtHorizont2);
 
@@ -3394,19 +4207,21 @@ function exportPDF(){
     if(D2.anamneza&&D2.anamneza!=='zadna') zoMin2+=100000; if(D2.zavPart==='plna') zoMin2+=50000;
 
     // PN helpery — cíl odpovídá variantě a podílu výdajů
+    // PN helpery — cíl odpovídá variantě a podílu výdajů (sjednoceno s engine)
+    // Engine (ř. 2080-2086): K = vlastní příjem | S = podíl × výdaje | Z = S × 0,75
     const podilKpn2 = D2.vydajePodil !== undefined ? D2.vydajePodil : 1.0;
-    const pnCil2 = isOSVC2
-      ? D2.prijem                          // OSVČ: vždy plný příjem
-      : (activeKey === 'k'
-          ? D2.prijem                      // Komplexní: plný příjem
-          : D2.vydaje * podilKpn2);        // Standardní/Základní: podíl výdajů
-    const pnCilLabel2 = isOSVC2
-      ? 'Příjem OSVČ (cíl)'
-      : (activeKey === 'k'
-          ? 'Vlastní příjem (cíl)'
+    const pnCil2 = activeKey === 'k'
+      ? D2.prijem                                            // Komplexní: plný vlastní příjem
+      : activeKey === 'z'
+          ? Math.round(D2.vydaje * podilKpn2 * 0.75)         // Základní: podíl × 75 %
+          : Math.round(D2.vydaje * podilKpn2);               // Standardní: podíl výdajů
+    const pnCilLabel2 = activeKey === 'k'
+      ? 'Vlastní příjem (cíl)'
+      : activeKey === 'z'
+          ? `Podíl výdajů × 0,75 (${Math.round(podilKpn2*100)} % × 75 %)`
           : (podilKpn2 < 1.0
               ? `Podíl výdajů (${Math.round(podilKpn2*100)} % — dle poměru příjmů)`
-              : 'Výdaje domácnosti (cíl)'));
+              : 'Výdaje domácnosti (cíl)');
     const pnMezera2 = Math.max(pnCil2 - (R_arg.nemocenska||0), 0);
 
     // Rizika z V_arg
@@ -3436,53 +4251,74 @@ function exportPDF(){
         <span style="font-weight:600;color:${color||'#1A1A1A'}">${fKc(amount)}</span>
        </div>`;
 
-    const cfCardInv = (st, vyd, invPC, invCelkem) => {
-      const s = src(st);
-      const pokryto = s.total >= vyd;
-      const mezera  = Math.max(vyd - s.total, 0);
-      const kapRaw  = Math.round(mezera * 12 * af2);
+    // Karta výpočtu invalidity (v21.1: data PŘÍMO z R.inv = engine)
+    // Cíl, mezera, zach. příjem, inv. důchod jsou už spočítány enginem podle aktivní varianty
+    const cfCardInv = (st, invPC, invCelkem) => {
+      const data = invV ? invV[st] : null;
+      const cil = data ? Math.round(data.cil) : 0;
+      const zach = data ? Math.round(data.zachPrijem) : 0;
+      const duc = data ? data.invDuc : 0;
+      const mezera = data ? Math.round(data.mezera) : 0;
+      const pokryto = mezera <= 0;
+      const kapRaw = Math.round(mezera * 12 * afInv2);
       const bc = pokryto ? '#A7F3D0' : '#FCA5A5';
       const hbg = pokryto ? '#F0FAF4' : '#FFF1F1';
       const hcol = pokryto ? '#166534' : '#E3000F';
-      const retPct = Math.round((R_arg.ret||{I:.65,II:.30,III:.05})[st]*100);
-      const vydDesc = st==='I' ? 'plné výdaje, splácíte hypo' : st==='II' ? 'bez hypo, +10 %' : 'bez hypo, +25 %';
+      const retPctRaw = R_arg.ret ? R_arg.ret[st] : ({I:.55,II:.25,III:.05}[st]);
+      const retPct = Math.round(retPctRaw * 100);
+
+      // Popis cíle dle aktivní varianty
+      let cilLabel, vydDesc;
+      if(activeKey === 'k'){
+        const pct = {I:5,II:10,III:25}[st];
+        cilLabel = `Cíl = příjem + ${pct} % výdajů`;
+        vydDesc = `zachováte ${retPct} % příjmu · příjem + ${pct} % výdajů`;
+      } else if(activeKey === 'z'){
+        const pct = {I:5,II:10,III:25}[st];
+        const vydPart = st==='I' ? 'plné výdaje × 0,75' : 'výdaje bez hypo × 0,75';
+        cilLabel = `Cíl = podíl × (${vydPart}) + ${pct} %`;
+        vydDesc = `zachováte ${retPct} % příjmu · ${vydPart} + ${pct} %`;
+      } else { // 's'
+        const pct = {I:5,II:10,III:25}[st];
+        const vydPart = st==='I' ? 'plné výdaje' : 'výdaje bez hypo';
+        cilLabel = `Cíl = podíl × ${vydPart} + ${pct} %`;
+        vydDesc = `zachováte ${retPct} % příjmu · ${vydPart} + ${pct} %`;
+      }
+
       const cfR = (lbl, val, col) =>
         `<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #F0F0F0;font-size:8px">
           <span style="color:${col||'#6B6560'}">${lbl}</span>
           <span style="font-weight:600;color:${col||'#1A1A1A'}">${fKc(val)}</span>
          </div>`;
-      // Výpočtový box — stejný pro všechny stupně
       const vypocetBox =
         `<div style="margin-top:8px;border:1px solid ${bc};border-radius:5px;overflow:hidden">
           <div style="background:${pokryto?'#166534':'#E3000F'};padding:3px 8px">
             <span style="font-size:7.5px;font-weight:700;color:#fff;text-transform:uppercase">Výpočet mezery — ${st}. stupeň</span>
           </div>
           <div style="padding:6px 8px;background:#fff">
-            ${cfR('Výdaje domácnosti', vyd)}
-            ${cfR(`− Zachovaný příjem (${retPct} %)`, s.zach, '#166534')}
-            ${s.duc>0 ? cfR('− Invalidní důchod', s.duc, '#166534') : ''}
-            ${s.part>0 ? cfR('− Příjem partnera', s.part, '#166534') : ''}
+            ${cfR(cilLabel, cil)}
+            ${cfR(`− Zachovaný příjem (${retPct} %)`, zach, '#166534')}
+            ${duc>0 ? cfR('− Invalidní důchod', duc, '#166534') : ''}
             ${pokryto
               ? `<div style="background:#166534;border-radius:3px;padding:4px 8px;margin-top:5px;display:flex;justify-content:space-between">
                   <span style="font-size:8px;font-weight:700;color:#fff">= POKRYTO ✓</span>
                   <span style="font-size:8px;color:rgba(255,255,255,.8)">${st}. stupeň</span>
                  </div>
                  <div style="margin-top:4px;font-size:7px;color:#6B6560;line-height:1.6;padding:0 2px">
-                   Váš zachovaný příjem a invalidní důchod pokrývají výdaje domácnosti při ${st}. stupni invalidity. Pojistka pro tento stupeň není nutná.
+                   Váš zachovaný příjem a invalidní důchod plně pokrývají cíl při ${st}. stupni invalidity. Pojistka pro tento stupeň není nutná.
                  </div>`
               : `<div style="background:#E3000F;border-radius:3px;padding:4px 8px;margin-top:5px;display:flex;justify-content:space-between">
                   <span style="font-size:8px;font-weight:700;color:#fff">= CHYBÍ MĚSÍČNĚ</span>
                   <span style="font-size:10px;font-weight:700;color:#fff">${fKc(mezera)}</span>
                  </div>
                  <div style="font-size:7px;color:#6B6560;margin-top:4px;line-height:1.6;padding:0 2px">
-                   ${fKc(mezera)} × 12 měs. × AF ${Math.round(af2*100)/100} = ${fKp2(kapRaw)}${investRezerva2>0?' · −&nbsp;rezerva '+fKp2(investRezerva2):''}
+                   ${fKc(mezera)} × 12 měs. × KV ${Math.round(afInv2*100)/100} = ${fKp2(kapRaw)}
                    <br>→ ${st==='I'?'Pojistná částka při I. stupni':st==='II'?'Navíc při II. stupni (přičte se k I.)':'Navíc při III. stupni (přičte se k I.+II.)'}: <strong style="color:#1A1A1A">${fKp2(invPC)}</strong>
-            ${invCelkem>0&&mezera>0?`<br><span style="color:#888">💡 Celkem ${fKp2(invCelkem)} při ${st}. stupni zajistí Vám příjem <strong style="color:#1A1A1A">${fKc(Math.round(mezera))}/měs</strong> po dobu ${Math.round(af2)} let.</span>`:''}
+            ${invCelkem>0&&mezera>0?`<br><span style="color:#888">💡 Celkem ${fKp2(invCelkem)} při ${st}. stupni zajistí Vám příjem <strong style="color:#1A1A1A">${fKc(mezera)}/měs</strong> po dobu ${Math.round(afInv2)} let.</span>`:''}
                  </div>`
             }
           </div>
         </div>`;
-      // Součet kumulativní — stejný font jako "Celkem při III. st." v hlavičce
       const soucetBar = `
         <div style="margin-top:6px;background:#1A1A1A;border-radius:4px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:8px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.04em">Celkem vyplaceno při ${st}. st.</span>
@@ -3491,13 +4327,12 @@ function exportPDF(){
       return `<div style="border:1.5px solid ${bc};border-radius:6px;overflow:hidden">
         <div style="background:${hbg};padding:6px 10px;border-bottom:1px solid ${bc}">
           <div style="font-size:9.5px;font-weight:700;color:${hcol};text-transform:uppercase">${st}. stupeň invalidity${st==='III'?' — nejtěžší':st==='II'?' — středně těžký':' — nejlehčí'}</div>
-          <div style="font-size:7.5px;color:#6B6560;margin-top:1px">zachováte ${retPct} % příjmu · ${vydDesc}</div>
+          <div style="font-size:7.5px;color:#6B6560;margin-top:1px">${vydDesc}</div>
         </div>
         <div style="padding:8px 10px">
-          ${cfRow('Výdaje domácnosti', vyd)}
-          ${cfRow(`Zachovaný příjem (${retPct} %)`, s.zach, '#166534')}
-          ${s.duc>0 ? cfRow('Invalidní důchod', s.duc, '#166534') : ''}
-          ${s.part>0 ? cfRow('Příjem partnera', s.part, '#166534') : ''}
+          ${cfRow('Cíl (' + (activeKey==='k'?'příjem + zvýšené výdaje':'podíl výdajů') + ')', cil)}
+          ${cfRow(`Zachovaný příjem (${retPct} %)`, zach, '#166534')}
+          ${duc>0 ? cfRow('Invalidní důchod', duc, '#166534') : ''}
           ${vypocetBox}
           ${soucetBar}
         </div>
@@ -3523,13 +4358,12 @@ function exportPDF(){
           ⚠️ Nutné minimum kryje <strong>75 % standardního doporučení</strong>. Při invaliditě budete mít nižší příjem — zvažte přechod na Standardní variantu.
         </div>`:''}
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-          ${cfCardInv('I',   vydI,   invPrirI,   invCelkemI)}
-          ${cfCardInv('II',  vydII,  invPrirII,  invCelkemII)}
-          ${cfCardInv('III', vydIII, invPrirIII, invCelkemIII)}
+          ${cfCardInv('I',   invPrirI,   invCelkemI)}
+          ${cfCardInv('II',  invPrirII,  invCelkemII)}
+          ${cfCardInv('III', invPrirIII, invCelkemIII)}
         </div>
         <div style="margin-top:5px;font-size:7.5px;color:#6B6560;background:#F5F5F5;padding:4px 8px;border-radius:3px">
           Kumulativní plnění: při II. st. obdržíte PČ za I.+II. st. dohromady · při III. st. za všechny tři stupně.
-          ${investRezerva2>0?`<strong style="color:#1A6644"> Investiční rezerva ${fKp2(investRezerva2)} snižuje každou PČ (rezerva ${fKp2(D2.rezerva||0)} − nouzová rezerva 750 tis. Kč).</strong>`:''}
         </div>
       </div>
 
@@ -3601,21 +4435,30 @@ function exportPDF(){
                 <div style="width:20px;height:20px;background:#1A1A1A;color:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700">RIP</div>
                 <div style="font-size:9.5px;font-weight:700;color:#1A1A1A;text-transform:uppercase">Pojištění pro případ smrti</div>
               </div>
-              <div style="font-size:7.5px;color:#6B6560;margin-top:2px">${activeKey==='k'?'Nahrazení příjmu zemřelého — kolik rodině chybí bez jeho výdělku':'Pokrytí výdajů rodiny po úmrtí — co musí zaplatit i bez zemřelého'} · horizont ${smrtHorizont2} let</div>
+              <div style="font-size:7.5px;color:#6B6560;margin-top:2px">${activeKey==='k'?'Nahrazení vlastního příjmu klienta — partner žije dál se svým příjmem':'Pokrytí podílu výdajů domácnosti, který klient hradí'} · horizont ${smrtHorizont2} let</div>
             </div>
             <div style="padding:8px 10px">
-              ${cfRow(
-                activeKey==='k'
-                  ? 'Příjem zemřelého (který rodina ztratí)'
-                  : 'Výdaje rodiny po úmrtí (80 % z výdajů bez splátky)',
-                activeKey==='k' ? (R_arg.D?.prijem||vydPoSmrti2) : vydPoSmrti2)}
+              ${cfRow(smrtCilLabel2, vydPoSmrti2)}
               ${vdovDuc2>0  ? cfRow('− Vdovský/vdovecký důchod', vdovDuc2, '#166534') : ''}
-              ${partnerPr2>0 ? cfRow('− Příjem partnera', partnerPr2, '#166534') : ''}
               ${sirotciCelk2>0 ? cfRow('− Sirotčí důchod ('+R_arg.pocetD+' '+(R_arg.pocetD===1?'dítě':'děti')+')', sirotciCelk2, '#166534') : ''}
+              ${sirotciCelk2>0 ? (() => {
+                const procVym = Math.max((duc2?.III||0) - 4900, 0);
+                const sirotciProc = Math.max(procVym * 0.40, 4900);
+                const aplikovanoMin = procVym * 0.40 < 4900;
+                return `<div style="margin-top:3px;margin-bottom:5px;font-size:7px;color:#6B6560;background:#F5F5F5;border-left:2px solid #A7F3D0;padding:4px 8px;line-height:1.55">
+                <strong style="color:#1A1A1A">Výpočet sirotčího důchodu (§ 50 zákona 155/1995 Sb.):</strong><br>
+                základní výměra 4 900 Kč + 40 % procentní výměry zemřelého<br>
+                Procentní výměra zemřelého = inv. důchod III. st. ${fKc(duc2?.III||0)} − 4 900 = ${fKc(procVym)}/měs<br>
+                40 % z procentní výměry = ${fKc(Math.round(procVym * 0.40))}/měs${aplikovanoMin?' (zákonné minimum 4 900 Kč)':''}<br>
+                Sirotčí důchod = 4 900 + ${fKc(Math.round(sirotciProc))} = <strong style="color:#1A1A1A">${fKc(R_arg.sirotciDuc||0)}/měs</strong> na jedno dítě${R_arg.pocetD>1?' × '+R_arg.pocetD+' děti = '+fKc(sirotciCelk2):''}
+              </div>`;
+              })() : ''}
               ${smrtMezera2<=0
                 ? `<div style="background:#166534;border-radius:4px;padding:6px 10px;margin-top:6px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:9px;font-weight:700;color:#fff">= POKRYTO</span><span style="font-size:13px;color:#fff">✓</span></div>
                    <div style="margin-top:5px;font-size:7.5px;color:#6B6560;background:#F0FAF4;border:1px solid #A7F3D0;border-radius:4px;padding:5px 8px;line-height:1.7">
-                     Příjmy rodiny (${R_arg.maPartnera?'příjem partnera + ':''}${R_arg.vdovDuc>0?'vdovský důchod + ':''}sirotčí důchody) pokryjí výdaje domácnosti i po Vašem úmrtí. Pojistka pro případ smrti pro Vás není v této variantě nutná.
+                     ${activeKey==='k'
+                       ? `Vdovský${sirotciCelk2>0?' + sirotčí':''} důchod plně pokryje vlastní příjem klienta. Pojistka pro případ smrti pro Vás není v této variantě nutná.`
+                       : `Vdovský${sirotciCelk2>0?' + sirotčí':''} důchod plně pokryje podíl výdajů, který klient hradí. Pojistka pro případ smrti pro Vás není v této variantě nutná.`}
                    </div>`
                 : `<div style="background:#E3000F;border-radius:4px;padding:6px 10px;margin-top:6px;display:flex;justify-content:space-between;align-items:center">
                     <span style="font-size:9px;font-weight:700;color:#fff">= CHYBÍ MĚSÍČNĚ</span>
@@ -3623,8 +4466,7 @@ function exportPDF(){
                    </div>
                    <div style="margin-top:5px;background:#FFF8F8;border:1px solid #FCA5A5;border-radius:4px;padding:5px 8px;font-size:7.5px;color:#6B6560;line-height:1.8">
                      <strong style="color:#1A1A1A">Výpočet PČ:</strong><br>
-                     ${fKc(smrtMezera2)} × 12 měs. × AF ${Math.round(afSmrt2*100)/100} (horizont ${smrtHorizont2} let) = ${fKp2(Math.round(smrtMezera2*12*afSmrt2))}
-                     ${investRezerva2>0 ? '<br>− investovatelná rezerva: '+fKp2(investRezerva2) : ''}
+                     ${fKc(smrtMezera2)} × 12 měs. × KV ${Math.round(afSmrt2*100)/100} (horizont ${smrtHorizont2} let) = ${fKp2(Math.round(smrtMezera2*12*afSmrt2))}
                      ${(D2.zpSmrt||0)>0 ? '<br>− stávající pojištění: '+fKp2(D2.zpSmrt) : ''}
                      <br><strong style="color:#1A1A1A">→ Doporučená PČ: ${fKp2(smrtPC)}</strong>
                    </div>`
@@ -3652,11 +4494,16 @@ function exportPDF(){
 
         // PN: pokud dávka < 150 Kč/den → zobrazit info "PN není potřeba"
         const pnNeniTreba2 = pnDav > 0 && pnDav < 150;
+        const pnDescTxt = activeKey === 'k'
+          ? 'dorovnání na 100 % vlastního příjmu'
+          : activeKey === 'z'
+              ? 'dorovnání 75 % podílu výdajů'
+              : 'dorovnání podílu výdajů dle poměru příjmů';
         const pnKarta = pnDav>0 ? `
           <div style="border:1.5px solid #FCA5A5;border-radius:6px;overflow:hidden">
             <div style="background:#FFF1F1;padding:6px 10px;border-bottom:1px solid #FCA5A5">
               <div style="font-size:9.5px;font-weight:700;color:#1A1A1A;text-transform:uppercase">Pracovní neschopnost</div>
-              <div style="font-size:7.5px;color:#6B6560;margin-top:1px">${isOSVC2?'OSVČ — dorovnání na 100 % příjmu':'zaměstnanec — dorovnání výdajů'} · od ${(R_arg.pnCek?.lhuta||29)}. dne</div>
+              <div style="font-size:7.5px;color:#6B6560;margin-top:1px">${pnDescTxt} · od ${(R_arg.pnCek?.lhuta||29)}. dne</div>
             </div>
             <div style="padding:8px 10px">
               ${cfRow(pnCilLabel2, pnCil2)}
@@ -3690,7 +4537,7 @@ function exportPDF(){
         výplata po dobu ${R_arg.rokiDD||30} let (do důchodového věku) ·
         diskontní faktor ${Math.round(af2*100)/100} ·
         ${R_arg.D?.ildpExact?'invalidní důchod zadán přesně z ILDP':'invalidní důchod odhadnut z příjmu (pro přesnost doporučujeme ILDP z eportal.cssz.cz)'} ·
-        nouzová rezerva ${fKp2(750000)} není součástí pojistné ochrany
+        nouzová rezerva ${fKp2(750000)} není součástí pojistné ochrany${(R_arg.pocetD||0)>0 ? ` · sirotčí důchod ${fKc(R_arg.sirotciDuc||0)}/měs (§ 50 zák. 155/1995 Sb. — základní výměra 4 900 Kč + 40 % procentní výměry zemřelého)` : ''}
       </div>
 
       <div style="position:absolute;bottom:9mm;left:13mm;right:13mm;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #D8D8D8;padding-top:5px">
@@ -3768,6 +4615,9 @@ function exportPDF(){
         </div>`;
       }
       if(activeKey==='z'){
+        const invRisk = V.risks.find(r=>r.name.includes('invalidity'));
+        const invCelkemIII = invRisk ? invRisk.items.filter(it=>it.a>0&&it.t!=='D').reduce((s,it)=>s+it.a,0) : 0;
+        const fKpV = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
         return `<div style="background:#FDEAEA;border:1.5px solid #F5ACAF;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start">
           <span style="font-size:16px;flex-shrink:0">⚠️</span>
           <div>
@@ -3811,6 +4661,11 @@ function exportPDF(){
           </div>
         </div>`;
       } else if(activeKey==='s'){
+        const pnText = pnDavka>0
+          ? `Při nemoci dostanete <strong>${pnDavka} Kč/den</strong> — výdaje domácnosti budou pokryty.`
+          : R.isBezPracePomeru
+            ? ` Pracovní neschopnost se pro Vás nepojišťuje — ${R.isMD ? 'na rodičovské dovolené' : 'jako nezaměstnaný/á'} nemáte výdělek z práce, který by bylo třeba kompenzovat.`
+            : ' Pracovní neschopnost je pokryta státní nemocenskou.';
         return `<div style="background:#F5EDD8;border:1.5px solid #E8D5A8;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start">
           <span style="font-size:16px;flex-shrink:0">⚖️</span>
           <div>
@@ -3818,7 +4673,7 @@ function exportPDF(){
             <div style="font-size:9px;color:#78350F;line-height:1.7">
               Tato varianta zajistí, že <strong>Vaše domácnost bude mít na pokrytí výdajů</strong> i bez Vašeho příjmu.
               ${invCelkemIII>0?`Při těžké invaliditě obdržíte celkem <strong>${fKpV(invCelkemIII)}</strong> — dostatečné na pokrytí výdajů do důchodu.`:''}
-              ${pnDavka>0?`Při nemoci dostanete <strong>${pnDavka} Kč/den</strong> — výdaje domácnosti budou pokryty.`:' Pracovní neschopnost je pokryta státní nemocenskou.'}
+              ${pnText}
             </div>
           </div>
         </div>`;
@@ -3950,7 +4805,13 @@ function exportPDF(){
   a.download = `pojistna-ochrana-${varNames[activeKey].toLowerCase().replace(/\s/g,'-')}.html`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 5000);
-  setTimeout(()=>{btn.textContent='⬇ Stáhnout jako PDF'; btn.disabled=false;}, 1500);
+  setTimeout(()=>{if(btn){btn.textContent='⬇ Stáhnout jako PDF'; btn.disabled=false;}}, 1500);
+
+  } catch(err){
+    console.error('Chyba při generování PDF:', err);
+    alert('Chyba při generování PDF: ' + err.message + '\n\nDetail v konzoli prohlížeče (F12).');
+    if(btn){ btn.textContent='⬇ Stáhnout jako PDF'; btn.disabled=false; }
+  }
 }
 
 
@@ -3999,7 +4860,7 @@ function updateSens(){
   const diffPct = Math.round(diff * 100);
   const color = diff > 0.05 ? 'var(--red)' : diff < -0.05 ? 'var(--green)' : 'var(--ink2)';
   el.innerHTML = `
-    <strong>Anuitní faktor:</strong> ${afSens.toFixed(2)}× (původní: ${afOrig.toFixed(2)}×)<br>
+    <strong>Koeficient výplaty:</strong> ${afSens.toFixed(2)}× (původní: ${afOrig.toFixed(2)}×)<br>
     <strong>Inv. kapitál (Komplexní):</strong> ${fKst(invTotal)} <span style="color:${color};font-weight:700">(${diffPct>0?'+':''}${diffPct} %)</span><br>
     <strong>Celkové PČ:</strong> přibližně <span style="color:${color};font-weight:700">${diffPct>0?'+':''}${diffPct} %</span> oproti základnímu výpočtu<br>
     <span style="font-size:10px;color:var(--ink4)">Nižší výnos → vyšší potřebné PČ (nutný větší kapitál). Vyšší výnos → nižší PČ.</span>
