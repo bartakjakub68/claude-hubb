@@ -82,7 +82,7 @@
     <div class="page-tabs" id="page-tabs" style="display:none">
       <button class="page-tab visible active" onclick="showTab('apps',this)">Aplikace</button>
       <button class="page-tab visible" id="ptab-users" onclick="showTab('users',this)">Uživatelé</button>
-      <button class="page-tab" id="ptab-costs" onclick="showTab('costs',this);loadCosts()">Náklady API</button>
+      <button class="page-tab" id="ptab-costs" onclick="showTab('costs',this);refreshCosts()">Náklady API</button>
       <button class="page-tab" id="ptab-billing" onclick="showTab('billing',this);loadBilling()">Fakturace</button>
       <button class="page-tab" id="ptab-appmanage" onclick="showTab('appmanage',this)">Správa aplikací</button>
     </div>
@@ -172,6 +172,7 @@
         <div>
           <div class="section-title">Náklady API</div>
         </div>
+        <button onclick="refreshCosts()" style="padding:7px 14px;background:var(--white);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2)">↻ Aktualizovat</button>
       </div>
 
       <!-- Nastavení marže (jen admin) -->
