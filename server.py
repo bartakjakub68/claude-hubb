@@ -375,6 +375,22 @@ def init_db():
             ('Kalkulačka úvěrů', '/kalkulacka-4.html', '🏦', 'Kalkulačka úvěrů', 5)
         )
 
+    # Spoření test
+    sp_exists = c.execute("SELECT id FROM apps WHERE nazev='Spoření test'").fetchone()
+    if not sp_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Spoření test', '/kalkulator-A-sporeni.html', '💰', 'Kalkulačka spoření', 6)
+        )
+
+    # Úvěry test
+    ut_exists = c.execute("SELECT id FROM apps WHERE nazev='Úvěry test'").fetchone()
+    if not ut_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Úvěry test', '/kalkulator-B-uvery.html', '📊', 'Kalkulačka úvěrů test', 7)
+        )
+
     # Výchozí admin účet
     existing = c.execute("SELECT id FROM users WHERE role='admin'").fetchone()
     if not existing:

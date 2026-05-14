@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulátor — Spoření, důchod, rezerva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --cream:#F6F5F3;--white:#FFFFFF;
+  --ink:#1A1A1A;--ink2:#4A4845;--ink3:#8F8C87;--ink4:#9A9692;
+  --gold:#CC0000;--gold-light:#E03333;--gold-pale:#F9EDED;--gold-border:rgba(204,0,0,0.2);
+  --red:#CC0000;--red-pale:#F9EDED;--red-border:rgba(204,0,0,0.2);
+  --green:#1a6644;--green-pale:#e8f4ee;--green-border:#a8d4bc;
+  --blue:#1e4a8a;--blue-pale:#e8eef7;--blue-border:#b8cce8;
+  --amber:#854F0B;--amber-pale:#FAEEDA;--amber-border:#FAC775;
+  --border:#E2E0DC;--border2:#D0CEC9;
+  --sh-sm:0 1px 3px rgba(20,18,16,.05);--sh:0 4px 20px rgba(20,18,16,.07);--sh-lg:0 16px 48px rgba(20,18,16,.1);
+  --r:20px;--rs:12px;--rx:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.5;padding-top:56px}
+
+/* TOPBAR */
+.hub-topbar{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:stretch;z-index:500;font-family:'IBM Plex Sans',sans-serif}
+.hub-topbar__left{background:#1A1A1A;flex:1;display:flex;align-items:center;padding:0 24px;gap:24px}
+.hub-topbar__logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0}
+.hub-topbar__logomark{width:30px;height:30px;position:relative;flex-shrink:0}
+.hub-topbar__logomark::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15)}
+.hub-topbar__logomark::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:#CC0000}
+.hub-topbar__logotext{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;font-weight:500;color:#fff;letter-spacing:0.16em;text-transform:uppercase}
+.hub-topbar__appname{font-size:0.8125rem;color:rgba(255,255,255,0.45);font-weight:300}
+.hub-topbar__right{background:#CC0000;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.hub-topbar__user{display:flex;flex-direction:column;align-items:flex-end}
+.hub-topbar__name{font-size:0.8125rem;font-weight:500;color:#fff;line-height:1.2}
+.hub-topbar__role{font-size:0.7rem;color:rgba(255,255,255,0.7);font-weight:300}
+
+/* LAYOUT */
+.main{max-width:980px;margin:0 auto;padding:28px 20px 100px}
+.step-header{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.step-header h1{font-family:'DM Serif Display',serif;font-size:28px;color:var(--ink);letter-spacing:-.5px;margin-bottom:4px}
+.step-header p{font-size:13px;color:var(--ink3);font-weight:500}
+.print-btn{padding:10px 16px;background:var(--white);border:1px solid var(--border);border-radius:var(--rx);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.print-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* TABS */
+.module-tabs{display:flex;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh-sm);margin-bottom:20px;flex-wrap:wrap}
+.mtab{flex:1 1 0;min-width:140px;padding:14px 10px;cursor:pointer;transition:all .2s;border-right:1px solid var(--border);text-align:center;background:transparent;border-top:none;border-bottom:none;font-family:'IBM Plex Sans',sans-serif;position:relative}
+.mtab:last-child{border-right:none}
+.mtab:hover{background:var(--cream)}
+.mtab.active{background:var(--ink)}
+.mtab-icon{font-size:18px;margin-bottom:4px}
+.mtab-name{font-size:11.5px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ink2);margin-bottom:1px}
+.mtab.active .mtab-name{color:white}
+.mtab-desc{font-size:10px;color:var(--ink4);line-height:1.3}
+.mtab.active .mtab-desc{color:rgba(255,255,255,.4)}
+.mtab::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--gold);transform:scaleX(0);transition:transform .25s;transform-origin:center}
+.mtab.active::after{transform:scaleX(1)}
+
+.module-content{display:none}
+.module-content.active{display:block}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--sh-sm);transition:box-shadow .3s;margin-bottom:16px}
+.card:hover{box-shadow:var(--sh)}
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.card-icon{width:36px;height:36px;background:var(--gold-pale);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.card-title{font-size:14px;font-weight:700;color:var(--ink2);letter-spacing:-.2px}
+.card-subtitle{font-size:11px;color:var(--ink4);margin-top:2px}
+
+/* FORM ELEMENTS */
+.layout-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.layout-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.layout-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+@media(max-width:680px){.layout-2,.layout-3,.layout-4{grid-template-columns:1fr 1fr}}
+.field{margin-bottom:18px}.field:last-child{margin-bottom:0}
+.field-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.field-label span{font-size:13px;color:var(--ink3);font-weight:500}
+.field-label strong{font-size:16px;font-weight:700;color:var(--ink);font-family:'DM Serif Display',serif;letter-spacing:-.3px}
+.select-group label{display:block;font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:6px}
+.slider-wrap{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--white);border:2.5px solid var(--gold);box-shadow:0 2px 8px rgba(204,0,0,.2);cursor:pointer;transition:all .2s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+.num-input{width:120px;flex-shrink:0;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:8px 10px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;text-align:right;outline:none;transition:all .2s;-moz-appearance:textfield}
+.num-input::-webkit-inner-spin-button,.num-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.num-input:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(204,0,0,.1)}
+.num-input.sm{width:90px}
+select{width:100%;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:9px 32px 9px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b6560' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color .2s}
+select:focus{border-color:var(--gold)}
+input[type=text],input[type=number]{background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:8px 10px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;outline:none;transition:all .2s}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(204,0,0,.1)}
+textarea{width:100%;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:10px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;outline:none;transition:all .2s;resize:vertical;min-height:60px}
+textarea:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(204,0,0,.1)}
+.sec-div{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 12px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* TOGGLE (inflation switch) */
+.toggle-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cream);border-radius:var(--rx);margin-bottom:14px;font-size:12.5px;color:var(--ink2)}
+.toggle-switch{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border2);border-radius:20px;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s}
+input:checked+.toggle-slider{background:var(--gold)}
+input:checked+.toggle-slider:before{transform:translateX(16px)}
+
+/* CALC BUTTON */
+.calc-btn{display:block;width:100%;padding:16px;background:var(--ink);color:white;border:none;border-radius:var(--rs);font-family:'IBM Plex Sans',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.2px;cursor:pointer;transition:all .2s;margin-top:8px;position:relative;overflow:hidden}
+.calc-btn::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(204,0,0,.6),transparent)}
+.calc-btn:hover{background:var(--ink2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(20,18,16,.2)}
+.calc-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* PROFILE CARD (dark) */
+.profile-card{background:var(--ink);border-radius:var(--r);padding:24px;box-shadow:var(--sh-lg);position:relative;overflow:hidden;margin-bottom:16px}
+.profile-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(204,0,0,.5),transparent)}
+.profile-name{font-family:'DM Serif Display',serif;font-size:22px;color:white;letter-spacing:-.3px;margin-bottom:3px}
+.profile-sub{font-size:12px;color:rgba(255,255,255,.45);font-weight:400;margin-bottom:16px}
+.profile-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.07);border-radius:var(--rx);overflow:hidden}
+.kpi{background:rgba(255,255,255,.035);padding:11px 14px;text-align:center}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:2px}
+.kpi-lbl{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+@media(max-width:680px){.profile-kpis{grid-template-columns:repeat(2,1fr)}}
+
+/* METRIC CARDS */
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:680px){.metrics-grid{grid-template-columns:1fr 1fr}}
+.metric{background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;box-shadow:var(--sh-sm)}
+.metric-lbl{font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.metric-val{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink);margin-bottom:2px}
+.metric-sub{font-size:11px;color:var(--ink4)}
+.metric.green .metric-val{color:var(--green)}
+.metric.red .metric-val{color:var(--red)}
+.metric.amber .metric-val{color:var(--amber)}
+.metric.blue .metric-val{color:var(--blue)}
+
+/* SCENARIO BADGES */
+.scenario-badges{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.sbadge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.sbadge.green{background:var(--green-pale);color:var(--green);border-color:var(--green-border)}
+.sbadge.blue{background:var(--blue-pale);color:var(--blue);border-color:var(--blue-border)}
+.sbadge.amber{background:var(--amber-pale);color:var(--amber);border-color:var(--amber-border)}
+
+/* CHART */
+.chart-wrap{position:relative;width:100%;height:280px;margin-bottom:16px}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-bottom:10px}
+.chart-legend span{display:flex;align-items:center;gap:5px}
+.leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
+
+/* AI BOX */
+.ai-box{background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:18px 20px;box-shadow:var(--sh-sm);margin-bottom:16px;border-left:3px solid var(--gold)}
+.ai-label{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.ai-text{font-size:14px;line-height:1.7;color:var(--ink2)}
+.ai-loading{font-size:13px;color:var(--ink4);font-style:italic}
+
+/* WHAT-IF */
+.whatif-card{background:var(--white);border:1px solid var(--gold-border);border-radius:var(--rs);padding:18px 20px;box-shadow:var(--sh-sm);margin-bottom:16px;background:var(--gold-pale)}
+.whatif-title{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.whatif-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+@media(max-width:600px){.whatif-grid{grid-template-columns:1fr}}
+.whatif-btn{padding:10px 14px;background:var(--white);border:1px solid var(--gold-border);border-radius:var(--rx);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;text-align:left;transition:all .15s;line-height:1.4;display:flex;flex-direction:column;gap:2px}
+.whatif-btn:hover{border-color:var(--gold);background:white;color:var(--gold)}
+.whatif-btn .wi-q{color:var(--ink4);font-weight:400;font-size:11px;display:block}
+.whatif-btn:hover .wi-q{color:var(--gold);opacity:.7}
+.whatif-btn.active{border-color:var(--gold);background:var(--white);color:var(--gold)}
+
+/* WHAT-IF CUSTOM */
+.wi-custom{background:var(--white);border:1px dashed var(--gold-border);border-radius:var(--rx);padding:14px;margin-top:8px}
+.wi-custom-label{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.wi-custom textarea{margin-bottom:8px;min-height:50px}
+.wi-custom-btn{padding:8px 14px;background:var(--gold);color:white;border:none;border-radius:var(--rx);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.wi-custom-btn:hover{background:var(--gold-light);transform:translateY(-1px)}
+.wi-custom-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* WHAT-IF ANSWER (numeric) */
+.wi-answer{background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:16px 18px;margin-top:10px;display:none}
+.wi-answer.show{display:block}
+.wi-answer-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.wi-answer-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;line-height:1.4}
+.wi-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:600px){.wi-result-grid{grid-template-columns:1fr}}
+.wi-result{background:var(--cream);border-radius:var(--rx);padding:10px 14px}
+.wi-result-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.wi-result-val{font-family:'DM Serif Display',serif;font-size:17px;color:var(--ink)}
+.wi-result.green .wi-result-val{color:var(--green)}
+.wi-result.red .wi-result-val{color:var(--red)}
+.wi-result.amber .wi-result-val{color:var(--amber)}
+.wi-delta{font-size:11px;font-weight:600;color:var(--ink3);margin-top:2px}
+.wi-delta.positive{color:var(--green)}
+.wi-delta.negative{color:var(--red)}
+.wi-summary{font-size:13px;line-height:1.6;color:var(--ink2);padding:10px 14px;background:var(--cream);border-radius:var(--rx);border-left:3px solid var(--gold)}
+
+/* SENSITIVITY HEATMAP */
+.heatmap-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:18px 20px;box-shadow:var(--sh-sm);margin-bottom:16px}
+.heatmap-title{font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.heatmap-sub{font-size:11.5px;color:var(--ink4);margin-bottom:14px}
+.heatmap-table{width:100%;border-collapse:separate;border-spacing:2px;font-size:12px}
+.heatmap-table th{font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;padding:6px 4px;text-align:center;background:var(--cream);border-radius:var(--rx)}
+.heatmap-table th.corner{background:transparent}
+.heatmap-table td{padding:10px 4px;text-align:center;border-radius:var(--rx);font-weight:600;color:var(--ink);transition:transform .15s;cursor:default;font-size:11.5px}
+.heatmap-table td:hover{transform:scale(1.05);z-index:2;position:relative;box-shadow:var(--sh)}
+.heatmap-table td.rowlabel{background:var(--cream);color:var(--ink3);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px}
+
+/* RESULTS SECTION */
+.results-section{display:none}
+.results-section.show{display:block}
+.results-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.results-topbar h2{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);letter-spacing:-.3px}
+
+/* SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* DIVIDER */
+.sec-label{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 12px;padding-top:16px;border-top:1px solid var(--border)}
+.sec-label:first-of-type{margin-top:0;padding-top:0;border-top:none}
+
+/* PRINT */
+@media print{
+  body{background:white;padding-top:0;font-size:12px}
+  .hub-topbar,.module-tabs,.calc-btn,.whatif-card,.print-btn,.results-topbar,.toggle-row{display:none !important}
+  .main{max-width:100%;padding:0}
+  .card,.profile-card,.heatmap-card,.ai-box{page-break-inside:avoid;box-shadow:none;margin-bottom:12px}
+  .module-content{display:none !important}
+  .module-content.active{display:block !important}
+  .results-section{display:block !important}
+  .card-header{margin-bottom:10px;padding-bottom:8px}
+  .profile-card{background:#1a1a1a !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .metrics-grid{grid-template-columns:repeat(3,1fr) !important}
+  .chart-wrap{height:220px}
+  .step-header h1{font-size:20px}
+  .step-header p{font-size:11px}
+  .heatmap-table td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header class="hub-topbar">
+  <div class="hub-topbar__left">
+    <a class="hub-topbar__logo" href="#">
+      <div class="hub-topbar__logomark"></div>
+      <span class="hub-topbar__logotext">PORTÁL</span>
+    </a>
+    <span class="hub-topbar__appname">Kalkulátor scénářů — Spoření, důchod, rezerva</span>
+  </div>
+  <div class="hub-topbar__right">
+    <div class="hub-topbar__user">
+      <span class="hub-topbar__name">Finanční poradce</span>
+      <span class="hub-topbar__role">Komerční banka</span>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="step-header">
+    <div>
+      <h1>Kalkulátor spoření a ochrany</h1>
+      <p>Tři scénáře pro plánování investic, důchodu a finanční rezervy — s AI komentářem pro schůzku.</p>
+    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ Tisk / Export PDF</button>
+  </div>
+
+
+  <!-- MODULE TABS -->
+  <div class="module-tabs">
+    <button class="mtab active" onclick="switchModule('invest',this)">
+      <div class="mtab-icon">📈</div>
+      <div class="mtab-name">Investice</div>
+      <div class="mtab-desc">Spoření & zhodnocení</div>
+    </button>
+    <button class="mtab" onclick="switchModule('duchod',this)">
+      <div class="mtab-icon">🧓</div>
+      <div class="mtab-name">Důchod</div>
+      <div class="mtab-desc">Penzijní spoření</div>
+    </button>
+    <button class="mtab" onclick="switchModule('rezerva',this)">
+      <div class="mtab-icon">🛟</div>
+      <div class="mtab-name">Rezerva</div>
+      <div class="mtab-desc">Nouzový fond</div>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       MODULE 1 — INVESTICE
+  ═══════════════════════════════════ -->
+  <div class="module-content active" id="mod-invest">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">👤</div>
+        <div><div class="card-title">Profil klienta</div><div class="card-subtitle">Základní údaje pro výpočet scénářů</div></div>
+      </div>
+      <div class="layout-3" style="margin-bottom:16px">
+        <div class="select-group">
+          <label>Jméno klienta</label>
+          <input type="text" id="i-jmeno" value="Jan Novák" style="width:100%">
+        </div>
+        <div class="select-group">
+          <label>Věk</label>
+          <div class="slider-wrap">
+            <input type="range" min="18" max="70" step="1" value="35" id="i-vek-sl" oninput="sv('i-vek-sl','i-vek','i-vek-lbl','',true)">
+            <input type="number" class="num-input sm" id="i-vek" value="35" onchange="si('i-vek','i-vek-sl','i-vek-lbl','',18,70,true)" onkeydown="if(event.key==='Enter')this.blur()">
+            <span id="i-vek-lbl" style="font-size:11px;color:var(--ink4);min-width:38px">35 let</span>
+          </div>
+        </div>
+        <div class="select-group">
+          <label>Investiční horizont (roky)</label>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="40" step="1" value="20" id="i-hor-sl" oninput="sv('i-hor-sl','i-hor','i-hor-lbl','let',false)">
+            <input type="number" class="num-input sm" id="i-hor" value="20" onchange="si('i-hor','i-hor-sl','i-hor-lbl','let',1,40,false)" onkeydown="if(event.key==='Enter')this.blur()">
+            <span id="i-hor-lbl" style="font-size:11px;color:var(--ink4);min-width:38px">20 let</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Počáteční vklad</span><strong id="i-poc-lbl">100 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="0" max="2000000" step="10000" value="100000" id="i-poc-sl" oninput="syncK('i-poc-sl','i-poc-ni','i-poc-lbl')">
+          <input type="text" class="num-input" id="i-poc-ni" value="100 000" onchange="syncKi('i-poc-ni','i-poc-sl','i-poc-lbl',0,2000000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Měsíční vklad</span><strong id="i-mes-lbl">3 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="0" max="50000" step="500" value="3000" id="i-mes-sl" oninput="syncK('i-mes-sl','i-mes-ni','i-mes-lbl')">
+          <input type="text" class="num-input" id="i-mes-ni" value="3 000" onchange="syncKi('i-mes-ni','i-mes-sl','i-mes-lbl',0,50000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="layout-2">
+        <div class="field">
+          <div class="field-label"><span>Realistický výnos p.a.</span><strong id="i-vyn-lbl">6,0 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="15" step="0.5" value="6" id="i-vyn-sl" oninput="syncPct('i-vyn-sl','i-vyn-lbl')">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Průměrná inflace p.a.</span><strong id="i-inf-lbl">3,0 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="8" step="0.5" value="3" id="i-inf-sl" oninput="syncPct('i-inf-sl','i-inf-lbl')">
+          </div>
+        </div>
+      </div>
+      <button class="calc-btn" id="i-btn" onclick="calcInvest()">Spočítat scénáře investice →</button>
+    </div>
+
+    <div class="results-section" id="i-results">
+      <div class="results-topbar">
+        <h2>Výsledky — <span id="i-res-jmeno"></span></h2>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-name" id="i-pc-name"></div>
+        <div class="profile-sub" id="i-pc-sub"></div>
+        <div class="profile-kpis" id="i-pc-kpis"></div>
+      </div>
+
+      <div class="scenario-badges">
+        <span class="sbadge green">Optimistický</span>
+        <span class="sbadge blue">Realistický</span>
+        <span class="sbadge amber">Pesimistický</span>
+      </div>
+
+      <div class="metrics-grid" id="i-metrics"></div>
+
+      <div class="card" style="padding:20px">
+        <div class="chart-legend" id="i-legend"></div>
+        <div class="chart-wrap"><canvas id="i-chart" role="img" aria-label="Graf vývoje investice ve třech scénářích"></canvas></div>
+      </div>
+
+      <!-- SENSITIVITY HEATMAP -->
+      <div class="heatmap-card">
+        <div class="heatmap-title">🔥 Citlivostní analýza</div>
+        <div class="heatmap-sub">Jak se mění výsledná hodnota podle výnosu a horizontu (barva = výše částky)</div>
+        <div id="i-heatmap"></div>
+      </div>
+
+      <!-- WHAT-IF -->
+      <div class="whatif-card">
+        <div class="whatif-title">
+          <span>💡</span> Co kdyby... (What-if analýza)
+        </div>
+        <div class="whatif-grid" id="i-whatif-btns"></div>
+
+        <div class="wi-custom">
+          <div class="wi-custom-label">✏️ Vlastní scénář</div>
+          <textarea id="i-wi-custom" placeholder="Napište vlastní otázku. Např.: Co když budu investovat 5 000 Kč měsíčně po dobu 25 let s výnosem 7 %?"></textarea>
+          <button class="wi-custom-btn" onclick="runWI_I_custom()">Spočítat →</button>
+        </div>
+
+        <div class="wi-answer" id="i-wi-answer">
+          <div class="wi-answer-label">📊 Výsledek scénáře</div>
+          <div id="i-wi-content"></div>
+        </div>
+      </div>
+
+      <div class="ai-box">
+        <div class="ai-label">AI komentář pro schůzku</div>
+        <div class="ai-text" id="i-ai-text"><span class="ai-loading">Generuji komentář...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       MODULE 3 — DŮCHOD (s inflací)
+  ═══════════════════════════════════ -->
+  <div class="module-content" id="mod-duchod">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🧓</div>
+        <div><div class="card-title">Důchodové spoření</div><div class="card-subtitle">Penzijní připojištění, DIP a státní příspěvky</div></div>
+      </div>
+      <div class="layout-3" style="margin-bottom:16px">
+        <div class="select-group">
+          <label>Jméno klienta</label>
+          <input type="text" id="d-jmeno" value="Petr Svoboda" style="width:100%">
+        </div>
+        <div class="select-group">
+          <label>Věk</label>
+          <div class="slider-wrap">
+            <input type="range" min="18" max="60" step="1" value="40" id="d-vek-sl" oninput="sv('d-vek-sl','d-vek','d-vek-lbl','',true)">
+            <input type="number" class="num-input sm" id="d-vek" value="40" onchange="si('d-vek','d-vek-sl','d-vek-lbl','',18,60,true)" onkeydown="if(event.key==='Enter')this.blur()">
+            <span id="d-vek-lbl" style="font-size:11px;color:var(--ink4);min-width:38px">40 let</span>
+          </div>
+        </div>
+        <div class="select-group">
+          <label>Věk odchodu do důchodu</label>
+          <div class="slider-wrap">
+            <input type="range" min="55" max="70" step="1" value="65" id="d-duc-sl" oninput="sv('d-duc-sl','d-duc','d-duc-lbl','',true)">
+            <input type="number" class="num-input sm" id="d-duc" value="65" onchange="si('d-duc','d-duc-sl','d-duc-lbl','',55,70,true)" onkeydown="if(event.key==='Enter')this.blur()">
+            <span id="d-duc-lbl" style="font-size:11px;color:var(--ink4);min-width:38px">65 let</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Aktuální úspory na důchod</span><strong id="d-usp-lbl">200 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="0" max="3000000" step="10000" value="200000" id="d-usp-sl" oninput="syncK('d-usp-sl','d-usp-ni','d-usp-lbl')">
+          <input type="text" class="num-input" id="d-usp-ni" value="200 000" onchange="syncKi('d-usp-ni','d-usp-sl','d-usp-lbl',0,3000000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Vlastní měsíční příspěvek</span><strong id="d-mes-lbl">3 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="0" max="30000" step="500" value="3000" id="d-mes-sl" oninput="syncK('d-mes-sl','d-mes-ni','d-mes-lbl')">
+          <input type="text" class="num-input" id="d-mes-ni" value="3 000" onchange="syncKi('d-mes-ni','d-mes-sl','d-mes-lbl',0,30000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="layout-2">
+        <div class="field">
+          <div class="field-label"><span>Příspěvek zaměstnavatele / stát</span><strong id="d-stat-lbl">500 Kč</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="5000" step="100" value="500" id="d-stat-sl" oninput="syncK('d-stat-sl','d-stat-ni','d-stat-lbl')">
+            <input type="text" class="num-input sm" id="d-stat-ni" value="500" onchange="syncKi('d-stat-ni','d-stat-sl','d-stat-lbl',0,5000)" onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Plánovaná délka výplaty</span><strong id="d-vyp-lbl">20 let</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="5" max="35" step="1" value="20" id="d-vyp-sl" oninput="sv('d-vyp-sl','d-vyp','d-vyp-lbl','let',false)">
+            <input type="number" class="num-input sm" id="d-vyp" value="20" onchange="si('d-vyp','d-vyp-sl','d-vyp-lbl','let',5,35,false)" onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+        </div>
+      </div>
+      <div class="layout-2">
+        <div class="field">
+          <div class="field-label"><span>Předpokládaný výnos p.a.</span><strong id="d-vyn-lbl">5,0 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="10" step="0.5" value="5" id="d-vyn-sl" oninput="syncPct('d-vyn-sl','d-vyn-lbl')">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Průměrná inflace p.a.</span><strong id="d-inf-lbl">3,0 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="8" step="0.5" value="3" id="d-inf-sl" oninput="syncPct('d-inf-sl','d-inf-lbl')">
+          </div>
+        </div>
+      </div>
+      <button class="calc-btn" id="d-btn" onclick="calcDuchod()">Spočítat scénáře důchodu →</button>
+    </div>
+
+    <div class="results-section" id="d-results">
+      <div class="results-topbar">
+        <h2>Výsledky — <span id="d-res-jmeno"></span></h2>
+      </div>
+
+      <div class="toggle-row">
+        <label class="toggle-switch">
+          <input type="checkbox" id="d-realtoggle" onchange="calcDuchod()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span>Zobrazit v <strong>dnešních penězích</strong> (očištěno o inflaci) — když je vypnuto, zobrazují se nominální hodnoty</span>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-name" id="d-pc-name"></div>
+        <div class="profile-sub" id="d-pc-sub"></div>
+        <div class="profile-kpis" id="d-pc-kpis"></div>
+      </div>
+      <div class="metrics-grid" id="d-metrics"></div>
+      <div class="card" style="padding:20px">
+        <div class="chart-legend" id="d-legend"></div>
+        <div class="chart-wrap"><canvas id="d-chart" role="img" aria-label="Graf vývoje úspor na důchod"></canvas></div>
+      </div>
+
+      <div class="heatmap-card">
+        <div class="heatmap-title">🔥 Citlivostní analýza</div>
+        <div class="heatmap-sub">Jak se mění naspořená částka podle výnosu a počtu let spoření</div>
+        <div id="d-heatmap"></div>
+      </div>
+
+      <div class="whatif-card">
+        <div class="whatif-title"><span>💡</span> Co kdyby... (What-if analýza)</div>
+        <div class="whatif-grid" id="d-whatif-btns"></div>
+
+        <div class="wi-custom">
+          <div class="wi-custom-label">✏️ Vlastní scénář</div>
+          <textarea id="d-wi-custom" placeholder="Napište vlastní otázku. Např.: Co když začnu spořit o 10 let dřív a budu dávat 4 000 Kč místo 3 000 Kč?"></textarea>
+          <button class="wi-custom-btn" onclick="runWI_D_custom()">Spočítat →</button>
+        </div>
+
+        <div class="wi-answer" id="d-wi-answer">
+          <div class="wi-answer-label">📊 Výsledek scénáře</div>
+          <div id="d-wi-content"></div>
+        </div>
+      </div>
+
+      <div class="ai-box">
+        <div class="ai-label">AI komentář pro schůzku</div>
+        <div class="ai-text" id="d-ai-text"><span class="ai-loading">Generuji komentář...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       MODULE 4 — FINANČNÍ REZERVA
+  ═══════════════════════════════════ -->
+  <div class="module-content" id="mod-rezerva">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🛟</div>
+        <div><div class="card-title">Finanční rezerva</div><div class="card-subtitle">Nouzový fond — základ každé finanční stability</div></div>
+      </div>
+      <div class="layout-2" style="margin-bottom:16px">
+        <div class="select-group">
+          <label>Jméno klienta</label>
+          <input type="text" id="r-jmeno" value="Lenka Dvořáková" style="width:100%">
+        </div>
+        <div class="select-group">
+          <label>Životní situace</label>
+          <select id="r-situ">
+            <option value="3">Single, stabilní příjem (3 měsíce)</option>
+            <option value="6" selected>Rodina / průměrná stabilita (6 měsíců)</option>
+            <option value="9">OSVČ / proměnlivý příjem (9 měsíců)</option>
+            <option value="12">Jediný živitel / riziková práce (12 měsíců)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Průměrné měsíční výdaje</span><strong id="r-vyd-lbl">35 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="5000" max="200000" step="1000" value="35000" id="r-vyd-sl" oninput="syncK('r-vyd-sl','r-vyd-ni','r-vyd-lbl')">
+          <input type="text" class="num-input" id="r-vyd-ni" value="35 000" onchange="syncKi('r-vyd-ni','r-vyd-sl','r-vyd-lbl',5000,200000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Aktuální rezerva (likvidní prostředky)</span><strong id="r-akt-lbl">50 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="0" max="2000000" step="5000" value="50000" id="r-akt-sl" oninput="syncK('r-akt-sl','r-akt-ni','r-akt-lbl')">
+          <input type="text" class="num-input" id="r-akt-ni" value="50 000" onchange="syncKi('r-akt-ni','r-akt-sl','r-akt-lbl',0,2000000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Kolik si může klient měsíčně odkládat</span><strong id="r-odkl-lbl">3 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="500" max="30000" step="500" value="3000" id="r-odkl-sl" oninput="syncK('r-odkl-sl','r-odkl-ni','r-odkl-lbl')">
+          <input type="text" class="num-input" id="r-odkl-ni" value="3 000" onchange="syncKi('r-odkl-ni','r-odkl-sl','r-odkl-lbl',500,30000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Úrok na spořicím účtu p.a.</span><strong id="r-uro-lbl">4,0 %</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="0" max="8" step="0.1" value="4.0" id="r-uro-sl" oninput="syncPct('r-uro-sl','r-uro-lbl')">
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcRezerva()">Spočítat plán rezervy →</button>
+    </div>
+
+    <div class="results-section" id="r-results">
+      <div class="results-topbar">
+        <h2>Výsledky — <span id="r-res-jmeno"></span></h2>
+      </div>
+      <div class="profile-card">
+        <div class="profile-name" id="r-pc-name"></div>
+        <div class="profile-sub" id="r-pc-sub"></div>
+        <div class="profile-kpis" id="r-pc-kpis"></div>
+      </div>
+      <div class="metrics-grid" id="r-metrics"></div>
+      <div class="card" style="padding:20px">
+        <div class="chart-legend" id="r-legend"></div>
+        <div class="chart-wrap"><canvas id="r-chart" role="img" aria-label="Graf růstu finanční rezervy"></canvas></div>
+      </div>
+
+      <div class="whatif-card">
+        <div class="whatif-title"><span>💡</span> Co kdyby... (What-if analýza)</div>
+        <div class="whatif-grid" id="r-whatif-btns"></div>
+
+        <div class="wi-custom">
+          <div class="wi-custom-label">✏️ Vlastní scénář</div>
+          <textarea id="r-wi-custom" placeholder="Napište vlastní otázku. Např.: Co když budu odkládat 5 000 Kč místo 3 000 Kč a úrok bude 5 %?"></textarea>
+          <button class="wi-custom-btn" onclick="runWI_R_custom()">Spočítat →</button>
+        </div>
+
+        <div class="wi-answer" id="r-wi-answer">
+          <div class="wi-answer-label">📊 Výsledek scénáře</div>
+          <div id="r-wi-content"></div>
+        </div>
+      </div>
+
+      <div class="ai-box">
+        <div class="ai-label">AI komentář pro schůzku</div>
+        <div class="ai-text" id="r-ai-text"><span class="ai-loading">Generuji komentář...</span></div>
+      </div>
+    </div>
+  </div>
+
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+let chartI = null, chartU = null, chartD = null, chartR = null, chartRF = null, chartIV = null;
+
+function fK(n){ return Math.round(n).toLocaleString('cs-CZ') + ' Kč'; }
+function fM(n){
+  const m = n/1000000;
+  if(Math.abs(m) < 10) return m.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' M Kč';
+  return (Math.round(m*10)/10).toLocaleString('cs-CZ',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' M Kč';
+}
+function fPct(n){ return parseFloat(n).toFixed(1).replace('.',',') + ' %'; }
+function parseK(s){ return parseFloat(String(s).replace(/\s/g,'').replace(',','.')) || 0; }
+
+function sv(slId, numId, lblId, suffix, isAge){
+  const v = document.getElementById(slId).value;
+  document.getElementById(numId).value = v;
+  const lbl = document.getElementById(lblId);
+  if(lbl) lbl.textContent = v + (isAge ? ' let' : (suffix ? ' ' + suffix : ''));
+}
+function si(numId, slId, lblId, suffix, mn, mx, isAge){
+  let v = Math.max(mn, Math.min(mx, parseFloat(document.getElementById(numId).value) || mn));
+  document.getElementById(numId).value = v;
+  document.getElementById(slId).value = v;
+  const lbl = document.getElementById(lblId);
+  if(lbl) lbl.textContent = v + (isAge ? ' let' : (suffix ? ' ' + suffix : ''));
+}
+function syncK(slId, niId, lblId){
+  const v = parseInt(document.getElementById(slId).value);
+  document.getElementById(niId).value = v.toLocaleString('cs-CZ');
+  document.getElementById(lblId).textContent = fK(v);
+}
+function syncKi(niId, slId, lblId, mn, mx){
+  let v = Math.max(mn, Math.min(mx, parseK(document.getElementById(niId).value)));
+  document.getElementById(slId).value = v;
+  document.getElementById(niId).value = Math.round(v).toLocaleString('cs-CZ');
+  document.getElementById(lblId).textContent = fK(v);
+}
+function syncPct(slId, lblId){
+  document.getElementById(lblId).textContent = fPct(document.getElementById(slId).value);
+}
+
+function switchModule(id, el){
+  document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.module-content').forEach(m => m.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('mod-' + id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// FINANCIAL MATH
+// ═══════════════════════════════════════════════════════
+function calcFV(pv, pmt, r, years){
+  if(r === 0) return pv + pmt * years * 12;
+  const rm = r / 12;
+  const n = years * 12;
+  return pv * Math.pow(1+rm, n) + pmt * (Math.pow(1+rm, n) - 1) / rm;
+}
+function calcMonthly(pv, r, years){
+  const rm = r / 12, n = years * 12;
+  if(n === 0) return 0;
+  if(rm === 0) return pv / n;
+  return pv * rm * Math.pow(1+rm, n) / (Math.pow(1+rm, n) - 1);
+}
+function buildFVSeries(pv, pmt, r, years){
+  return Array.from({length: years+1}, (_,i) => Math.round(calcFV(pv, pmt, r, i)));
+}
+// Zůstatek úvěru po N měsících
+function remainingBalance(pv, pmt, r, months){
+  const rm = r/12;
+  let bal = pv;
+  for(let i=0; i<months; i++){
+    bal = bal*(1+rm) - pmt;
+    if(bal < 0) bal = 0;
+  }
+  return bal;
+}
+// Roční série zůstatků úvěru
+function buildBalanceSeries(pv, pmt, r, years){
+  const series = [pv];
+  let bal = pv;
+  const rm = r/12;
+  for(let y=1; y<=years; y++){
+    for(let m=0; m<12; m++){
+      bal = bal*(1+rm) - pmt;
+      if(bal < 0) bal = 0;
+    }
+    series.push(Math.round(bal));
+  }
+  return series;
+}
+
+// ═══════════════════════════════════════════════════════
+// HEATMAP (citlivostní analýza)
+// ═══════════════════════════════════════════════════════
+function buildHeatmap(container, rowLabel, colLabel, rows, cols, valueFn, formatFn, colorLow, colorHigh, invert){
+  // rows/cols = arrays of parameter values
+  // valueFn(row, col) returns numeric result
+  let values = [];
+  rows.forEach(r => cols.forEach(c => values.push(valueFn(r, c))));
+  const minV = Math.min(...values), maxV = Math.max(...values);
+
+  function cellColor(v){
+    if(maxV === minV) return 'background:var(--cream)';
+    let t = (v - minV) / (maxV - minV);
+    if(invert) t = 1 - t;
+    // lerp mezi colorLow a colorHigh (v RGB)
+    const a = colorLow, b = colorHigh;
+    const r = Math.round(a[0] + (b[0]-a[0])*t);
+    const g = Math.round(a[1] + (b[1]-a[1])*t);
+    const bl = Math.round(a[2] + (b[2]-a[2])*t);
+    return `background:rgb(${r},${g},${bl})`;
+  }
+
+  let html = `<table class="heatmap-table"><thead><tr><th class="corner">${rowLabel} \\ ${colLabel}</th>`;
+  cols.forEach(c => html += `<th>${c.label}</th>`);
+  html += `</tr></thead><tbody>`;
+  rows.forEach(r => {
+    html += `<tr><td class="rowlabel">${r.label}</td>`;
+    cols.forEach(c => {
+      const v = valueFn(r.value, c.value);
+      html += `<td style="${cellColor(v)}">${formatFn(v)}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+// AI CALLS (jen pro main AI komentář a vlastní what-if)
+// ═══════════════════════════════════════════════════════
+async function aiCall(prompt, elId){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  el.innerHTML = '<span class="ai-loading">Generuji komentář...</span>';
+  try{
+    const resp = await fetch('/api/claude', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:'Jsi zkušený finanční poradce v české komerční bance. Píšeš stručné, přesvědčivé komentáře pro poradce, kteří je čtou klientovi přímo na schůzce. Komentář má být lidský, konkrétní, motivující k akci. Piš plynulý odstavec 3–5 vět. Zmiň jméno klienta. Mluv v první osobě množného čísla (my, vám, společně). Vyhni se finančnímu žargonu. Formátování: žádné odrážky, jen odstavec.',
+        messages:[{role:'user', content: prompt}]
+      })
+    });
+    const data = await resp.json();
+    el.textContent = data.content?.[0]?.text || 'Komentář není dostupný.';
+  } catch(e){
+    el.textContent = 'Komentář se nepodařilo vygenerovat.';
+  }
+}
+
+// Vlastní what-if — AI vrací strukturu JSON s čísly
+async function wiCustomCall(userQuestion, stateJSON, moduleDescription, contentElId, answerElId){
+  const contentEl = document.getElementById(contentElId);
+  const boxEl = document.getElementById(answerElId);
+  boxEl.classList.add('show');
+  contentEl.innerHTML = '<div style="padding:12px;color:var(--ink4);font-style:italic;font-size:13px">🧠 Zpracovávám vlastní scénář...</div>';
+
+  const systemPrompt = `Jsi finanční kalkulačka. Dostaneš aktuální stav výpočtu a uživatelovu otázku typu "co kdyby". Tvůj úkol je VYPOČÍTAT konkrétní čísla odpovídající scénáři a vrátit JSON s výsledky.
+
+Modul: ${moduleDescription}
+
+Aktuální stav (výchozí hodnoty): ${stateJSON}
+
+Odpověz POUZE validním JSON (bez markdown, bez zpětných apostrofů, bez textu okolo). Struktura:
+{
+  "title": "Krátký popis scénáře",
+  "results": [
+    {"label": "Původní hodnota", "value": "XXX", "type": "neutral"},
+    {"label": "Nová hodnota", "value": "XXX", "type": "positive"},
+    {"label": "Rozdíl", "value": "+XXX / -XXX", "type": "positive|negative"}
+  ],
+  "summary": "Krátká větá nebo dvě shrnující výsledek (pro poradce)"
+}
+
+"type" může být: positive (zelená), negative (červená), amber (oranžová — varování), neutral (šedá).
+Hodnoty piš v čitelném formátu ("1 250 000 Kč", "12 500 Kč/měs", "+240 000 Kč", "15,3 %"). Počítej přesně podle finanční matematiky.`;
+
+  try{
+    const resp = await fetch('/api/claude', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        system: systemPrompt,
+        messages:[{role:'user', content: userQuestion}]
+      })
+    });
+    const data = await resp.json();
+    let txt = (data.content?.[0]?.text || '').trim();
+    // odstranit případné ```json wrapy
+    txt = txt.replace(/^```json\s*/i, '').replace(/^```\s*/,'').replace(/```$/,'').trim();
+    let parsed;
+    try { parsed = JSON.parse(txt); }
+    catch(e){
+      contentEl.innerHTML = `<div style="padding:10px;color:var(--ink2);font-size:13px">${txt}</div>`;
+      return;
+    }
+    renderWICustom(contentEl, parsed);
+  } catch(e){
+    contentEl.innerHTML = '<div style="padding:10px;color:var(--red);font-size:13px">Nepodařilo se vyhodnotit scénář.</div>';
+  }
+}
+
+function renderWICustom(el, data){
+  const typeClass = { positive: 'green', negative: 'red', amber: 'amber', neutral: '' };
+  let html = `<div class="wi-answer-title">${data.title || 'Výsledek vlastního scénáře'}</div>`;
+  if(data.results && data.results.length){
+    html += `<div class="wi-result-grid">`;
+    data.results.forEach(r => {
+      const cls = typeClass[r.type] || '';
+      html += `<div class="wi-result ${cls}"><div class="wi-result-lbl">${r.label}</div><div class="wi-result-val">${r.value}</div></div>`;
+    });
+    html += `</div>`;
+  }
+  if(data.summary){
+    html += `<div class="wi-summary">${data.summary}</div>`;
+  }
+  el.innerHTML = html;
+}
+
+// Lokální what-if render (bez AI) — pro předvolené
+function renderWI(contentElId, answerElId, data){
+  const contentEl = document.getElementById(contentElId);
+  const boxEl = document.getElementById(answerElId);
+  boxEl.classList.add('show');
+  renderWICustom(contentEl, data);
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MODUL 1 — INVESTICE
+// ═══════════════════════════════════════════════════════
+let iState = {};
+
+function calcInvest(){
+  const jmeno = document.getElementById('i-jmeno').value || 'klient';
+  const vek = parseInt(document.getElementById('i-vek').value);
+  const hor = parseInt(document.getElementById('i-hor').value);
+  const poc = parseK(document.getElementById('i-poc-ni').value);
+  const mes = parseK(document.getElementById('i-mes-ni').value);
+  const vyn = parseFloat(document.getElementById('i-vyn-sl').value)/100;
+  const inf = parseFloat(document.getElementById('i-inf-sl').value)/100;
+
+  const rOpt = vyn + 0.03, rReal = vyn, rPes = Math.max(0, vyn - 0.03);
+  const fvOpt = calcFV(poc, mes, rOpt, hor);
+  const fvReal = calcFV(poc, mes, rReal, hor);
+  const fvPes = calcFV(poc, mes, rPes, hor);
+  const vlozeno = poc + mes * 12 * hor;
+  const fvRealReal = fvReal / Math.pow(1+inf, hor);
+  const zhodnoceni = Math.round((fvReal/vlozeno - 1)*100);
+
+  iState = {jmeno, vek, hor, poc, mes, vyn, inf, rOpt, rReal, rPes, fvOpt, fvReal, fvPes, vlozeno, fvRealReal, zhodnoceni};
+
+  document.getElementById('i-res-jmeno').textContent = jmeno;
+  document.getElementById('i-results').classList.add('show');
+
+  // Profile card
+  document.getElementById('i-pc-name').textContent = jmeno;
+  document.getElementById('i-pc-sub').textContent = `Věk: ${vek} let · Horizont: ${hor} let · Výnos: ${fPct(vyn*100)}`;
+  document.getElementById('i-pc-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${fM(poc)}</div><div class="kpi-lbl">Počáteční vklad</div></div>
+    <div class="kpi"><div class="kpi-val">${fK(mes)}</div><div class="kpi-lbl">Měsíčně</div></div>
+    <div class="kpi"><div class="kpi-val">${fM(vlozeno)}</div><div class="kpi-lbl">Celkem vloženo</div></div>
+    <div class="kpi"><div class="kpi-val">${vek + hor} let</div><div class="kpi-lbl">Věk při výběru</div></div>
+  `;
+
+  // Metrics
+  document.getElementById('i-metrics').innerHTML = `
+    <div class="metric green"><div class="metric-lbl">Optimistický (+3 %)</div><div class="metric-val">${fM(fvOpt)}</div><div class="metric-sub">${fPct((rOpt)*100)} p.a.</div></div>
+    <div class="metric"><div class="metric-lbl">Realistický (základ)</div><div class="metric-val">${fM(fvReal)}</div><div class="metric-sub">${fPct(vyn*100)} p.a.</div></div>
+    <div class="metric amber"><div class="metric-lbl">Pesimistický (−3 %)</div><div class="metric-val">${fM(fvPes)}</div><div class="metric-sub">${fPct(rPes*100)} p.a.</div></div>
+    <div class="metric"><div class="metric-lbl">Celkem vloženo</div><div class="metric-val">${fM(vlozeno)}</div><div class="metric-sub">bez výnosů</div></div>
+    <div class="metric green"><div class="metric-lbl">Zhodnocení (reál.)</div><div class="metric-val">+${zhodnoceni} %</div><div class="metric-sub">oproti vloženým</div></div>
+    <div class="metric"><div class="metric-lbl">Po inflaci (reál.)</div><div class="metric-val">${fM(fvRealReal)}</div><div class="metric-sub">v dnešních cenách</div></div>
+  `;
+
+  // Chart
+  const labels = Array.from({length: hor+1}, (_, i) => vek + i);
+  const onlyVklady = Array.from({length: hor+1}, (_, i) => Math.round(poc + mes*12*i));
+  document.getElementById('i-legend').innerHTML = `
+    <span><span class="leg-dot" style="background:#1a6644"></span>Optimistický</span>
+    <span><span class="leg-dot" style="background:#1e4a8a"></span>Realistický</span>
+    <span><span class="leg-dot" style="background:#854F0B"></span>Pesimistický</span>
+    <span><span class="leg-dot" style="background:#9A9692;opacity:.6"></span>Pouze vklady</span>
+  `;
+  if(chartI) chartI.destroy();
+  chartI = new Chart(document.getElementById('i-chart'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Optimistický', data:buildFVSeries(poc,mes,rOpt,hor), borderColor:'#1a6644', borderWidth:2, pointRadius:0, tension:.3, fill:false},
+        {label:'Realistický', data:buildFVSeries(poc,mes,rReal,hor), borderColor:'#1e4a8a', borderWidth:2.5, pointRadius:0, tension:.3, fill:false},
+        {label:'Pesimistický', data:buildFVSeries(poc,mes,rPes,hor), borderColor:'#854F0B', borderWidth:2, pointRadius:0, tension:.3, fill:false, borderDash:[6,3]},
+        {label:'Vklady', data:onlyVklady, borderColor:'#9A9692', borderWidth:1.5, pointRadius:0, tension:0, fill:false, borderDash:[3,3]}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:11}}}, y:{ticks:{callback:v=>(v/1000000).toFixed(1)+' M', font:{size:11}}}}}
+  });
+
+  // Heatmap — výnos × horizont
+  const rows = [
+    {label:'3 %', value:0.03}, {label:'5 %', value:0.05}, {label:'7 %', value:0.07}, {label:'9 %', value:0.09}, {label:'11 %', value:0.11}
+  ];
+  const cols = [
+    {label:'10 let', value:10}, {label:'15 let', value:15}, {label:'20 let', value:20}, {label:'25 let', value:25}, {label:'30 let', value:30}
+  ];
+  buildHeatmap(
+    document.getElementById('i-heatmap'),
+    'Výnos', 'Horizont',
+    rows, cols,
+    (r,c) => calcFV(poc, mes, r, c),
+    v => fM(v),
+    [232,244,238], [26,102,68], false
+  );
+
+  // What-if buttons
+  renderInvestWIButtons();
+
+  // AI komentář
+  aiCall(`Finanční poradce ukazuje klientovi ${jmeno} (${vek} let) výsledky investičního kalkulátoru. Parametry: počáteční vklad ${fK(poc)}, měsíční vklad ${fK(mes)}, horizont ${hor} let, výnos ${fPct(vyn*100)} p.a. Výsledky: optimistický ${fM(fvOpt)}, realistický ${fM(fvReal)}, pesimistický ${fM(fvPes)}, celkem vloženo ${fM(vlozeno)}, reálná hodnota po inflaci ${fM(fvRealReal)}, zhodnocení +${zhodnoceni}%. Napiš motivující komentář pro schůzku.`, 'i-ai-text');
+
+  setTimeout(() => document.getElementById('i-results').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
+
+function renderInvestWIButtons(){
+  const {jmeno, vek, hor, poc, mes, vyn, inf, rReal, fvReal, vlozeno} = iState;
+  const wiBtns = [
+    {
+      q: 'Přidat +1 000 Kč/měsíc',
+      sub: `z ${fK(mes)} na ${fK(mes+1000)}`,
+      fn: () => {
+        const nv = calcFV(poc, mes+1000, rReal, hor);
+        return {
+          title: `Zvýšení měsíčního vkladu o 1 000 Kč (celkem ${fK(mes+1000)}/měs)`,
+          results: [
+            {label:'Původní výsledek', value: fM(fvReal), type:'neutral'},
+            {label:'S vyšším vkladem', value: fM(nv), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(nv-fvReal), type:'positive'},
+            {label:'Celkem vloženo navíc', value: fK(1000*12*hor), type:'neutral'}
+          ],
+          summary: `Každých 1 000 Kč navíc měsíčně znamená o ${fM(nv-fvReal)} víc na konci horizontu — zhodnocení oproti vloženým ${fK(1000*12*hor)} je ${fPct((nv-fvReal)/(1000*12*hor)*100-100)}.`
+        };
+      }
+    },
+    {
+      q: 'Začít o 5 let dřív',
+      sub: `horizont ${hor+5} let místo ${hor}`,
+      fn: () => {
+        const nv = calcFV(poc, mes, rReal, hor+5);
+        return {
+          title: `Delší investiční horizont: ${hor+5} let místo ${hor} let`,
+          results: [
+            {label:'Původní výsledek', value: fM(fvReal), type:'neutral'},
+            {label:'S delším horizontem', value: fM(nv), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(nv-fvReal), type:'positive'},
+            {label:'Vloženo navíc', value: fK(mes*12*5), type:'neutral'}
+          ],
+          summary: `Pět let navíc = ${fM(nv-fvReal)} navíc. Z toho jen ${fK(mes*12*5)} tvoří vklady — zbytek dělá složený úrok.`
+        };
+      }
+    },
+    {
+      q: 'Začít o 5 let později',
+      sub: `horizont ${Math.max(1,hor-5)} let místo ${hor}`,
+      fn: () => {
+        const novyHor = Math.max(1, hor-5);
+        const nv = calcFV(poc, mes, rReal, novyHor);
+        return {
+          title: `Pozdější start: horizont ${novyHor} let místo ${hor} let`,
+          results: [
+            {label:'Původní výsledek', value: fM(fvReal), type:'neutral'},
+            {label:'S kratším horizontem', value: fM(nv), type:'negative'},
+            {label:'Rozdíl', value: fM(nv-fvReal), type:'negative'},
+            {label:'Ušlý výnos', value: fM(fvReal-nv), type:'negative'}
+          ],
+          summary: `Odklad o 5 let stojí ${fM(fvReal-nv)} — a to přes nižší celkové vklady. Čas pracuje proti klientovi.`
+        };
+      }
+    },
+    {
+      q: 'Zdvojnásobit počáteční vklad',
+      sub: `z ${fK(poc)} na ${fK(poc*2)}`,
+      fn: () => {
+        const nv = calcFV(poc*2, mes, rReal, hor);
+        return {
+          title: `Vyšší počáteční vklad: ${fK(poc*2)}`,
+          results: [
+            {label:'Původní výsledek', value: fM(fvReal), type:'neutral'},
+            {label:'Se zdvojeným počátkem', value: fM(nv), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(nv-fvReal), type:'positive'},
+            {label:'Vloženo navíc', value: fK(poc), type:'neutral'}
+          ],
+          summary: `Jednorázový vklad ${fK(poc)} navíc na začátku vytvoří ${fM(nv-fvReal)} — to je násobek díky času.`
+        };
+      }
+    },
+    {
+      q: 'Trh spadne o 30 % v půlce',
+      sub: `simulace propadu`,
+      fn: () => {
+        const pul = Math.floor(hor/2);
+        const fv1 = calcFV(poc, mes, rReal, pul);
+        const fv1Pokles = fv1 * 0.7;
+        const fv2 = calcFV(fv1Pokles, mes, rReal, hor - pul);
+        return {
+          title: `Propad trhu o 30 % v polovině horizontu (po ${pul} letech)`,
+          results: [
+            {label:'Bez propadu', value: fM(fvReal), type:'neutral'},
+            {label:'S propadem', value: fM(fv2), type:'negative'},
+            {label:'Ztráta', value: fM(fv2-fvReal), type:'negative'},
+            {label:'Hodnota po propadu', value: fM(fv1Pokles), type:'amber'}
+          ],
+          summary: `Ani 30% propad neznamená katastrofu — díky pokračujícím vkladům se portfolio zotaví. Klient neztrácí vše, jen ${Math.abs(Math.round((fv2-fvReal)/fvReal*100))} % očekávaného výnosu.`
+        };
+      }
+    },
+    {
+      q: 'Konzervativní portfolio (4 %)',
+      sub: `místo ${fPct(vyn*100)}`,
+      fn: () => {
+        const nv = calcFV(poc, mes, 0.04, hor);
+        return {
+          title: `Konzervativní strategie: výnos 4 % p.a.`,
+          results: [
+            {label:'Původní výsledek', value: fM(fvReal), type:'neutral'},
+            {label:'S konzerv. výnosem', value: fM(nv), type:'negative'},
+            {label:'Rozdíl', value: fM(nv-fvReal), type:'negative'},
+            {label:'Zhodnocení', value: '+' + Math.round((nv/vlozeno-1)*100) + ' %', type:'neutral'}
+          ],
+          summary: `Bezpečnější strategie přináší stabilitu, ale stojí ${fM(fvReal-nv)}. Vhodné pro klienta s horizontem pod 5 let nebo nízkou tolerancí rizika.`
+        };
+      }
+    },
+    {
+      q: 'Agresivní portfolio (10 %)',
+      sub: `místo ${fPct(vyn*100)}`,
+      fn: () => {
+        const nv = calcFV(poc, mes, 0.10, hor);
+        return {
+          title: `Agresivní strategie: výnos 10 % p.a.`,
+          results: [
+            {label:'Původní výsledek', value: fM(fvReal), type:'neutral'},
+            {label:'S agresivním výnosem', value: fM(nv), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(nv-fvReal), type:'positive'},
+            {label:'Ale s vyšším rizikem', value: 'volatilita ±30 %', type:'amber'}
+          ],
+          summary: `Vyšší výnos ${fPct(10)} přidá ${fM(nv-fvReal)}, ale za cenu výraznějších výkyvů. Vhodné jen při horizontu 10+ let.`
+        };
+      }
+    },
+    {
+      q: 'Výběr za polovinu horizontu',
+      sub: `za ${Math.floor(hor/2)} let`,
+      fn: () => {
+        const pul = Math.floor(hor/2);
+        const nv = calcFV(poc, mes, rReal, pul);
+        return {
+          title: `Předčasný výběr po ${pul} letech`,
+          results: [
+            {label:'Plný horizont', value: fM(fvReal), type:'neutral'},
+            {label:'Výběr po ${pul} letech'.replace('${pul}',pul), value: fM(nv), type:'amber'},
+            {label:'Ušlý zisk', value: fM(fvReal-nv), type:'negative'},
+            {label:'Vloženo do výběru', value: fM(poc + mes*12*pul), type:'neutral'}
+          ],
+          summary: `Půlroční výběr znamená ${fM(fvReal-nv)} ušlého zisku. Druhá polovina horizontu vydělá víc než první díky složenému úroku.`
+        };
+      }
+    },
+    {
+      q: 'Bez měsíčních vkladů',
+      sub: `jen počáteční ${fK(poc)}`,
+      fn: () => {
+        const nv = calcFV(poc, 0, rReal, hor);
+        return {
+          title: `Pouze jednorázový vklad (bez měsíčních příspěvků)`,
+          results: [
+            {label:'S měsíčními vklady', value: fM(fvReal), type:'neutral'},
+            {label:'Bez měsíčních vkladů', value: fM(nv), type:'negative'},
+            {label:'Rozdíl', value: fM(nv-fvReal), type:'negative'},
+            {label:'Ušlé vklady', value: fM(mes*12*hor), type:'neutral'}
+          ],
+          summary: `Pravidelné vklady dělají ${fM(fvReal-nv)}. Z toho ${fM(mes*12*hor)} jsou jen vklady — zbytek je výnos z nich.`
+        };
+      }
+    }
+  ];
+
+  document.getElementById('i-whatif-btns').innerHTML = wiBtns.map((b,i) =>
+    `<button class="whatif-btn" onclick="runWI_I(${i})"><span>${b.q}</span><span class="wi-q">${b.sub}</span></button>`
+  ).join('');
+  window._iWiBtns = wiBtns;
+}
+
+function runWI_I(idx){
+  const data = window._iWiBtns[idx].fn();
+  renderWI('i-wi-content', 'i-wi-answer', data);
+  document.getElementById('i-wi-answer').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function runWI_I_custom(){
+  const q = document.getElementById('i-wi-custom').value.trim();
+  if(!q) return;
+  const stateStr = JSON.stringify({
+    jmeno: iState.jmeno,
+    vek: iState.vek,
+    horizont_let: iState.hor,
+    pocatecni_vklad_Kc: iState.poc,
+    mesicni_vklad_Kc: iState.mes,
+    ocekavany_vynos_rocne: iState.vyn,
+    inflace_rocne: iState.inf,
+    vysledek_realisticky_Kc: Math.round(iState.fvReal),
+    celkem_vlozeno_Kc: iState.vlozeno
+  });
+  wiCustomCall(q, stateStr, 'Investiční kalkulátor (spoření s výnosem). Formule: FV = PV*(1+r/12)^(n) + PMT*((1+r/12)^n - 1)/(r/12).', 'i-wi-content', 'i-wi-answer');
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MODUL 3 — DŮCHOD (s inflačním přepínačem)
+// ═══════════════════════════════════════════════════════
+let dState = {};
+
+function calcDuchod(){
+  const jmeno = document.getElementById('d-jmeno').value || 'klient';
+  const vek = parseInt(document.getElementById('d-vek').value);
+  const ducVek = parseInt(document.getElementById('d-duc').value);
+  const uspory = parseK(document.getElementById('d-usp-ni').value);
+  const mes = parseK(document.getElementById('d-mes-ni').value);
+  const stat = parseK(document.getElementById('d-stat-ni').value);
+  const vyn = parseFloat(document.getElementById('d-vyn-sl').value)/100;
+  const inf = parseFloat(document.getElementById('d-inf-sl').value)/100;
+  const vyp = parseInt(document.getElementById('d-vyp').value);
+  const useReal = document.getElementById('d-realtoggle').checked;
+
+  const hor = Math.max(1, ducVek - vek);
+  const total = mes + stat;
+  const rOpt = vyn + 0.02, rReal = vyn, rPes = Math.max(0, vyn-0.02);
+  const fvOpt = calcFV(uspory, total, rOpt, hor);
+  const fvReal = calcFV(uspory, total, rReal, hor);
+  const fvPes = calcFV(uspory, total, rPes, hor);
+  const vlozeno = uspory + total*12*hor;
+  const mesReal = fvReal / (vyp*12);
+  const mesOpt = fvOpt / (vyp*12);
+  const mesPes = fvPes / (vyp*12);
+
+  // inflační deflátor
+  const defl = useReal ? Math.pow(1+inf, hor) : 1;
+  const show = x => x / defl;
+
+  dState = {jmeno, vek, ducVek, hor, uspory, mes, stat, vyn, inf, vyp, total, rOpt, rReal, rPes, fvOpt, fvReal, fvPes, vlozeno, mesReal, mesOpt, mesPes, useReal};
+
+  document.getElementById('d-res-jmeno').textContent = jmeno;
+  document.getElementById('d-results').classList.add('show');
+
+  const sufix = useReal ? ' (v dnešních penězích)' : ' (nominálně)';
+
+  document.getElementById('d-pc-name').textContent = jmeno;
+  document.getElementById('d-pc-sub').textContent = `Věk: ${vek} let · Odchod v: ${ducVek} letech · Do důchodu: ${hor} let${sufix}`;
+  document.getElementById('d-pc-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${fK(mes)}</div><div class="kpi-lbl">Váš příspěvek/měs</div></div>
+    <div class="kpi"><div class="kpi-val">${fK(stat)}</div><div class="kpi-lbl">Stát/zaměstnavatel</div></div>
+    <div class="kpi"><div class="kpi-val">${fM(vlozeno)}</div><div class="kpi-lbl">Celkem vloženo (nom.)</div></div>
+    <div class="kpi"><div class="kpi-val">${fM(stat*12*hor)}</div><div class="kpi-lbl">Bonus příspěvků</div></div>
+  `;
+
+  document.getElementById('d-metrics').innerHTML = `
+    <div class="metric green"><div class="metric-lbl">Naspořeno (optimistický)</div><div class="metric-val">${fM(show(fvOpt))}</div><div class="metric-sub">${fK(show(mesOpt))}/měs po ${vyp} let${sufix}</div></div>
+    <div class="metric"><div class="metric-lbl">Naspořeno (realistický)</div><div class="metric-val">${fM(show(fvReal))}</div><div class="metric-sub">${fK(show(mesReal))}/měs po ${vyp} let${sufix}</div></div>
+    <div class="metric amber"><div class="metric-lbl">Naspořeno (pesimistický)</div><div class="metric-val">${fM(show(fvPes))}</div><div class="metric-sub">${fK(show(mesPes))}/měs po ${vyp} let${sufix}</div></div>
+    <div class="metric"><div class="metric-lbl">Zbývá do důchodu</div><div class="metric-val">${hor} let</div><div class="metric-sub">odchod ve ${ducVek} letech</div></div>
+    <div class="metric"><div class="metric-lbl">Celkem vloženo</div><div class="metric-val">${fM(vlozeno)}</div><div class="metric-sub">vlastní + příspěvky (nom.)</div></div>
+    <div class="metric green"><div class="metric-lbl">Zhodnocení (reál.)</div><div class="metric-val">+${Math.round((fvReal/vlozeno-1)*100)} %</div><div class="metric-sub">oproti vloženým (nom.)</div></div>
+  `;
+
+  const labels = Array.from({length:hor+1}, (_,i) => vek+i);
+  // pokud useReal, každou sérii dělíme (1+inf)^i
+  const seriesOpt = buildFVSeries(uspory,total,rOpt,hor).map((v,i) => useReal ? Math.round(v/Math.pow(1+inf,i)) : v);
+  const seriesReal = buildFVSeries(uspory,total,rReal,hor).map((v,i) => useReal ? Math.round(v/Math.pow(1+inf,i)) : v);
+  const seriesPes = buildFVSeries(uspory,total,rPes,hor).map((v,i) => useReal ? Math.round(v/Math.pow(1+inf,i)) : v);
+
+  document.getElementById('d-legend').innerHTML = `
+    <span><span class="leg-dot" style="background:#1a6644"></span>Optimistický</span>
+    <span><span class="leg-dot" style="background:#1e4a8a"></span>Realistický</span>
+    <span><span class="leg-dot" style="background:#854F0B"></span>Pesimistický</span>
+    <span style="color:var(--ink4);font-style:italic">${useReal ? '(v dnešních penězích)' : '(nominálně)'}</span>
+  `;
+  if(chartD) chartD.destroy();
+  chartD = new Chart(document.getElementById('d-chart'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Opt.', data:seriesOpt, borderColor:'#1a6644', borderWidth:2, pointRadius:0, tension:.3, fill:false},
+        {label:'Real.', data:seriesReal, borderColor:'#1e4a8a', borderWidth:2.5, pointRadius:0, tension:.3, fill:false},
+        {label:'Pes.', data:seriesPes, borderColor:'#854F0B', borderWidth:2, pointRadius:0, tension:.3, fill:false, borderDash:[6,3]}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:11}}}, y:{ticks:{callback:v=>(v/1000000).toFixed(1)+' M', font:{size:11}}}}}
+  });
+
+  // Heatmap — výnos × počet let do důchodu
+  const rows = [
+    {label:'3 %', value:0.03}, {label:'5 %', value:0.05}, {label:'7 %', value:0.07}, {label:'9 %', value:0.09}
+  ];
+  const cols = [
+    {label:'10 let', value:10}, {label:'15 let', value:15}, {label:'20 let', value:20}, {label:'25 let', value:25}, {label:'30 let', value:30}
+  ];
+  buildHeatmap(
+    document.getElementById('d-heatmap'),
+    'Výnos', 'Počet let',
+    rows, cols,
+    (r,c) => {
+      const raw = calcFV(uspory, total, r, c);
+      return useReal ? raw/Math.pow(1+inf, c) : raw;
+    },
+    v => fM(v),
+    [232,244,238], [26,102,68], false
+  );
+
+  renderDuchodWIButtons();
+
+  aiCall(`Finanční poradce ukazuje klientovi ${jmeno} (${vek} let) výsledky důchodového spoření. Do důchodu zbývá ${hor} let (odchod v ${ducVek} letech). Měsíční příspěvek: ${fK(mes)}, státní/zaměstnavatelský příspěvek: ${fK(stat)}, výnos ${fPct(vyn*100)}. Realisticky naspoří: ${fM(fvReal)} (v dnešních penězích ${fM(fvReal/Math.pow(1+inf,hor))}), čímž získá ${fK(mesReal)}/měs po dobu ${vyp} let. Napiš motivující komentář o důležitosti pravidelného spoření, využití příspěvků zaměstnavatele a vlivu inflace.`, 'd-ai-text');
+
+  setTimeout(() => document.getElementById('d-results').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
+
+function renderDuchodWIButtons(){
+  const {jmeno, vek, ducVek, hor, uspory, mes, stat, vyn, inf, vyp, total, rReal, fvReal, mesReal} = dState;
+
+  const wiBtns = [
+    {
+      q: 'Přidat +500 Kč/měsíc',
+      sub: `z ${fK(total)} na ${fK(total+500)}`,
+      fn: () => {
+        const nv = calcFV(uspory, total+500, rReal, hor);
+        return {
+          title: `Zvýšení měsíčního příspěvku o 500 Kč`,
+          results: [
+            {label:'Původní naspořeno', value: fM(fvReal), type:'neutral'},
+            {label:'S vyšším příspěvkem', value: fM(nv), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(nv-fvReal), type:'positive'},
+            {label:'Nová renta', value: fK(nv/(vyp*12))+'/měs', type:'positive'}
+          ],
+          summary: `500 Kč měsíčně navíc přidá ${fM(nv-fvReal)} na konci — to je ${Math.round((nv-fvReal)/(500*12*hor)*100)} % zhodnocení oproti vloženým 500 Kč × ${hor*12} měsíců.`
+        };
+      }
+    },
+    {
+      q: 'Odejít do důchodu o 3 roky dřív',
+      sub: `v ${ducVek-3} místo ${ducVek} let`,
+      fn: () => {
+        const nv = calcFV(uspory, total, rReal, hor-3);
+        const rozdil = fvReal - nv;
+        return {
+          title: `Dřívější odchod do důchodu — v ${ducVek-3} letech`,
+          results: [
+            {label:'Plné spoření', value: fM(fvReal), type:'neutral'},
+            {label:'O 3 roky dřív', value: fM(nv), type:'negative'},
+            {label:'Méně naspořeno', value: '-' + fM(rozdil), type:'negative'},
+            {label:'Nižší renta', value: fK(nv/(vyp*12))+'/měs', type:'amber'}
+          ],
+          summary: `Odchod o 3 roky dřív znamená o ${fM(rozdil)} méně — a zároveň delší dobu čerpání. Renta klesne na ${fK(nv/(vyp*12))}/měs.`
+        };
+      }
+    },
+    {
+      q: 'Začít o 5 let dřív',
+      sub: `od ${vek-5} let`,
+      fn: () => {
+        const nv = calcFV(0, total, rReal, hor+5);
+        return {
+          title: `Pozdě pozdě, lepší nikdy — začátek o 5 let dřív`,
+          results: [
+            {label:'Současný start', value: fM(fvReal), type:'neutral'},
+            {label:'Start o 5 let dřív', value: fM(nv), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(nv-fvReal), type:'positive'},
+            {label:'Navíc vloženo', value: fM(total*12*5), type:'neutral'}
+          ],
+          summary: `Pět let navíc = ${fM(nv-fvReal)} navíc. Přes to, že vložíte jen ${fM(total*12*5)}. Kouzlo složeného úroku.`
+        };
+      }
+    },
+    {
+      q: 'Maximální státní příspěvek',
+      sub: 'na 1 700 Kč/měs',
+      fn: () => {
+        // maximální státní příspěvek v ČR od r. 2024 je 340 Kč při vlastním vkladu 1 700 Kč
+        const novyStat = 340;
+        const novyVlastni = 1700;
+        const novyTotal = novyStat + novyVlastni;
+        const nv = calcFV(uspory, novyTotal, rReal, hor);
+        return {
+          title: `Nastavení na max. státní příspěvek (vlastní 1 700 Kč + stát 340 Kč)`,
+          results: [
+            {label:'Stávající naspořeno', value: fM(fvReal), type:'neutral'},
+            {label:'S max. st. příspěvkem', value: fM(nv), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(nv-fvReal), type:'positive'},
+            {label:'Bonus státu celkem', value: fK(novyStat*12*hor), type:'positive'}
+          ],
+          summary: `Max. státní příspěvek 340 Kč/měs přinese ${fK(novyStat*12*hor)} zdarma od státu. Nevyužít ho je promrhaná příležitost.`
+        };
+      }
+    },
+    {
+      q: 'Čerpat 30 let místo 20',
+      sub: 'delší výplata',
+      fn: () => {
+        const novyVyp = 30;
+        const novaRenta = fvReal / (novyVyp*12);
+        return {
+          title: `Delší výplata — 30 let místo ${vyp}`,
+          results: [
+            {label:'Naspořeno', value: fM(fvReal), type:'neutral'},
+            {label:'Původní renta (${vyp} let)'.replace('${vyp}', vyp), value: fK(mesReal)+'/měs', type:'neutral'},
+            {label:'Nová renta (30 let)', value: fK(novaRenta)+'/měs', type:'amber'},
+            {label:'Pokles měsíčně', value: '-' + fK(mesReal-novaRenta), type:'negative'}
+          ],
+          summary: `Pokud klient počítá s delším životem, renta klesne na ${fK(novaRenta)}/měs. Alternativa — spořit víc, nebo pracovat déle.`
+        };
+      }
+    },
+    {
+      q: 'Inflace 5 % místo 3 %',
+      sub: 'vyšší znehodnocení',
+      fn: () => {
+        const defl3 = fvReal / Math.pow(1.03, hor);
+        const defl5 = fvReal / Math.pow(1.05, hor);
+        return {
+          title: `Vyšší inflace 5 % p.a.`,
+          results: [
+            {label:'Nominálně naspořeno', value: fM(fvReal), type:'neutral'},
+            {label:'Dnešní hodnota (inflace 3 %)', value: fM(defl3), type:'neutral'},
+            {label:'Dnešní hodnota (inflace 5 %)', value: fM(defl5), type:'negative'},
+            {label:'Rozdíl kvůli inflaci', value: '-' + fM(defl3-defl5), type:'negative'}
+          ],
+          summary: `Vyšší inflace o 2 p.b. znehodnotí úspory o ${fM(defl3-defl5)}. Klient musí mířit na výnos výrazně nad inflaci.`
+        };
+      }
+    },
+    {
+      q: 'Jednorázový vklad 500 000 Kč',
+      sub: 'na začátku',
+      fn: () => {
+        const nv = calcFV(uspory + 500000, total, rReal, hor);
+        return {
+          title: `Jednorázový vklad 500 000 Kč navíc`,
+          results: [
+            {label:'Bez vkladu', value: fM(fvReal), type:'neutral'},
+            {label:'S vkladem 500 tis.', value: fM(nv), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(nv-fvReal), type:'positive'},
+            {label:'Zhodnocení vkladu', value: Math.round((nv-fvReal)/500000*100) + ' %', type:'positive'}
+          ],
+          summary: `500 000 Kč vložené dnes se za ${hor} let zhodnotí na ${fM(nv-fvReal)} — tedy ${Math.round((nv-fvReal)/500000*100)} % oproti vloženému.`
+        };
+      }
+    },
+    {
+      q: 'Pesimistický scénář výnosu (3 %)',
+      sub: 'horší trh',
+      fn: () => {
+        const nv = calcFV(uspory, total, 0.03, hor);
+        return {
+          title: `Dlouhodobě nízký výnos — jen 3 % p.a.`,
+          results: [
+            {label:'Plánovaný výnos', value: fM(fvReal), type:'neutral'},
+            {label:'Při nízkém výnosu', value: fM(nv), type:'negative'},
+            {label:'Rozdíl', value: '-' + fM(fvReal-nv), type:'negative'},
+            {label:'Renta', value: fK(nv/(vyp*12))+'/měs', type:'amber'}
+          ],
+          summary: `I pesimistický scénář zachová slušnou rentu ${fK(nv/(vyp*12))}/měs. Klient má rezervu proti špatným letům.`
+        };
+      }
+    }
+  ];
+
+  document.getElementById('d-whatif-btns').innerHTML = wiBtns.map((b,i) =>
+    `<button class="whatif-btn" onclick="runWI_D(${i})"><span>${b.q}</span><span class="wi-q">${b.sub}</span></button>`
+  ).join('');
+  window._dWiBtns = wiBtns;
+}
+
+function runWI_D(idx){
+  renderWI('d-wi-content', 'd-wi-answer', window._dWiBtns[idx].fn());
+  document.getElementById('d-wi-answer').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function runWI_D_custom(){
+  const q = document.getElementById('d-wi-custom').value.trim();
+  if(!q) return;
+  const stateStr = JSON.stringify({
+    jmeno: dState.jmeno,
+    aktualni_vek: dState.vek,
+    odchod_do_duchodu_let: dState.ducVek,
+    let_do_duchodu: dState.hor,
+    uspory_ted_Kc: dState.uspory,
+    mesicni_prispevek_vlastni_Kc: dState.mes,
+    prispevek_stat_zamest_Kc: dState.stat,
+    ocekavany_vynos_rocne: dState.vyn,
+    inflace_rocne: dState.inf,
+    planovana_delka_vyplaty_let: dState.vyp,
+    naspori_realisticky_Kc: Math.round(dState.fvReal),
+    mesicni_renta_Kc: Math.round(dState.mesReal)
+  });
+  wiCustomCall(q, stateStr, 'Důchodový kalkulátor (spoření na penzi se státními příspěvky). Max. státní příspěvek v ČR 2024: 340 Kč/měs při vlastním 1 700 Kč. Daňový odpočet až 48 000 Kč/rok.', 'd-wi-content', 'd-wi-answer');
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MODUL 4 — FINANČNÍ REZERVA
+// ═══════════════════════════════════════════════════════
+let rState = {};
+
+function calcRezerva(){
+  const jmeno = document.getElementById('r-jmeno').value || 'klient';
+  const mesicu = parseInt(document.getElementById('r-situ').value);
+  const vyd = parseK(document.getElementById('r-vyd-ni').value);
+  const akt = parseK(document.getElementById('r-akt-ni').value);
+  const odkl = parseK(document.getElementById('r-odkl-ni').value);
+  const uro = parseFloat(document.getElementById('r-uro-sl').value)/100;
+
+  const cil = vyd * mesicu;
+  const chybi = Math.max(0, cil - akt);
+  const pokrytoMes = akt / vyd; // kolik měsíců pokrývá aktuální rezerva
+  const procento = Math.min(100, Math.round(akt/cil*100));
+
+  // za jak dlouho naspoří chybějící částku? S úrokem.
+  // solve: FV(akt, odkl, uro, roky) = cil  →  iterativně po měsících
+  let bal = akt, months = 0;
+  const rm = uro/12;
+  if(chybi > 0){
+    while(bal < cil && months < 600){
+      bal = bal*(1+rm) + odkl;
+      months++;
+    }
+  }
+  const rokuDoCile = months / 12;
+
+  rState = {jmeno, mesicu, vyd, akt, odkl, uro, cil, chybi, pokrytoMes, procento, rokuDoCile, months};
+
+  document.getElementById('r-res-jmeno').textContent = jmeno;
+  document.getElementById('r-results').classList.add('show');
+
+  const situLabel = mesicu===3?'single / stabilní': mesicu===6?'rodina / průměrná': mesicu===9?'OSVČ':'jediný živitel';
+
+  document.getElementById('r-pc-name').textContent = jmeno;
+  document.getElementById('r-pc-sub').textContent = `Situace: ${situLabel} · Cíl: ${mesicu} měsíců výdajů`;
+  document.getElementById('r-pc-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${fK(vyd)}</div><div class="kpi-lbl">Měsíční výdaje</div></div>
+    <div class="kpi"><div class="kpi-val">${fK(cil)}</div><div class="kpi-lbl">Cílová rezerva</div></div>
+    <div class="kpi"><div class="kpi-val">${fK(akt)}</div><div class="kpi-lbl">Aktuálně</div></div>
+    <div class="kpi"><div class="kpi-val">${procento} %</div><div class="kpi-lbl">Splněno</div></div>
+  `;
+
+  const stavClass = procento >= 100 ? 'green' : (procento >= 50 ? '' : 'red');
+  const stavText = procento >= 100 ? 'Rezerva je dostačující' : procento >= 50 ? 'Částečně pokryto' : 'Nedostatečná rezerva';
+
+  document.getElementById('r-metrics').innerHTML = `
+    <div class="metric ${stavClass}"><div class="metric-lbl">Stav rezervy</div><div class="metric-val">${stavText}</div><div class="metric-sub">${procento} % z cíle</div></div>
+    <div class="metric"><div class="metric-lbl">Pokrytí současnou rezervou</div><div class="metric-val">${pokrytoMes.toFixed(1)} měs</div><div class="metric-sub">při současných výdajích</div></div>
+    <div class="metric ${chybi===0?'green':'amber'}"><div class="metric-lbl">Chybí do cíle</div><div class="metric-val">${fK(chybi)}</div><div class="metric-sub">${chybi===0?'hotovo':'dospořit'}</div></div>
+    <div class="metric"><div class="metric-lbl">Doba naspoření</div><div class="metric-val">${chybi===0?'—':rokuDoCile.toFixed(1)+' let'}</div><div class="metric-sub">${chybi===0?'cíl splněn':`${odkl.toLocaleString('cs-CZ')} Kč/měs + úrok ${fPct(uro*100)}`}</div></div>
+    <div class="metric"><div class="metric-lbl">Roční výnos z rezervy</div><div class="metric-val">${fK(akt*uro)}</div><div class="metric-sub">při ${fPct(uro*100)} na spoř. účtu</div></div>
+    <div class="metric"><div class="metric-lbl">Doporučený cíl</div><div class="metric-val">${fM(cil)}</div><div class="metric-sub">${mesicu} měsíců × výdaje</div></div>
+  `;
+
+  // Chart — růst rezervy
+  const maxMes = Math.min(months + 12, 240);
+  const labels = [];
+  const dataRez = [];
+  const dataCil = [];
+  let b = akt;
+  for(let m=0; m<=maxMes; m++){
+    if(m % 3 === 0){ // každé 3 měsíce bod
+      labels.push(m===0?'Teď':(m/12).toFixed(m%12===0?0:1)+' r');
+      dataRez.push(Math.round(b));
+      dataCil.push(cil);
+    }
+    b = b*(1+rm) + odkl;
+    if(b > cil * 1.3) break;
+  }
+
+  document.getElementById('r-legend').innerHTML = `
+    <span><span class="leg-dot" style="background:#1a6644"></span>Růst rezervy</span>
+    <span><span class="leg-dot" style="background:#CC0000"></span>Cílová hodnota</span>
+  `;
+  if(chartR) chartR.destroy();
+  chartR = new Chart(document.getElementById('r-chart'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Rezerva', data:dataRez, borderColor:'#1a6644', backgroundColor:'rgba(26,102,68,.12)', borderWidth:2.5, pointRadius:0, tension:.25, fill:true},
+        {label:'Cíl', data:dataCil, borderColor:'#CC0000', borderWidth:1.5, pointRadius:0, borderDash:[6,4], fill:false}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,font:{size:11}}}, y:{ticks:{callback:v=>(v/1000).toFixed(0)+' tis', font:{size:11}}, min:0}}}
+  });
+
+  renderRezervaWIButtons();
+
+  aiCall(`Finanční poradce ukazuje klientovi ${jmeno} plán finanční rezervy. Životní situace vyžaduje ${mesicu} měsíců rezervy. Měsíční výdaje: ${fK(vyd)}, cílová rezerva: ${fK(cil)}, aktuálně má: ${fK(akt)} (${procento} % cíle). ${chybi>0?`Chybí ${fK(chybi)}, při odkládání ${fK(odkl)}/měs a úroku ${fPct(uro*100)} naspoří za ${rokuDoCile.toFixed(1)} let.`:'Rezerva je splněna.'} Napiš motivující komentář o důležitosti finanční rezervy — první krok před investováním.`, 'r-ai-text');
+
+  setTimeout(() => document.getElementById('r-results').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
+
+function renderRezervaWIButtons(){
+  const {jmeno, mesicu, vyd, akt, odkl, uro, cil, chybi, rokuDoCile} = rState;
+
+  const wiBtns = [
+    {
+      q: 'Odkládat 2× víc',
+      sub: `${fK(odkl*2)}/měs místo ${fK(odkl)}`,
+      fn: () => {
+        let bal = akt, m = 0;
+        const rm = uro/12;
+        while(bal < cil && m < 600){ bal = bal*(1+rm) + odkl*2; m++; }
+        const roky = m/12;
+        return {
+          title: `Dvojnásobné měsíční odkládání`,
+          results: [
+            {label:'Původní doba', value: rokuDoCile.toFixed(1)+' let', type:'neutral'},
+            {label:'Nová doba', value: roky.toFixed(1)+' let', type:'positive'},
+            {label:'Úspora času', value: (rokuDoCile-roky).toFixed(1)+' let', type:'positive'},
+            {label:'Měsíčně navíc', value: fK(odkl), type:'neutral'}
+          ],
+          summary: `Dvojnásobné odkládání zkrátí cestu k rezervě o ${(rokuDoCile-roky).toFixed(1)} let. Klient získá dřív klid.`
+        };
+      }
+    },
+    {
+      q: 'Snížit výdaje o 10 %',
+      sub: `${fK(vyd*0.9)} místo ${fK(vyd)}`,
+      fn: () => {
+        const novyCil = vyd*0.9*mesicu;
+        const novyChybi = Math.max(0, novyCil - akt);
+        let bal = akt, m = 0;
+        const rm = uro/12;
+        while(bal < novyCil && m < 600){ bal = bal*(1+rm) + odkl; m++; }
+        return {
+          title: `Optimalizace výdajů o 10 %`,
+          results: [
+            {label:'Původní cíl', value: fK(cil), type:'neutral'},
+            {label:'Nový cíl (nižší výdaje)', value: fK(novyCil), type:'positive'},
+            {label:'Snížení cíle', value: '-' + fK(cil-novyCil), type:'positive'},
+            {label:'Doba do cíle', value: (m/12).toFixed(1)+' let', type:'positive'}
+          ],
+          summary: `Snížení výdajů o 10 % sníží cílovou rezervu o ${fK(cil-novyCil)} — cíl je dosažitelný dřív.`
+        };
+      }
+    },
+    {
+      q: 'Vyšší úrok 6 %',
+      sub: `místo ${fPct(uro*100)}`,
+      fn: () => {
+        const rm = 0.06/12;
+        let bal = akt, m = 0;
+        while(bal < cil && m < 600){ bal = bal*(1+rm) + odkl; m++; }
+        return {
+          title: `Lepší spořicí účet s úrokem 6 % p.a.`,
+          results: [
+            {label:'Původní doba', value: rokuDoCile.toFixed(1)+' let', type:'neutral'},
+            {label:'S úrokem 6 %', value: (m/12).toFixed(1)+' let', type:'positive'},
+            {label:'Rozdíl', value: (rokuDoCile - m/12).toFixed(1)+' let', type:'positive'},
+            {label:'Roční výnos navíc', value: fK(akt*0.02), type:'positive'}
+          ],
+          summary: `Lepší úrok sice doběh výrazně nezkrátí, ale ročně klient získá ${fK(akt*0.02)} navíc na úrocích.`
+        };
+      }
+    },
+    {
+      q: 'Vyšší nároky (12 měs)',
+      sub: 'místo ${mesicu} měsíců'.replace('${mesicu}', mesicu),
+      fn: () => {
+        const novyCil = vyd*12;
+        const novyChybi = Math.max(0, novyCil - akt);
+        let bal = akt, m = 0;
+        const rm = uro/12;
+        while(bal < novyCil && m < 600){ bal = bal*(1+rm) + odkl; m++; }
+        return {
+          title: `Rezerva na 12 měsíců (místo ${mesicu})`,
+          results: [
+            {label:'Původní cíl', value: fK(cil), type:'neutral'},
+            {label:'Nový cíl', value: fK(novyCil), type:'amber'},
+            {label:'Rozdíl', value: '+' + fK(novyCil-cil), type:'neutral'},
+            {label:'Doba do cíle', value: (m/12).toFixed(1)+' let', type:'amber'}
+          ],
+          summary: `Vyšší ambice (12 měsíců) znamenají o ${fK(novyCil-cil)} víc — doporučené pro OSVČ, rodiny na jeden příjem nebo rizikovou práci.`
+        };
+      }
+    },
+    {
+      q: 'Co když přijde výpadek příjmu',
+      sub: `jak dlouho přežije`,
+      fn: () => {
+        // aktuální rezerva / výdaje
+        const mesiceProstredky = akt/vyd;
+        return {
+          title: `Test: klient ztratí příjem a žije jen z rezervy`,
+          results: [
+            {label:'Aktuální rezerva', value: fK(akt), type:'neutral'},
+            {label:'Měsíční výdaje', value: fK(vyd), type:'neutral'},
+            {label:'Vydrží', value: mesiceProstredky.toFixed(1)+' měsíců', type: mesiceProstredky >= mesicu ? 'positive' : 'negative'},
+            {label:'Cíl pokryje', value: mesicu+' měsíců', type:'neutral'}
+          ],
+          summary: mesiceProstredky >= mesicu 
+            ? `Klient má aktuálně rezervu na ${mesiceProstredky.toFixed(1)} měsíců — plně pokrývá doporučených ${mesicu} měsíců.`
+            : `Klient vydrží jen ${mesiceProstredky.toFixed(1)} měsíců, o ${(mesicu-mesiceProstredky).toFixed(1)} méně než doporučených ${mesicu}. Priorita dospořit.`
+        };
+      }
+    },
+    {
+      q: 'Jednorázový vklad 100 000 Kč',
+      sub: 'např. z 13. platu',
+      fn: () => {
+        const novyAkt = akt + 100000;
+        let bal = novyAkt, m = 0;
+        const rm = uro/12;
+        while(bal < cil && m < 600){ bal = bal*(1+rm) + odkl; m++; }
+        const roky = m/12;
+        return {
+          title: `Jednorázový vklad 100 000 Kč (bonus / 13. plat)`,
+          results: [
+            {label:'Původní doba', value: rokuDoCile.toFixed(1)+' let', type:'neutral'},
+            {label:'S jednorázovým vkladem', value: roky.toFixed(1)+' let', type:'positive'},
+            {label:'Rozdíl', value: (rokuDoCile-roky).toFixed(1)+' let', type:'positive'},
+            {label:'Nové procento splnění', value: Math.round(novyAkt/cil*100) + ' %', type:'positive'}
+          ],
+          summary: `Jednorázový vklad 100 000 Kč zkrátí cestu o ${(rokuDoCile-roky).toFixed(1)} let. Pokrytí vzroste na ${Math.round(novyAkt/cil*100)} %.`
+        };
+      }
+    }
+  ];
+
+  document.getElementById('r-whatif-btns').innerHTML = wiBtns.map((b,i) =>
+    `<button class="whatif-btn" onclick="runWI_R(${i})"><span>${b.q}</span><span class="wi-q">${b.sub}</span></button>`
+  ).join('');
+  window._rWiBtns = wiBtns;
+}
+
+function runWI_R(idx){
+  renderWI('r-wi-content', 'r-wi-answer', window._rWiBtns[idx].fn());
+  document.getElementById('r-wi-answer').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function runWI_R_custom(){
+  const q = document.getElementById('r-wi-custom').value.trim();
+  if(!q) return;
+  const stateStr = JSON.stringify({
+    jmeno: rState.jmeno,
+    doporuceno_mesicu: rState.mesicu,
+    mesicni_vydaje_Kc: rState.vyd,
+    cilova_rezerva_Kc: rState.cil,
+    aktualni_rezerva_Kc: rState.akt,
+    mesicni_odkladani_Kc: rState.odkl,
+    urok_rocne: rState.uro,
+    doba_do_cile_let: rState.rokuDoCile,
+    procento_splneno: rState.procento
+  });
+  wiCustomCall(q, stateStr, 'Kalkulátor finanční rezervy (nouzový fond). Standardní doporučení: 3-12 měsíců výdajů na likvidním spořicím účtu.', 'r-wi-content', 'r-wi-answer');
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// INIT — automatický výpočet prvního modulu
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if(typeof calcInvest === 'function'){
+      try { calcInvest(); } catch(e){ console.warn('Init calcInvest failed:', e); }
+    }
+  }, 50);
+});
+</script>
+
+</body>
+</html>

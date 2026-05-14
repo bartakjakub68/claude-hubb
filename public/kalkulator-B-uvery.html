@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulátor — Úvěry a hypotéky</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --cream:#F6F5F3;--white:#FFFFFF;
+  --ink:#1A1A1A;--ink2:#4A4845;--ink3:#8F8C87;--ink4:#9A9692;
+  --gold:#CC0000;--gold-light:#E03333;--gold-pale:#F9EDED;--gold-border:rgba(204,0,0,0.2);
+  --red:#CC0000;--red-pale:#F9EDED;--red-border:rgba(204,0,0,0.2);
+  --green:#1a6644;--green-pale:#e8f4ee;--green-border:#a8d4bc;
+  --blue:#1e4a8a;--blue-pale:#e8eef7;--blue-border:#b8cce8;
+  --amber:#854F0B;--amber-pale:#FAEEDA;--amber-border:#FAC775;
+  --border:#E2E0DC;--border2:#D0CEC9;
+  --sh-sm:0 1px 3px rgba(20,18,16,.05);--sh:0 4px 20px rgba(20,18,16,.07);--sh-lg:0 16px 48px rgba(20,18,16,.1);
+  --r:20px;--rs:12px;--rx:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.5;padding-top:56px}
+
+/* TOPBAR */
+.hub-topbar{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:stretch;z-index:500;font-family:'IBM Plex Sans',sans-serif}
+.hub-topbar__left{background:#1A1A1A;flex:1;display:flex;align-items:center;padding:0 24px;gap:24px}
+.hub-topbar__logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0}
+.hub-topbar__logomark{width:30px;height:30px;position:relative;flex-shrink:0}
+.hub-topbar__logomark::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15)}
+.hub-topbar__logomark::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:#CC0000}
+.hub-topbar__logotext{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;font-weight:500;color:#fff;letter-spacing:0.16em;text-transform:uppercase}
+.hub-topbar__appname{font-size:0.8125rem;color:rgba(255,255,255,0.45);font-weight:300}
+.hub-topbar__right{background:#CC0000;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.hub-topbar__user{display:flex;flex-direction:column;align-items:flex-end}
+.hub-topbar__name{font-size:0.8125rem;font-weight:500;color:#fff;line-height:1.2}
+.hub-topbar__role{font-size:0.7rem;color:rgba(255,255,255,0.7);font-weight:300}
+
+/* LAYOUT */
+.main{max-width:980px;margin:0 auto;padding:28px 20px 100px}
+.step-header{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.step-header h1{font-family:'DM Serif Display',serif;font-size:28px;color:var(--ink);letter-spacing:-.5px;margin-bottom:4px}
+.step-header p{font-size:13px;color:var(--ink3);font-weight:500}
+.print-btn{padding:10px 16px;background:var(--white);border:1px solid var(--border);border-radius:var(--rx);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.print-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* TABS */
+.module-tabs{display:flex;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh-sm);margin-bottom:20px;flex-wrap:wrap}
+.mtab{flex:1 1 0;min-width:140px;padding:14px 10px;cursor:pointer;transition:all .2s;border-right:1px solid var(--border);text-align:center;background:transparent;border-top:none;border-bottom:none;font-family:'IBM Plex Sans',sans-serif;position:relative}
+.mtab:last-child{border-right:none}
+.mtab:hover{background:var(--cream)}
+.mtab.active{background:var(--ink)}
+.mtab-icon{font-size:18px;margin-bottom:4px}
+.mtab-name{font-size:11.5px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ink2);margin-bottom:1px}
+.mtab.active .mtab-name{color:white}
+.mtab-desc{font-size:10px;color:var(--ink4);line-height:1.3}
+.mtab.active .mtab-desc{color:rgba(255,255,255,.4)}
+.mtab::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--gold);transform:scaleX(0);transition:transform .25s;transform-origin:center}
+.mtab.active::after{transform:scaleX(1)}
+
+.module-content{display:none}
+.module-content.active{display:block}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--sh-sm);transition:box-shadow .3s;margin-bottom:16px}
+.card:hover{box-shadow:var(--sh)}
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.card-icon{width:36px;height:36px;background:var(--gold-pale);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.card-title{font-size:14px;font-weight:700;color:var(--ink2);letter-spacing:-.2px}
+.card-subtitle{font-size:11px;color:var(--ink4);margin-top:2px}
+
+/* FORM ELEMENTS */
+.layout-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.layout-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.layout-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+@media(max-width:680px){.layout-2,.layout-3,.layout-4{grid-template-columns:1fr 1fr}}
+.field{margin-bottom:18px}.field:last-child{margin-bottom:0}
+.field-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.field-label span{font-size:13px;color:var(--ink3);font-weight:500}
+.field-label strong{font-size:16px;font-weight:700;color:var(--ink);font-family:'DM Serif Display',serif;letter-spacing:-.3px}
+.select-group label{display:block;font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:6px}
+.slider-wrap{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--white);border:2.5px solid var(--gold);box-shadow:0 2px 8px rgba(204,0,0,.2);cursor:pointer;transition:all .2s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+.num-input{width:120px;flex-shrink:0;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:8px 10px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;text-align:right;outline:none;transition:all .2s;-moz-appearance:textfield}
+.num-input::-webkit-inner-spin-button,.num-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.num-input:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(204,0,0,.1)}
+.num-input.sm{width:90px}
+select{width:100%;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:9px 32px 9px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b6560' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color .2s}
+select:focus{border-color:var(--gold)}
+input[type=text],input[type=number]{background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:8px 10px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;outline:none;transition:all .2s}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(204,0,0,.1)}
+textarea{width:100%;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:10px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;outline:none;transition:all .2s;resize:vertical;min-height:60px}
+textarea:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(204,0,0,.1)}
+.sec-div{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 12px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* TOGGLE (inflation switch) */
+.toggle-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cream);border-radius:var(--rx);margin-bottom:14px;font-size:12.5px;color:var(--ink2)}
+.toggle-switch{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border2);border-radius:20px;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s}
+input:checked+.toggle-slider{background:var(--gold)}
+input:checked+.toggle-slider:before{transform:translateX(16px)}
+
+/* CALC BUTTON */
+.calc-btn{display:block;width:100%;padding:16px;background:var(--ink);color:white;border:none;border-radius:var(--rs);font-family:'IBM Plex Sans',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.2px;cursor:pointer;transition:all .2s;margin-top:8px;position:relative;overflow:hidden}
+.calc-btn::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(204,0,0,.6),transparent)}
+.calc-btn:hover{background:var(--ink2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(20,18,16,.2)}
+.calc-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* PROFILE CARD (dark) */
+.profile-card{background:var(--ink);border-radius:var(--r);padding:24px;box-shadow:var(--sh-lg);position:relative;overflow:hidden;margin-bottom:16px}
+.profile-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(204,0,0,.5),transparent)}
+.profile-name{font-family:'DM Serif Display',serif;font-size:22px;color:white;letter-spacing:-.3px;margin-bottom:3px}
+.profile-sub{font-size:12px;color:rgba(255,255,255,.45);font-weight:400;margin-bottom:16px}
+.profile-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.07);border-radius:var(--rx);overflow:hidden}
+.kpi{background:rgba(255,255,255,.035);padding:11px 14px;text-align:center}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:2px}
+.kpi-lbl{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+@media(max-width:680px){.profile-kpis{grid-template-columns:repeat(2,1fr)}}
+
+/* METRIC CARDS */
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:680px){.metrics-grid{grid-template-columns:1fr 1fr}}
+.metric{background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;box-shadow:var(--sh-sm)}
+.metric-lbl{font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.metric-val{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink);margin-bottom:2px}
+.metric-sub{font-size:11px;color:var(--ink4)}
+.metric.green .metric-val{color:var(--green)}
+.metric.red .metric-val{color:var(--red)}
+.metric.amber .metric-val{color:var(--amber)}
+.metric.blue .metric-val{color:var(--blue)}
+
+/* SCENARIO BADGES */
+.scenario-badges{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.sbadge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.sbadge.green{background:var(--green-pale);color:var(--green);border-color:var(--green-border)}
+.sbadge.blue{background:var(--blue-pale);color:var(--blue);border-color:var(--blue-border)}
+.sbadge.amber{background:var(--amber-pale);color:var(--amber);border-color:var(--amber-border)}
+
+/* CHART */
+.chart-wrap{position:relative;width:100%;height:280px;margin-bottom:16px}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-bottom:10px}
+.chart-legend span{display:flex;align-items:center;gap:5px}
+.leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
+
+/* AI BOX */
+.ai-box{background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:18px 20px;box-shadow:var(--sh-sm);margin-bottom:16px;border-left:3px solid var(--gold)}
+.ai-label{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.ai-text{font-size:14px;line-height:1.7;color:var(--ink2)}
+.ai-loading{font-size:13px;color:var(--ink4);font-style:italic}
+
+/* WHAT-IF */
+.whatif-card{background:var(--white);border:1px solid var(--gold-border);border-radius:var(--rs);padding:18px 20px;box-shadow:var(--sh-sm);margin-bottom:16px;background:var(--gold-pale)}
+.whatif-title{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.whatif-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+@media(max-width:600px){.whatif-grid{grid-template-columns:1fr}}
+.whatif-btn{padding:10px 14px;background:var(--white);border:1px solid var(--gold-border);border-radius:var(--rx);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;text-align:left;transition:all .15s;line-height:1.4;display:flex;flex-direction:column;gap:2px}
+.whatif-btn:hover{border-color:var(--gold);background:white;color:var(--gold)}
+.whatif-btn .wi-q{color:var(--ink4);font-weight:400;font-size:11px;display:block}
+.whatif-btn:hover .wi-q{color:var(--gold);opacity:.7}
+.whatif-btn.active{border-color:var(--gold);background:var(--white);color:var(--gold)}
+
+/* WHAT-IF CUSTOM */
+.wi-custom{background:var(--white);border:1px dashed var(--gold-border);border-radius:var(--rx);padding:14px;margin-top:8px}
+.wi-custom-label{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.wi-custom textarea{margin-bottom:8px;min-height:50px}
+.wi-custom-btn{padding:8px 14px;background:var(--gold);color:white;border:none;border-radius:var(--rx);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.wi-custom-btn:hover{background:var(--gold-light);transform:translateY(-1px)}
+.wi-custom-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* WHAT-IF ANSWER (numeric) */
+.wi-answer{background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:16px 18px;margin-top:10px;display:none}
+.wi-answer.show{display:block}
+.wi-answer-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.wi-answer-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;line-height:1.4}
+.wi-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:600px){.wi-result-grid{grid-template-columns:1fr}}
+.wi-result{background:var(--cream);border-radius:var(--rx);padding:10px 14px}
+.wi-result-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.wi-result-val{font-family:'DM Serif Display',serif;font-size:17px;color:var(--ink)}
+.wi-result.green .wi-result-val{color:var(--green)}
+.wi-result.red .wi-result-val{color:var(--red)}
+.wi-result.amber .wi-result-val{color:var(--amber)}
+.wi-delta{font-size:11px;font-weight:600;color:var(--ink3);margin-top:2px}
+.wi-delta.positive{color:var(--green)}
+.wi-delta.negative{color:var(--red)}
+.wi-summary{font-size:13px;line-height:1.6;color:var(--ink2);padding:10px 14px;background:var(--cream);border-radius:var(--rx);border-left:3px solid var(--gold)}
+
+/* SENSITIVITY HEATMAP */
+.heatmap-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:18px 20px;box-shadow:var(--sh-sm);margin-bottom:16px}
+.heatmap-title{font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.heatmap-sub{font-size:11.5px;color:var(--ink4);margin-bottom:14px}
+.heatmap-table{width:100%;border-collapse:separate;border-spacing:2px;font-size:12px}
+.heatmap-table th{font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;padding:6px 4px;text-align:center;background:var(--cream);border-radius:var(--rx)}
+.heatmap-table th.corner{background:transparent}
+.heatmap-table td{padding:10px 4px;text-align:center;border-radius:var(--rx);font-weight:600;color:var(--ink);transition:transform .15s;cursor:default;font-size:11.5px}
+.heatmap-table td:hover{transform:scale(1.05);z-index:2;position:relative;box-shadow:var(--sh)}
+.heatmap-table td.rowlabel{background:var(--cream);color:var(--ink3);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px}
+
+/* RESULTS SECTION */
+.results-section{display:none}
+.results-section.show{display:block}
+.results-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.results-topbar h2{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);letter-spacing:-.3px}
+
+/* SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* DIVIDER */
+.sec-label{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 12px;padding-top:16px;border-top:1px solid var(--border)}
+.sec-label:first-of-type{margin-top:0;padding-top:0;border-top:none}
+
+/* PRINT */
+@media print{
+  body{background:white;padding-top:0;font-size:12px}
+  .hub-topbar,.module-tabs,.calc-btn,.whatif-card,.print-btn,.results-topbar,.toggle-row{display:none !important}
+  .main{max-width:100%;padding:0}
+  .card,.profile-card,.heatmap-card,.ai-box{page-break-inside:avoid;box-shadow:none;margin-bottom:12px}
+  .module-content{display:none !important}
+  .module-content.active{display:block !important}
+  .results-section{display:block !important}
+  .card-header{margin-bottom:10px;padding-bottom:8px}
+  .profile-card{background:#1a1a1a !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .metrics-grid{grid-template-columns:repeat(3,1fr) !important}
+  .chart-wrap{height:220px}
+  .step-header h1{font-size:20px}
+  .step-header p{font-size:11px}
+  .heatmap-table td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header class="hub-topbar">
+  <div class="hub-topbar__left">
+    <a class="hub-topbar__logo" href="#">
+      <div class="hub-topbar__logomark"></div>
+      <span class="hub-topbar__logotext">PORTÁL</span>
+    </a>
+    <span class="hub-topbar__appname">Kalkulátor scénářů — Úvěry, refinancování, invest vs. splátka</span>
+  </div>
+  <div class="hub-topbar__right">
+    <div class="hub-topbar__user">
+      <span class="hub-topbar__name">Finanční poradce</span>
+      <span class="hub-topbar__role">Komerční banka</span>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="step-header">
+    <div>
+      <h1>Kalkulátor úvěrů a hypoték</h1>
+      <p>Splátky, refixace, refinancování a srovnání: investovat nebo splatit dřív — s AI komentářem pro schůzku.</p>
+    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ Tisk / Export PDF</button>
+  </div>
+
+
+  <!-- MODULE TABS -->
+  <div class="module-tabs">
+    <button class="mtab active" onclick="switchModule('uver',this)">
+      <div class="mtab-icon">🏠</div>
+      <div class="mtab-name">Úvěr</div>
+      <div class="mtab-desc">Splátky & refixace</div>
+    </button>
+    <button class="mtab" onclick="switchModule('refin',this)">
+      <div class="mtab-icon">🔄</div>
+      <div class="mtab-name">Refinance</div>
+      <div class="mtab-desc">Srovnání nabídek</div>
+    </button>
+    <button class="mtab" onclick="switchModule('invsplat',this)">
+      <div class="mtab-icon">⚖️</div>
+      <div class="mtab-name">Invest vs. splátka</div>
+      <div class="mtab-desc">Co se víc vyplatí</div>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       MODULE 2 — ÚVĚR
+  ═══════════════════════════════════ -->
+  <div class="module-content active" id="mod-uver">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🏠</div>
+        <div><div class="card-title">Parametry úvěru</div><div class="card-subtitle">Hypotéka nebo spotřebitelský úvěr</div></div>
+      </div>
+      <div class="layout-3" style="margin-bottom:16px">
+        <div class="select-group">
+          <label>Jméno klienta</label>
+          <input type="text" id="u-jmeno" value="Jana Kovářová" style="width:100%">
+        </div>
+        <div class="select-group">
+          <label>Typ úvěru</label>
+          <select id="u-typ">
+            <option value="hypo">Hypoteční úvěr</option>
+            <option value="spotreb">Spotřebitelský úvěr</option>
+            <option value="auto">Úvěr na auto</option>
+          </select>
+        </div>
+        <div class="select-group">
+          <label>Fixace (roky)</label>
+          <select id="u-fixace">
+            <option value="3">3 roky</option>
+            <option value="5" selected>5 let</option>
+            <option value="7">7 let</option>
+            <option value="10">10 let</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Výše úvěru</span><strong id="u-vyse-lbl">3 000 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="100000" max="20000000" step="100000" value="3000000" id="u-vyse-sl" oninput="syncK('u-vyse-sl','u-vyse-ni','u-vyse-lbl')">
+          <input type="text" class="num-input" id="u-vyse-ni" value="3 000 000" onchange="syncKi('u-vyse-ni','u-vyse-sl','u-vyse-lbl',100000,20000000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="layout-2">
+        <div class="field">
+          <div class="field-label"><span>Doba splácení</span><strong id="u-doba-lbl">25 let</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="30" step="1" value="25" id="u-doba-sl" oninput="sv('u-doba-sl','u-doba','u-doba-lbl','let',false)">
+            <input type="number" class="num-input sm" id="u-doba" value="25" onchange="si('u-doba','u-doba-sl','u-doba-lbl','let',1,30,false)" onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Aktuální úroková sazba</span><strong id="u-saz-lbl">4,9 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0.5" max="12" step="0.1" value="4.9" id="u-saz-sl" oninput="syncPct('u-saz-sl','u-saz-lbl')">
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-label">Scénáře sazby po refixaci</div>
+      <div class="layout-3">
+        <div class="field">
+          <div class="field-label"><span>Optimistická sazba</span><strong id="u-opt-lbl">3,5 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0.5" max="12" step="0.1" value="3.5" id="u-opt-sl" oninput="syncPct('u-opt-sl','u-opt-lbl')">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Realistická sazba</span><strong id="u-real-lbl">5,0 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0.5" max="12" step="0.1" value="5.0" id="u-real-sl" oninput="syncPct('u-real-sl','u-real-lbl')">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Pesimistická sazba</span><strong id="u-pes-lbl">6,5 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0.5" max="12" step="0.1" value="6.5" id="u-pes-sl" oninput="syncPct('u-pes-sl','u-pes-lbl')">
+          </div>
+        </div>
+      </div>
+      <button class="calc-btn" id="u-btn" onclick="calcUver()">Spočítat scénáře úvěru →</button>
+    </div>
+
+    <div class="results-section" id="u-results">
+      <div class="results-topbar">
+        <h2>Výsledky — <span id="u-res-jmeno"></span></h2>
+      </div>
+      <div class="profile-card">
+        <div class="profile-name" id="u-pc-name"></div>
+        <div class="profile-sub" id="u-pc-sub"></div>
+        <div class="profile-kpis" id="u-pc-kpis"></div>
+      </div>
+      <div class="metrics-grid" id="u-metrics"></div>
+      <div class="card" style="padding:20px">
+        <div class="chart-legend" id="u-legend"></div>
+        <div class="chart-wrap"><canvas id="u-chart" role="img" aria-label="Graf vývoje zůstatku úvěru"></canvas></div>
+      </div>
+
+      <div class="heatmap-card">
+        <div class="heatmap-title">🔥 Citlivostní analýza splátky</div>
+        <div class="heatmap-sub">Jak se mění splátka po refixaci podle sazby a zbývající doby</div>
+        <div id="u-heatmap"></div>
+      </div>
+
+      <div class="whatif-card">
+        <div class="whatif-title"><span>💡</span> Co kdyby... (What-if analýza)</div>
+        <div class="whatif-grid" id="u-whatif-btns"></div>
+
+        <div class="wi-custom">
+          <div class="wi-custom-label">✏️ Vlastní scénář</div>
+          <textarea id="u-wi-custom" placeholder="Napište vlastní otázku. Např.: Co když splatím mimořádně 500 000 Kč a zkrátím dobu splácení o 5 let?"></textarea>
+          <button class="wi-custom-btn" onclick="runWI_U_custom()">Spočítat →</button>
+        </div>
+
+        <div class="wi-answer" id="u-wi-answer">
+          <div class="wi-answer-label">📊 Výsledek scénáře</div>
+          <div id="u-wi-content"></div>
+        </div>
+      </div>
+
+      <div class="ai-box">
+        <div class="ai-label">AI komentář pro schůzku</div>
+        <div class="ai-text" id="u-ai-text"><span class="ai-loading">Generuji komentář...</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════
+       MODULE 5 — REFINANCOVÁNÍ HYPOTÉKY
+  ═══════════════════════════════════ -->
+  <div class="module-content" id="mod-refin">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🔄</div>
+        <div><div class="card-title">Refinancování hypotéky</div><div class="card-subtitle">Porovnání: zůstat vs. přejít ke konkurenci</div></div>
+      </div>
+      <div class="layout-2" style="margin-bottom:16px">
+        <div class="select-group">
+          <label>Jméno klienta</label>
+          <input type="text" id="rf-jmeno" value="Martin Horák" style="width:100%">
+        </div>
+        <div class="select-group">
+          <label>Do konce fixace zbývá</label>
+          <select id="rf-kdy">
+            <option value="0" selected>Fixace právě končí (0 měsíců)</option>
+            <option value="3">3 měsíce</option>
+            <option value="6">6 měsíců</option>
+            <option value="12">12 měsíců</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sec-label">Současná hypotéka</div>
+      <div class="field">
+        <div class="field-label"><span>Zůstatek úvěru</span><strong id="rf-zust-lbl">2 500 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="100000" max="15000000" step="50000" value="2500000" id="rf-zust-sl" oninput="syncK('rf-zust-sl','rf-zust-ni','rf-zust-lbl')">
+          <input type="text" class="num-input" id="rf-zust-ni" value="2 500 000" onchange="syncKi('rf-zust-ni','rf-zust-sl','rf-zust-lbl',100000,15000000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="layout-2">
+        <div class="field">
+          <div class="field-label"><span>Zbývající doba splácení</span><strong id="rf-doba-lbl">20 let</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="30" step="1" value="20" id="rf-doba-sl" oninput="sv('rf-doba-sl','rf-doba','rf-doba-lbl','let',false)">
+            <input type="number" class="num-input sm" id="rf-doba" value="20" onchange="si('rf-doba','rf-doba-sl','rf-doba-lbl','let',1,30,false)" onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Nabízená sazba — stávající banka</span><strong id="rf-saz1-lbl">5,2 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0.5" max="12" step="0.1" value="5.2" id="rf-saz1-sl" oninput="syncPct('rf-saz1-sl','rf-saz1-lbl')">
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-label">Nabídka konkurence</div>
+      <div class="layout-2">
+        <div class="field">
+          <div class="field-label"><span>Sazba u konkurence</span><strong id="rf-saz2-lbl">4,6 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0.5" max="12" step="0.1" value="4.6" id="rf-saz2-sl" oninput="syncPct('rf-saz2-sl','rf-saz2-lbl')">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Fixace u konkurence</span><strong id="rf-fix2-lbl">5 let</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="10" step="1" value="5" id="rf-fix2-sl" oninput="sv('rf-fix2-sl','rf-fix2','rf-fix2-lbl','let',false)">
+            <input type="number" class="num-input sm" id="rf-fix2" value="5" onchange="si('rf-fix2','rf-fix2-sl','rf-fix2-lbl','let',1,10,false)" onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Náklady refinancování (odhad, poplatky, znalec)</span><strong id="rf-nakl-lbl">15 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="0" max="100000" step="1000" value="15000" id="rf-nakl-sl" oninput="syncK('rf-nakl-sl','rf-nakl-ni','rf-nakl-lbl')">
+          <input type="text" class="num-input" id="rf-nakl-ni" value="15 000" onchange="syncKi('rf-nakl-ni','rf-nakl-sl','rf-nakl-lbl',0,100000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcRefin()">Porovnat nabídky →</button>
+    </div>
+
+    <div class="results-section" id="rf-results">
+      <div class="results-topbar">
+        <h2>Výsledky — <span id="rf-res-jmeno"></span></h2>
+      </div>
+      <div class="profile-card">
+        <div class="profile-name" id="rf-pc-name"></div>
+        <div class="profile-sub" id="rf-pc-sub"></div>
+        <div class="profile-kpis" id="rf-pc-kpis"></div>
+      </div>
+      <div class="metrics-grid" id="rf-metrics"></div>
+
+      <div class="card" style="padding:20px">
+        <div class="chart-legend" id="rf-legend"></div>
+        <div class="chart-wrap"><canvas id="rf-chart" role="img" aria-label="Graf srovnání nabídek"></canvas></div>
+      </div>
+
+      <div class="whatif-card">
+        <div class="whatif-title"><span>💡</span> Co kdyby... (What-if analýza)</div>
+        <div class="whatif-grid" id="rf-whatif-btns"></div>
+
+        <div class="wi-custom">
+          <div class="wi-custom-label">✏️ Vlastní scénář</div>
+          <textarea id="rf-wi-custom" placeholder="Napište vlastní otázku. Např.: Co kdyby stávající banka snížila sazbu o 0,3 % a konkurence zůstala stejná?"></textarea>
+          <button class="wi-custom-btn" onclick="runWI_RF_custom()">Spočítat →</button>
+        </div>
+
+        <div class="wi-answer" id="rf-wi-answer">
+          <div class="wi-answer-label">📊 Výsledek scénáře</div>
+          <div id="rf-wi-content"></div>
+        </div>
+      </div>
+
+      <div class="ai-box">
+        <div class="ai-label">AI komentář pro schůzku</div>
+        <div class="ai-text" id="rf-ai-text"><span class="ai-loading">Generuji komentář...</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════
+       MODULE 6 — INVEST vs. MIMOŘÁDNÁ SPLÁTKA
+  ═══════════════════════════════════ -->
+  <div class="module-content" id="mod-invsplat">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">⚖️</div>
+        <div><div class="card-title">Investice vs. mimořádná splátka</div><div class="card-subtitle">Co se víc vyplatí — investovat volné prostředky, nebo je dát na úvěr?</div></div>
+      </div>
+      <div class="layout-2" style="margin-bottom:16px">
+        <div class="select-group">
+          <label>Jméno klienta</label>
+          <input type="text" id="iv-jmeno" value="Tomáš Procházka" style="width:100%">
+        </div>
+        <div class="select-group">
+          <label>Typ srovnání</label>
+          <select id="iv-typ">
+            <option value="jednor" selected>Jednorázová volná částka</option>
+            <option value="mes">Pravidelné volné peníze měsíčně</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sec-label">Vaše hypotéka</div>
+      <div class="layout-2">
+        <div class="field">
+          <div class="field-label"><span>Zůstatek úvěru</span><strong id="iv-zust-lbl">2 500 000 Kč</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="100000" max="15000000" step="50000" value="2500000" id="iv-zust-sl" oninput="syncK('iv-zust-sl','iv-zust-ni','iv-zust-lbl')">
+            <input type="text" class="num-input" id="iv-zust-ni" value="2 500 000" onchange="syncKi('iv-zust-ni','iv-zust-sl','iv-zust-lbl',100000,15000000)" onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Sazba úvěru</span><strong id="iv-saz-lbl">5,0 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0.5" max="12" step="0.1" value="5.0" id="iv-saz-sl" oninput="syncPct('iv-saz-sl','iv-saz-lbl')">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Zbývající doba splácení</span><strong id="iv-doba-lbl">20 let</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="1" max="30" step="1" value="20" id="iv-doba-sl" oninput="sv('iv-doba-sl','iv-doba','iv-doba-lbl','let',false)">
+          <input type="number" class="num-input sm" id="iv-doba" value="20" onchange="si('iv-doba','iv-doba-sl','iv-doba-lbl','let',1,30,false)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+
+      <div class="sec-label">Volné prostředky & investice</div>
+      <div class="field">
+        <div class="field-label"><span id="iv-prostr-label">Volná částka (jednorázově)</span><strong id="iv-prostr-lbl">200 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="10000" max="2000000" step="10000" value="200000" id="iv-prostr-sl" oninput="syncK('iv-prostr-sl','iv-prostr-ni','iv-prostr-lbl')">
+          <input type="text" class="num-input" id="iv-prostr-ni" value="200 000" onchange="syncKi('iv-prostr-ni','iv-prostr-sl','iv-prostr-lbl',10000,2000000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Očekávaný výnos investice p.a.</span><strong id="iv-vyn-lbl">7,0 %</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="1" max="15" step="0.5" value="7" id="iv-vyn-sl" oninput="syncPct('iv-vyn-sl','iv-vyn-lbl')">
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcInvSplat()">Porovnat obě varianty →</button>
+    </div>
+
+    <div class="results-section" id="iv-results">
+      <div class="results-topbar">
+        <h2>Výsledky — <span id="iv-res-jmeno"></span></h2>
+      </div>
+      <div class="profile-card">
+        <div class="profile-name" id="iv-pc-name"></div>
+        <div class="profile-sub" id="iv-pc-sub"></div>
+        <div class="profile-kpis" id="iv-pc-kpis"></div>
+      </div>
+      <div class="metrics-grid" id="iv-metrics"></div>
+
+      <div class="card" style="padding:20px">
+        <div class="chart-legend" id="iv-legend"></div>
+        <div class="chart-wrap"><canvas id="iv-chart" role="img" aria-label="Graf srovnání investice vs. splátka"></canvas></div>
+      </div>
+
+      <div class="whatif-card">
+        <div class="whatif-title"><span>💡</span> Co kdyby... (What-if analýza)</div>
+        <div class="whatif-grid" id="iv-whatif-btns"></div>
+
+        <div class="wi-custom">
+          <div class="wi-custom-label">✏️ Vlastní scénář</div>
+          <textarea id="iv-wi-custom" placeholder="Napište vlastní otázku. Např.: Co když sazby na hypotéce vzrostou na 7 % a akcie poklesnou o 20 %?"></textarea>
+          <button class="wi-custom-btn" onclick="runWI_IV_custom()">Spočítat →</button>
+        </div>
+
+        <div class="wi-answer" id="iv-wi-answer">
+          <div class="wi-answer-label">📊 Výsledek scénáře</div>
+          <div id="iv-wi-content"></div>
+        </div>
+      </div>
+
+      <div class="ai-box">
+        <div class="ai-label">AI komentář pro schůzku</div>
+        <div class="ai-text" id="iv-ai-text"><span class="ai-loading">Generuji komentář...</span></div>
+      </div>
+    </div>
+  </div>
+
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+let chartI = null, chartU = null, chartD = null, chartR = null, chartRF = null, chartIV = null;
+
+function fK(n){ return Math.round(n).toLocaleString('cs-CZ') + ' Kč'; }
+function fM(n){
+  const m = n/1000000;
+  if(Math.abs(m) < 10) return m.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' M Kč';
+  return (Math.round(m*10)/10).toLocaleString('cs-CZ',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' M Kč';
+}
+function fPct(n){ return parseFloat(n).toFixed(1).replace('.',',') + ' %'; }
+function parseK(s){ return parseFloat(String(s).replace(/\s/g,'').replace(',','.')) || 0; }
+
+function sv(slId, numId, lblId, suffix, isAge){
+  const v = document.getElementById(slId).value;
+  document.getElementById(numId).value = v;
+  const lbl = document.getElementById(lblId);
+  if(lbl) lbl.textContent = v + (isAge ? ' let' : (suffix ? ' ' + suffix : ''));
+}
+function si(numId, slId, lblId, suffix, mn, mx, isAge){
+  let v = Math.max(mn, Math.min(mx, parseFloat(document.getElementById(numId).value) || mn));
+  document.getElementById(numId).value = v;
+  document.getElementById(slId).value = v;
+  const lbl = document.getElementById(lblId);
+  if(lbl) lbl.textContent = v + (isAge ? ' let' : (suffix ? ' ' + suffix : ''));
+}
+function syncK(slId, niId, lblId){
+  const v = parseInt(document.getElementById(slId).value);
+  document.getElementById(niId).value = v.toLocaleString('cs-CZ');
+  document.getElementById(lblId).textContent = fK(v);
+}
+function syncKi(niId, slId, lblId, mn, mx){
+  let v = Math.max(mn, Math.min(mx, parseK(document.getElementById(niId).value)));
+  document.getElementById(slId).value = v;
+  document.getElementById(niId).value = Math.round(v).toLocaleString('cs-CZ');
+  document.getElementById(lblId).textContent = fK(v);
+}
+function syncPct(slId, lblId){
+  document.getElementById(lblId).textContent = fPct(document.getElementById(slId).value);
+}
+
+function switchModule(id, el){
+  document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.module-content').forEach(m => m.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('mod-' + id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// FINANCIAL MATH
+// ═══════════════════════════════════════════════════════
+function calcFV(pv, pmt, r, years){
+  if(r === 0) return pv + pmt * years * 12;
+  const rm = r / 12;
+  const n = years * 12;
+  return pv * Math.pow(1+rm, n) + pmt * (Math.pow(1+rm, n) - 1) / rm;
+}
+function calcMonthly(pv, r, years){
+  const rm = r / 12, n = years * 12;
+  if(n === 0) return 0;
+  if(rm === 0) return pv / n;
+  return pv * rm * Math.pow(1+rm, n) / (Math.pow(1+rm, n) - 1);
+}
+function buildFVSeries(pv, pmt, r, years){
+  return Array.from({length: years+1}, (_,i) => Math.round(calcFV(pv, pmt, r, i)));
+}
+// Zůstatek úvěru po N měsících
+function remainingBalance(pv, pmt, r, months){
+  const rm = r/12;
+  let bal = pv;
+  for(let i=0; i<months; i++){
+    bal = bal*(1+rm) - pmt;
+    if(bal < 0) bal = 0;
+  }
+  return bal;
+}
+// Roční série zůstatků úvěru
+function buildBalanceSeries(pv, pmt, r, years){
+  const series = [pv];
+  let bal = pv;
+  const rm = r/12;
+  for(let y=1; y<=years; y++){
+    for(let m=0; m<12; m++){
+      bal = bal*(1+rm) - pmt;
+      if(bal < 0) bal = 0;
+    }
+    series.push(Math.round(bal));
+  }
+  return series;
+}
+
+// ═══════════════════════════════════════════════════════
+// HEATMAP (citlivostní analýza)
+// ═══════════════════════════════════════════════════════
+function buildHeatmap(container, rowLabel, colLabel, rows, cols, valueFn, formatFn, colorLow, colorHigh, invert){
+  // rows/cols = arrays of parameter values
+  // valueFn(row, col) returns numeric result
+  let values = [];
+  rows.forEach(r => cols.forEach(c => values.push(valueFn(r, c))));
+  const minV = Math.min(...values), maxV = Math.max(...values);
+
+  function cellColor(v){
+    if(maxV === minV) return 'background:var(--cream)';
+    let t = (v - minV) / (maxV - minV);
+    if(invert) t = 1 - t;
+    // lerp mezi colorLow a colorHigh (v RGB)
+    const a = colorLow, b = colorHigh;
+    const r = Math.round(a[0] + (b[0]-a[0])*t);
+    const g = Math.round(a[1] + (b[1]-a[1])*t);
+    const bl = Math.round(a[2] + (b[2]-a[2])*t);
+    return `background:rgb(${r},${g},${bl})`;
+  }
+
+  let html = `<table class="heatmap-table"><thead><tr><th class="corner">${rowLabel} \\ ${colLabel}</th>`;
+  cols.forEach(c => html += `<th>${c.label}</th>`);
+  html += `</tr></thead><tbody>`;
+  rows.forEach(r => {
+    html += `<tr><td class="rowlabel">${r.label}</td>`;
+    cols.forEach(c => {
+      const v = valueFn(r.value, c.value);
+      html += `<td style="${cellColor(v)}">${formatFn(v)}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+// AI CALLS (jen pro main AI komentář a vlastní what-if)
+// ═══════════════════════════════════════════════════════
+async function aiCall(prompt, elId){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  el.innerHTML = '<span class="ai-loading">Generuji komentář...</span>';
+  try{
+    const resp = await fetch('/api/claude', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:'Jsi zkušený finanční poradce v české komerční bance. Píšeš stručné, přesvědčivé komentáře pro poradce, kteří je čtou klientovi přímo na schůzce. Komentář má být lidský, konkrétní, motivující k akci. Piš plynulý odstavec 3–5 vět. Zmiň jméno klienta. Mluv v první osobě množného čísla (my, vám, společně). Vyhni se finančnímu žargonu. Formátování: žádné odrážky, jen odstavec.',
+        messages:[{role:'user', content: prompt}]
+      })
+    });
+    const data = await resp.json();
+    el.textContent = data.content?.[0]?.text || 'Komentář není dostupný.';
+  } catch(e){
+    el.textContent = 'Komentář se nepodařilo vygenerovat.';
+  }
+}
+
+// Vlastní what-if — AI vrací strukturu JSON s čísly
+async function wiCustomCall(userQuestion, stateJSON, moduleDescription, contentElId, answerElId){
+  const contentEl = document.getElementById(contentElId);
+  const boxEl = document.getElementById(answerElId);
+  boxEl.classList.add('show');
+  contentEl.innerHTML = '<div style="padding:12px;color:var(--ink4);font-style:italic;font-size:13px">🧠 Zpracovávám vlastní scénář...</div>';
+
+  const systemPrompt = `Jsi finanční kalkulačka. Dostaneš aktuální stav výpočtu a uživatelovu otázku typu "co kdyby". Tvůj úkol je VYPOČÍTAT konkrétní čísla odpovídající scénáři a vrátit JSON s výsledky.
+
+Modul: ${moduleDescription}
+
+Aktuální stav (výchozí hodnoty): ${stateJSON}
+
+Odpověz POUZE validním JSON (bez markdown, bez zpětných apostrofů, bez textu okolo). Struktura:
+{
+  "title": "Krátký popis scénáře",
+  "results": [
+    {"label": "Původní hodnota", "value": "XXX", "type": "neutral"},
+    {"label": "Nová hodnota", "value": "XXX", "type": "positive"},
+    {"label": "Rozdíl", "value": "+XXX / -XXX", "type": "positive|negative"}
+  ],
+  "summary": "Krátká větá nebo dvě shrnující výsledek (pro poradce)"
+}
+
+"type" může být: positive (zelená), negative (červená), amber (oranžová — varování), neutral (šedá).
+Hodnoty piš v čitelném formátu ("1 250 000 Kč", "12 500 Kč/měs", "+240 000 Kč", "15,3 %"). Počítej přesně podle finanční matematiky.`;
+
+  try{
+    const resp = await fetch('/api/claude', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        system: systemPrompt,
+        messages:[{role:'user', content: userQuestion}]
+      })
+    });
+    const data = await resp.json();
+    let txt = (data.content?.[0]?.text || '').trim();
+    // odstranit případné ```json wrapy
+    txt = txt.replace(/^```json\s*/i, '').replace(/^```\s*/,'').replace(/```$/,'').trim();
+    let parsed;
+    try { parsed = JSON.parse(txt); }
+    catch(e){
+      contentEl.innerHTML = `<div style="padding:10px;color:var(--ink2);font-size:13px">${txt}</div>`;
+      return;
+    }
+    renderWICustom(contentEl, parsed);
+  } catch(e){
+    contentEl.innerHTML = '<div style="padding:10px;color:var(--red);font-size:13px">Nepodařilo se vyhodnotit scénář.</div>';
+  }
+}
+
+function renderWICustom(el, data){
+  const typeClass = { positive: 'green', negative: 'red', amber: 'amber', neutral: '' };
+  let html = `<div class="wi-answer-title">${data.title || 'Výsledek vlastního scénáře'}</div>`;
+  if(data.results && data.results.length){
+    html += `<div class="wi-result-grid">`;
+    data.results.forEach(r => {
+      const cls = typeClass[r.type] || '';
+      html += `<div class="wi-result ${cls}"><div class="wi-result-lbl">${r.label}</div><div class="wi-result-val">${r.value}</div></div>`;
+    });
+    html += `</div>`;
+  }
+  if(data.summary){
+    html += `<div class="wi-summary">${data.summary}</div>`;
+  }
+  el.innerHTML = html;
+}
+
+// Lokální what-if render (bez AI) — pro předvolené
+function renderWI(contentElId, answerElId, data){
+  const contentEl = document.getElementById(contentElId);
+  const boxEl = document.getElementById(answerElId);
+  boxEl.classList.add('show');
+  renderWICustom(contentEl, data);
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MODUL 2 — ÚVĚR
+// ═══════════════════════════════════════════════════════
+let uState = {};
+
+function calcUver(){
+  const jmeno = document.getElementById('u-jmeno').value || 'klient';
+  const typ = document.getElementById('u-typ').value;
+  const fixace = parseInt(document.getElementById('u-fixace').value);
+  const vyse = parseK(document.getElementById('u-vyse-ni').value);
+  const doba = parseInt(document.getElementById('u-doba').value);
+  const saz = parseFloat(document.getElementById('u-saz-sl').value)/100;
+  const sOpt = parseFloat(document.getElementById('u-opt-sl').value)/100;
+  const sReal = parseFloat(document.getElementById('u-real-sl').value)/100;
+  const sPes = parseFloat(document.getElementById('u-pes-sl').value)/100;
+
+  const splatka = calcMonthly(vyse, saz, doba);
+  const totalNow = splatka * 12 * doba;
+  const preplaceni = totalNow - vyse;
+
+  const zustatek = remainingBalance(vyse, splatka, saz, fixace*12);
+  const dobaZb = doba - fixace;
+
+  const splOpt = calcMonthly(zustatek, sOpt, dobaZb);
+  const splReal = calcMonthly(zustatek, sReal, dobaZb);
+  const splPes = calcMonthly(zustatek, sPes, dobaZb);
+
+  uState = {jmeno, typ, fixace, vyse, doba, saz, sOpt, sReal, sPes, splatka, preplaceni, zustatek, dobaZb, splOpt, splReal, splPes};
+
+  const typLabel = typ==='hypo'?'Hypoteční úvěr': typ==='spotreb'?'Spotřebitelský úvěr':'Úvěr na auto';
+
+  document.getElementById('u-res-jmeno').textContent = jmeno;
+  document.getElementById('u-results').classList.add('show');
+
+  document.getElementById('u-pc-name').textContent = jmeno;
+  document.getElementById('u-pc-sub').textContent = `${typLabel} · ${fK(vyse)} · ${doba} let · Fixace: ${fixace} let`;
+  document.getElementById('u-pc-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${fM(vyse)}</div><div class="kpi-lbl">Výše úvěru</div></div>
+    <div class="kpi"><div class="kpi-val">${fK(splatka)}</div><div class="kpi-lbl">Aktuální splátka</div></div>
+    <div class="kpi"><div class="kpi-val">${fM(preplaceni)}</div><div class="kpi-lbl">Celkem přeplatíte</div></div>
+    <div class="kpi"><div class="kpi-val">${fM(zustatek)}</div><div class="kpi-lbl">Zůstatek po fixaci</div></div>
+  `;
+
+  document.getElementById('u-metrics').innerHTML = `
+    <div class="metric green"><div class="metric-lbl">Splátka po refixaci (opt.)</div><div class="metric-val">${fK(splOpt)}</div><div class="metric-sub">${fPct(sOpt*100)} p.a. · úspora ${fK(splatka-splOpt)}/měs</div></div>
+    <div class="metric"><div class="metric-lbl">Splátka po refixaci (real.)</div><div class="metric-val">${fK(splReal)}</div><div class="metric-sub">${fPct(sReal*100)} p.a.</div></div>
+    <div class="metric red"><div class="metric-lbl">Splátka po refixaci (pes.)</div><div class="metric-val">${fK(splPes)}</div><div class="metric-sub">${fPct(sPes*100)} p.a. · nárůst ${fK(splPes-splatka)}/měs</div></div>
+    <div class="metric"><div class="metric-lbl">Aktuální splátka</div><div class="metric-val">${fK(splatka)}</div><div class="metric-sub">${fPct(saz*100)} p.a.</div></div>
+    <div class="metric"><div class="metric-lbl">Celkem přeplatíte</div><div class="metric-val">${fM(preplaceni)}</div><div class="metric-sub">při stávající sazbě po celou dobu</div></div>
+    <div class="metric"><div class="metric-lbl">Zbývá splatit po fixaci</div><div class="metric-val">${dobaZb} let</div><div class="metric-sub">z celkových ${doba} let</div></div>
+  `;
+
+  // Chart — zůstatky
+  function buildZust(splBefore, rBefore, splAfter, rAfter, fix, totalYrs){
+    const res = [vyse]; let rem2 = vyse;
+    const rmB = rBefore/12, rmA = rAfter/12;
+    for(let y=1; y<=totalYrs; y++){
+      for(let m=0; m<12; m++){
+        if(y<=fix){ rem2 = rem2*(1+rmB) - splBefore; }
+        else { rem2 = rem2*(1+rmA) - splAfter; }
+        if(rem2<0) rem2=0;
+      }
+      res.push(Math.round(rem2));
+    }
+    return res;
+  }
+  const labels = Array.from({length:doba+1}, (_,i) => i===0?'Start':'Rok '+i);
+  document.getElementById('u-legend').innerHTML = `
+    <span><span class="leg-dot" style="background:#1a6644"></span>Optimistická sazba</span>
+    <span><span class="leg-dot" style="background:#1e4a8a"></span>Realistická sazba</span>
+    <span><span class="leg-dot" style="background:#CC0000"></span>Pesimistická sazba</span>
+  `;
+  if(chartU) chartU.destroy();
+  chartU = new Chart(document.getElementById('u-chart'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Opt.', data:buildZust(splatka,saz,splOpt,sOpt,fixace,doba), borderColor:'#1a6644', borderWidth:2, pointRadius:0, tension:.3, fill:false},
+        {label:'Real.', data:buildZust(splatka,saz,splReal,sReal,fixace,doba), borderColor:'#1e4a8a', borderWidth:2.5, pointRadius:0, tension:.3, fill:false},
+        {label:'Pes.', data:buildZust(splatka,saz,splPes,sPes,fixace,doba), borderColor:'#CC0000', borderWidth:2, pointRadius:0, tension:.3, fill:false, borderDash:[6,3]}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,font:{size:11}}}, y:{ticks:{callback:v=>(v/1000000).toFixed(1)+' M', font:{size:11}}, min:0}}}
+  });
+
+  // Heatmap — sazba × zbývající doba (splátka)
+  const rows = [
+    {label:'3 %', value:0.03}, {label:'4 %', value:0.04}, {label:'5 %', value:0.05}, {label:'6 %', value:0.06}, {label:'7 %', value:0.07}
+  ];
+  const cols = [
+    {label:dobaZb-4+' let', value:Math.max(1,dobaZb-4)}, {label:dobaZb-2+' let', value:Math.max(1,dobaZb-2)},
+    {label:dobaZb+' let', value:dobaZb}, {label:dobaZb+2+' let', value:dobaZb+2}, {label:dobaZb+4+' let', value:dobaZb+4}
+  ];
+  buildHeatmap(
+    document.getElementById('u-heatmap'),
+    'Sazba', 'Zbývající doba',
+    rows, cols,
+    (r,c) => calcMonthly(zustatek, r, c),
+    v => fK(v),
+    [232,244,238], [204,0,0], false  // nižší splátka = zelené, vyšší = červené
+  );
+
+  renderUverWIButtons();
+
+  aiCall(`Finanční poradce ukazuje klientce ${jmeno} výsledky úvěrového kalkulátoru. ${typLabel}: ${fM(vyse)}, ${doba} let, aktuální sazba ${fPct(saz*100)}, splátka ${fK(splatka)}/měs. Fixace za ${fixace} let — optimistická splátka: ${fK(splOpt)}, realistická: ${fK(splReal)}, pesimistická: ${fK(splPes)}. Napiš motivující komentář zaměřený na důležitost plánování refixace a finanční rezervy.`, 'u-ai-text');
+
+  setTimeout(() => document.getElementById('u-results').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
+
+function renderUverWIButtons(){
+  const {jmeno, vyse, doba, saz, splatka, zustatek, dobaZb, sReal, splReal, preplaceni} = uState;
+
+  const wiBtns = [
+    {
+      q: 'Mimořádná splátka 200 000 Kč',
+      sub: 'po refixaci',
+      fn: () => {
+        const novaJistina = Math.max(0, zustatek - 200000);
+        const novaSpl = calcMonthly(novaJistina, sReal, dobaZb);
+        const uspora = (splReal - novaSpl) * dobaZb * 12;
+        return {
+          title: 'Jednorázová mimořádná splátka 200 000 Kč při refixaci',
+          results: [
+            {label:'Původní splátka po refixaci', value: fK(splReal), type:'neutral'},
+            {label:'Nová splátka', value: fK(novaSpl), type:'positive'},
+            {label:'Úspora měsíčně', value: '-' + fK(splReal-novaSpl), type:'positive'},
+            {label:'Úspora celkem', value: fK(uspora), type:'positive'}
+          ],
+          summary: `Vklad 200 000 Kč ušetří ${fK(uspora)} na úrocích za zbývajících ${dobaZb} let. Klient získává zhodnocení ${fPct(sReal*100)} bez rizika.`
+        };
+      }
+    },
+    {
+      q: 'Zkrátit dobu o 5 let',
+      sub: `${dobaZb-5} let místo ${dobaZb}`,
+      fn: () => {
+        const kratsiDoba = Math.max(5, dobaZb - 5);
+        const novaSpl = calcMonthly(zustatek, sReal, kratsiDoba);
+        const uroky1 = splReal * dobaZb * 12 - zustatek;
+        const uroky2 = novaSpl * kratsiDoba * 12 - zustatek;
+        return {
+          title: `Zkrácení zbývající doby z ${dobaZb} na ${kratsiDoba} let`,
+          results: [
+            {label:'Původní splátka', value: fK(splReal), type:'neutral'},
+            {label:'Vyšší splátka', value: fK(novaSpl), type:'amber'},
+            {label:'Nárůst měsíčně', value: '+' + fK(novaSpl-splReal), type:'amber'},
+            {label:'Úspora na úrocích', value: '-' + fK(uroky1-uroky2), type:'positive'}
+          ],
+          summary: `Vyšší splátka o ${fK(novaSpl-splReal)} měsíčně ušetří celkem ${fK(uroky1-uroky2)} na úrocích. Klient splatí úvěr o 5 let dřív.`
+        };
+      }
+    },
+    {
+      q: 'Prodloužit dobu o 5 let',
+      sub: `${dobaZb+5} let místo ${dobaZb}`,
+      fn: () => {
+        const delsiDoba = dobaZb + 5;
+        const novaSpl = calcMonthly(zustatek, sReal, delsiDoba);
+        const uroky1 = splReal * dobaZb * 12 - zustatek;
+        const uroky2 = novaSpl * delsiDoba * 12 - zustatek;
+        return {
+          title: `Prodloužení zbývající doby z ${dobaZb} na ${delsiDoba} let`,
+          results: [
+            {label:'Původní splátka', value: fK(splReal), type:'neutral'},
+            {label:'Nižší splátka', value: fK(novaSpl), type:'positive'},
+            {label:'Úleva měsíčně', value: '-' + fK(splReal-novaSpl), type:'positive'},
+            {label:'Zaplatíte navíc úroky', value: '+' + fK(uroky2-uroky1), type:'negative'}
+          ],
+          summary: `Nižší splátka o ${fK(splReal-novaSpl)}/měs uleví rozpočtu, ale klient přeplatí navíc ${fK(uroky2-uroky1)}. Vhodné jen v krizové situaci.`
+        };
+      }
+    },
+    {
+      q: 'Sazba klesne o 1 %',
+      sub: `na ${fPct((sReal-0.01)*100)}`,
+      fn: () => {
+        const nizsiSaz = Math.max(0.005, sReal - 0.01);
+        const novaSpl = calcMonthly(zustatek, nizsiSaz, dobaZb);
+        return {
+          title: `Sazba po refixaci klesne o 1 p.b. na ${fPct(nizsiSaz*100)}`,
+          results: [
+            {label:'Realistická splátka', value: fK(splReal), type:'neutral'},
+            {label:'S nižší sazbou', value: fK(novaSpl), type:'positive'},
+            {label:'Úspora měsíčně', value: '-' + fK(splReal-novaSpl), type:'positive'},
+            {label:'Úspora za fixaci', value: fK((splReal-novaSpl)*5*12), type:'positive'}
+          ],
+          summary: `Pokles sazby o 1 % znamená ${fK((splReal-novaSpl)*5*12)} úsporu za 5letou fixaci. Dobrá chvíle vyjednávat se současnou bankou.`
+        };
+      }
+    },
+    {
+      q: 'Sazba vzroste o 1 %',
+      sub: `na ${fPct((sReal+0.01)*100)}`,
+      fn: () => {
+        const vyssiSaz = sReal + 0.01;
+        const novaSpl = calcMonthly(zustatek, vyssiSaz, dobaZb);
+        return {
+          title: `Sazba po refixaci vzroste o 1 p.b. na ${fPct(vyssiSaz*100)}`,
+          results: [
+            {label:'Realistická splátka', value: fK(splReal), type:'neutral'},
+            {label:'S vyšší sazbou', value: fK(novaSpl), type:'negative'},
+            {label:'Nárůst měsíčně', value: '+' + fK(novaSpl-splReal), type:'negative'},
+            {label:'Nárůst za fixaci', value: fK((novaSpl-splReal)*5*12), type:'negative'}
+          ],
+          summary: `Růst sazby o 1 % zatíží rozpočet o ${fK(novaSpl-splReal)}/měs. Důvod pro finanční rezervu a včasné plánování refixace.`
+        };
+      }
+    },
+    {
+      q: 'Refinancování s úsporou 0,5 %',
+      sub: 'nabídka konkurence',
+      fn: () => {
+        const sazbaKonk = Math.max(0.005, sReal - 0.005);
+        const splKonk = calcMonthly(zustatek, sazbaKonk, dobaZb);
+        const uspora = (splReal - splKonk) * dobaZb * 12;
+        return {
+          title: `Refinancování se sazbou nižší o 0,5 p.b. (${fPct(sazbaKonk*100)})`,
+          results: [
+            {label:'Současná splátka', value: fK(splReal), type:'neutral'},
+            {label:'Splátka u konkurence', value: fK(splKonk), type:'positive'},
+            {label:'Úspora měsíčně', value: '-' + fK(splReal-splKonk), type:'positive'},
+            {label:'Úspora celkem (${dobaZb} let)'.replace('${dobaZb}', dobaZb), value: fK(uspora), type:'positive'}
+          ],
+          summary: `Refinancování přinese ${fK(uspora)} za zbývající ${dobaZb} let. Je nutné započíst náklady (odhad 10-20 tis. Kč) — investice se vrátí za pár měsíců.`
+        };
+      }
+    },
+    {
+      q: 'Pravidelná mimořádná splátka 5 000/měs',
+      sub: 'k normální splátce',
+      fn: () => {
+        // simulace: s extra splátkou
+        const extra = 5000;
+        const rm = sReal/12;
+        let bal = zustatek;
+        let mes = 0;
+        const maxMes = dobaZb*12;
+        while(bal > 0 && mes < maxMes){
+          bal = bal*(1+rm) - splReal - extra;
+          if(bal < 0) bal = 0;
+          mes++;
+        }
+        const letDriv = ((dobaZb*12) - mes) / 12;
+        const uroky1 = splReal * dobaZb * 12 - zustatek;
+        const uroky2 = (splReal + extra) * mes - zustatek;
+        return {
+          title: `Pravidelná mimořádná splátka 5 000 Kč/měs`,
+          results: [
+            {label:'Původní doba splácení', value: dobaZb + ' let', type:'neutral'},
+            {label:'Zkrácená doba splácení', value: (mes/12).toFixed(1) + ' let', type:'positive'},
+            {label:'Splaceno dřív o', value: letDriv.toFixed(1) + ' let', type:'positive'},
+            {label:'Úspora na úrocích', value: fK(Math.max(0,uroky1-uroky2)), type:'positive'}
+          ],
+          summary: `5 000 Kč navíc každý měsíc zkrátí hypotéku o ${letDriv.toFixed(1)} let a ušetří ${fK(Math.max(0,uroky1-uroky2))} na úrocích.`
+        };
+      }
+    },
+    {
+      q: 'Při 20 % akontaci (vyšší vlastní)',
+      sub: 'menší úvěr',
+      fn: () => {
+        const nizsiUver = vyse * 0.8;
+        const novaSpl = calcMonthly(nizsiUver, saz, doba);
+        const uroky1 = preplaceni;
+        const uroky2 = novaSpl * doba * 12 - nizsiUver;
+        return {
+          title: `Scénář: klient přinese 20 % vlastních (místo méně)`,
+          results: [
+            {label:'Původní úvěr', value: fM(vyse), type:'neutral'},
+            {label:'Nižší úvěr', value: fM(nizsiUver), type:'positive'},
+            {label:'Nižší splátka', value: '-' + fK(splatka-novaSpl) + '/měs', type:'positive'},
+            {label:'Úspora na úrocích', value: fK(uroky1-uroky2), type:'positive'}
+          ],
+          summary: `Vyšší vlastní vklad o 20 % (${fM(vyse*0.2)}) ušetří ${fK(uroky1-uroky2)} na úrocích za celou dobu.`
+        };
+      }
+    }
+  ];
+
+  document.getElementById('u-whatif-btns').innerHTML = wiBtns.map((b,i) =>
+    `<button class="whatif-btn" onclick="runWI_U(${i})"><span>${b.q}</span><span class="wi-q">${b.sub}</span></button>`
+  ).join('');
+  window._uWiBtns = wiBtns;
+}
+
+function runWI_U(idx){
+  renderWI('u-wi-content', 'u-wi-answer', window._uWiBtns[idx].fn());
+  document.getElementById('u-wi-answer').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function runWI_U_custom(){
+  const q = document.getElementById('u-wi-custom').value.trim();
+  if(!q) return;
+  const stateStr = JSON.stringify({
+    jmeno: uState.jmeno,
+    vyse_uveru_Kc: uState.vyse,
+    doba_splaceni_let: uState.doba,
+    aktualni_sazba: uState.saz,
+    aktualni_splatka_Kc: Math.round(uState.splatka),
+    fixace_let: uState.fixace,
+    zustatek_po_fixaci_Kc: Math.round(uState.zustatek),
+    zbyvajici_doba_let: uState.dobaZb,
+    sazba_realisticka: uState.sReal,
+    splatka_po_refixaci_Kc: Math.round(uState.splReal)
+  });
+  wiCustomCall(q, stateStr, 'Úvěrový kalkulátor (anuitní splátka). Formule: PMT = PV * (r/12) / (1 - (1+r/12)^(-n)), kde n = počet měsíců.', 'u-wi-content', 'u-wi-answer');
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MODUL 5 — REFINANCOVÁNÍ HYPOTÉKY
+// ═══════════════════════════════════════════════════════
+let rfState = {};
+
+function calcRefin(){
+  const jmeno = document.getElementById('rf-jmeno').value || 'klient';
+  const kdy = parseInt(document.getElementById('rf-kdy').value);
+  const zust = parseK(document.getElementById('rf-zust-ni').value);
+  const doba = parseInt(document.getElementById('rf-doba').value);
+  const saz1 = parseFloat(document.getElementById('rf-saz1-sl').value)/100;
+  const saz2 = parseFloat(document.getElementById('rf-saz2-sl').value)/100;
+  const fix2 = parseInt(document.getElementById('rf-fix2').value);
+  const nakl = parseK(document.getElementById('rf-nakl-ni').value);
+
+  const spl1 = calcMonthly(zust, saz1, doba);
+  const spl2 = calcMonthly(zust, saz2, doba);
+  const usporaMes = spl1 - spl2;
+  const usporaFix = usporaMes * fix2 * 12;
+  const usporaCista = usporaFix - nakl;
+
+  // Break-even měsíc (kdy se náklady vrátí)
+  const breakEven = usporaMes > 0 ? nakl / usporaMes : Infinity;
+
+  // Celková úspora za dobu trvání úvěru (pokud by sazba zůstala)
+  const preplac1 = spl1 * doba * 12 - zust;
+  const preplac2 = spl2 * doba * 12 - zust;
+  const usporaTotal = preplac1 - preplac2 - nakl;
+
+  rfState = {jmeno, kdy, zust, doba, saz1, saz2, fix2, nakl, spl1, spl2, usporaMes, usporaFix, usporaCista, breakEven, usporaTotal, preplac1, preplac2};
+
+  document.getElementById('rf-res-jmeno').textContent = jmeno;
+  document.getElementById('rf-results').classList.add('show');
+
+  const kdyText = kdy===0?'Fixace právě končí':`Do konce fixace: ${kdy} měsíců`;
+
+  document.getElementById('rf-pc-name').textContent = jmeno;
+  document.getElementById('rf-pc-sub').textContent = `${kdyText} · Zůstatek: ${fK(zust)} · Zbývá: ${doba} let`;
+  document.getElementById('rf-pc-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${fPct(saz1*100)}</div><div class="kpi-lbl">Stávající banka</div></div>
+    <div class="kpi"><div class="kpi-val">${fPct(saz2*100)}</div><div class="kpi-lbl">Konkurence</div></div>
+    <div class="kpi"><div class="kpi-val">${fPct((saz1-saz2)*100)}</div><div class="kpi-lbl">Rozdíl sazby</div></div>
+    <div class="kpi"><div class="kpi-val">${fK(nakl)}</div><div class="kpi-lbl">Náklady refinance</div></div>
+  `;
+
+  const sign = usporaMes >= 0;
+  const doporuceni = usporaCista > 50000 ? 'Refinancování se výrazně vyplatí' : usporaCista > 10000 ? 'Refinancování se vyplatí' : usporaCista > 0 ? 'Malá úspora — vyjednávat se současnou bankou' : 'Refinancování se nevyplatí';
+  const doporTyp = usporaCista > 50000 ? 'green' : usporaCista > 10000 ? 'green' : usporaCista > 0 ? 'amber' : 'red';
+
+  document.getElementById('rf-metrics').innerHTML = `
+    <div class="metric ${doporTyp}"><div class="metric-lbl">Doporučení</div><div class="metric-val" style="font-size:15px">${doporuceni}</div><div class="metric-sub">na základě úspory a nákladů</div></div>
+    <div class="metric"><div class="metric-lbl">Splátka — současná banka</div><div class="metric-val">${fK(spl1)}</div><div class="metric-sub">${fPct(saz1*100)} p.a.</div></div>
+    <div class="metric ${sign?'green':''}"><div class="metric-lbl">Splátka — konkurence</div><div class="metric-val">${fK(spl2)}</div><div class="metric-sub">${fPct(saz2*100)} p.a.</div></div>
+    <div class="metric ${sign?'green':'red'}"><div class="metric-lbl">Úspora měsíčně</div><div class="metric-val">${sign?'-':'+'}${fK(Math.abs(usporaMes))}</div><div class="metric-sub">${sign?'ušetříte':'přeplatíte'}</div></div>
+    <div class="metric ${usporaCista>0?'green':'red'}"><div class="metric-lbl">Úspora za fixaci (${fix2} let)</div><div class="metric-val">${fK(usporaCista)}</div><div class="metric-sub">po odečtení nákladů ${fK(nakl)}</div></div>
+    <div class="metric ${isFinite(breakEven)?'':''}"><div class="metric-lbl">Náklady se vrátí za</div><div class="metric-val">${isFinite(breakEven)?breakEven.toFixed(1)+' měs':'nevrátí se'}</div><div class="metric-sub">bod zvratu (break-even)</div></div>
+  `;
+
+  // Graf — porovnání zůstatků (2 linie)
+  const labels = [];
+  const z1 = [], z2 = [];
+  for(let y=0; y<=fix2; y++){
+    labels.push(y===0?'Teď':'Rok '+y);
+    z1.push(Math.round(remainingBalance(zust, spl1, saz1, y*12)));
+    z2.push(Math.round(remainingBalance(zust, spl2, saz2, y*12)));
+  }
+  document.getElementById('rf-legend').innerHTML = `
+    <span><span class="leg-dot" style="background:#CC0000"></span>Stávající banka — zůstatek</span>
+    <span><span class="leg-dot" style="background:#1a6644"></span>Konkurence — zůstatek</span>
+  `;
+  if(chartRF) chartRF.destroy();
+  chartRF = new Chart(document.getElementById('rf-chart'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Stávající', data:z1, borderColor:'#CC0000', borderWidth:2.5, pointRadius:0, tension:.25, fill:false},
+        {label:'Konkurence', data:z2, borderColor:'#1a6644', borderWidth:2.5, pointRadius:0, tension:.25, fill:false}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:11}}}, y:{ticks:{callback:v=>(v/1000000).toFixed(1)+' M', font:{size:11}}, min:0}}}
+  });
+
+  renderRefinWIButtons();
+
+  aiCall(`Finanční poradce řeší s klientem ${jmeno} refinancování hypotéky. Zůstatek ${fK(zust)}, zbývá ${doba} let. Stávající sazba ${fPct(saz1*100)} (splátka ${fK(spl1)}), konkurence nabízí ${fPct(saz2*100)} (splátka ${fK(spl2)}). Rozdíl ${fK(usporaMes)}/měs. Náklady refinance ${fK(nakl)}, break-even ${isFinite(breakEven)?breakEven.toFixed(1)+' měsíců':'nikdy'}. Úspora za fixaci ${fix2} let: ${fK(usporaCista)} po odečtení nákladů. Napiš komentář — pokud se vyplatí, motivuj klienta; pokud ne, doporuč vyjednávání se současnou bankou.`, 'rf-ai-text');
+
+  setTimeout(() => document.getElementById('rf-results').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
+
+function renderRefinWIButtons(){
+  const {jmeno, zust, doba, saz1, saz2, fix2, nakl, spl1, spl2, usporaMes, usporaCista} = rfState;
+
+  const wiBtns = [
+    {
+      q: 'Konkurence sníží o 0,3 % navíc',
+      sub: `na ${fPct((saz2-0.003)*100)}`,
+      fn: () => {
+        const novaSaz = Math.max(0.005, saz2-0.003);
+        const novaSpl = calcMonthly(zust, novaSaz, doba);
+        const novaUspora = (spl1-novaSpl)*fix2*12 - nakl;
+        return {
+          title: `Nová nabídka konkurence: ${fPct(novaSaz*100)}`,
+          results: [
+            {label:'Současná úspora', value: fK(usporaCista), type:'neutral'},
+            {label:'S lepší nabídkou', value: fK(novaUspora), type:'positive'},
+            {label:'Navíc', value: '+' + fK(novaUspora-usporaCista), type:'positive'},
+            {label:'Nová splátka', value: fK(novaSpl), type:'positive'}
+          ],
+          summary: `Pokud konkurence sníží sazbu o dalších 0,3 %, úspora za fixaci vzroste na ${fK(novaUspora)}. Stojí za to vyjednávat.`
+        };
+      }
+    },
+    {
+      q: 'Stávající banka sníží sazbu',
+      sub: `o 0,3 % na ${fPct((saz1-0.003)*100)}`,
+      fn: () => {
+        const novaSaz = Math.max(0.005, saz1-0.003);
+        const novaSpl = calcMonthly(zust, novaSaz, doba);
+        const novaUspora = (novaSpl-spl2)*fix2*12; // teď ušetří konkurence vs. banka méně
+        return {
+          title: `Stávající banka dorovná: ${fPct(novaSaz*100)}`,
+          results: [
+            {label:'Nová splátka u stáv. banky', value: fK(novaSpl), type:'positive'},
+            {label:'Splátka u konkurence', value: fK(spl2), type:'neutral'},
+            {label:'Rozdíl k refinance', value: fK(novaUspora), type:'amber'},
+            {label:'Bez nákladů refinance', value: fK(nakl), type:'positive'}
+          ],
+          summary: novaUspora > nakl
+            ? `I po snížení sazby v bance se refinance vyplatí o ${fK(novaUspora-nakl)}. Jinak zůstat.`
+            : `Stávající banka dorovnala — refinance už nemá smysl. Klient ušetří ${fK(nakl)} nákladů a zůstává.`
+        };
+      }
+    },
+    {
+      q: 'Delší fixace 10 let',
+      sub: 'místo ${fix2} let'.replace('${fix2}', fix2),
+      fn: () => {
+        const novaFix = 10;
+        const novaUspora = usporaMes*novaFix*12 - nakl;
+        return {
+          title: `Delší fixace: 10 let u konkurence`,
+          results: [
+            {label:'Současná úspora (${fix2} let)'.replace('${fix2}', fix2), value: fK(usporaCista), type:'neutral'},
+            {label:'Úspora za 10 let', value: fK(novaUspora), type:'positive'},
+            {label:'Rozdíl', value: '+' + fK(novaUspora-usporaCista), type:'positive'},
+            {label:'Ale riziko', value: 'uzamčená sazba', type:'amber'}
+          ],
+          summary: `Delší fixace přinese vyšší celkovou úsporu, ale uzamkne sazbu. Pokud sazby budou klesat, klient se k nim hned nedostane.`
+        };
+      }
+    },
+    {
+      q: 'Vyšší náklady refinance (40 tis)',
+      sub: `místo ${fK(nakl)}`,
+      fn: () => {
+        const novyNakl = 40000;
+        const novaUspora = usporaMes*fix2*12 - novyNakl;
+        const novyBE = usporaMes > 0 ? novyNakl/usporaMes : Infinity;
+        return {
+          title: `Reálnější náklady refinance: ${fK(novyNakl)}`,
+          results: [
+            {label:'Původní úspora', value: fK(usporaCista), type:'neutral'},
+            {label:'S vyššími náklady', value: fK(novaUspora), type:'amber'},
+            {label:'Rozdíl', value: '-' + fK(novyNakl-nakl), type:'negative'},
+            {label:'Nový break-even', value: isFinite(novyBE)?novyBE.toFixed(1)+' měs':'nikdy', type:'amber'}
+          ],
+          summary: `I s vyššími náklady ${fK(novyNakl)} klient ušetří ${fK(novaUspora)} za fixaci. Break-even za ${isFinite(novyBE)?novyBE.toFixed(1):'—'} měsíců.`
+        };
+      }
+    },
+    {
+      q: 'Bez nákladů (banka je převezme)',
+      sub: 'akční nabídka',
+      fn: () => {
+        const novaUspora = usporaMes*fix2*12;
+        return {
+          title: `Konkurence převezme náklady refinance`,
+          results: [
+            {label:'Původní úspora', value: fK(usporaCista), type:'neutral'},
+            {label:'Bez nákladů', value: fK(novaUspora), type:'positive'},
+            {label:'Bonus', value: '+' + fK(nakl), type:'positive'},
+            {label:'Break-even', value: 'ihned', type:'positive'}
+          ],
+          summary: `Pokud konkurence převezme náklady (${fK(nakl)}), úspora vzroste o stejnou částku a break-even je okamžitý. Nejvýhodnější scénář.`
+        };
+      }
+    },
+    {
+      q: 'Vyjednat bonus 20 000 Kč',
+      sub: 'pro nového klienta',
+      fn: () => {
+        const novaUspora = usporaMes*fix2*12 - nakl + 20000;
+        return {
+          title: `Bonus pro nového klienta: 20 000 Kč`,
+          results: [
+            {label:'Původní úspora', value: fK(usporaCista), type:'neutral'},
+            {label:'S bonusem', value: fK(novaUspora), type:'positive'},
+            {label:'Rozdíl', value: '+20 000 Kč', type:'positive'},
+            {label:'Efektivní náklady', value: fK(Math.max(0,nakl-20000)), type:'positive'}
+          ],
+          summary: `Bonus za přestup zcela pokryje náklady refinance a ještě ${20000-nakl>0?'přidá ':'sníží náklady o '}${fK(Math.abs(20000-nakl))}.`
+        };
+      }
+    },
+    {
+      q: 'Zkrátit dobu splácení',
+      sub: `o 5 let u konkurence`,
+      fn: () => {
+        const kratsiDoba = Math.max(5, doba-5);
+        const novaSpl = calcMonthly(zust, saz2, kratsiDoba);
+        const preplac = novaSpl*kratsiDoba*12 - zust;
+        const preplacStav = spl1*doba*12 - zust;
+        return {
+          title: `Refinance + zkrácení doby z ${doba} na ${kratsiDoba} let`,
+          results: [
+            {label:'Nová splátka', value: fK(novaSpl), type:'amber'},
+            {label:'Nárůst vs. stávající', value: fK(novaSpl-spl1)+'/měs', type:'amber'},
+            {label:'Úspora na úrocích', value: fK(preplacStav-preplac), type:'positive'},
+            {label:'Splatíte dřív', value: '5 let', type:'positive'}
+          ],
+          summary: `Kombinace refinance a zkrácení = vyšší splátka, ale klient splatí úvěr o 5 let dřív a ušetří ${fK(preplacStav-preplac)} na úrocích.`
+        };
+      }
+    },
+    {
+      q: 'Refinancovat a splatit mimořádně 300 000',
+      sub: 'současně',
+      fn: () => {
+        const novaJistina = Math.max(0, zust - 300000);
+        const novaSpl = calcMonthly(novaJistina, saz2, doba);
+        const usporaMimo = (spl2-novaSpl)*doba*12;
+        return {
+          title: `Refinance + mimořádná splátka 300 000 Kč`,
+          results: [
+            {label:'Splátka po refinance', value: fK(spl2), type:'neutral'},
+            {label:'Splátka po splátce', value: fK(novaSpl), type:'positive'},
+            {label:'Úspora měsíčně', value: '-' + fK(spl2-novaSpl), type:'positive'},
+            {label:'Úspora na úrocích', value: fK(usporaMimo), type:'positive'}
+          ],
+          summary: `Kombinace refinance + mimořádné splátky 300k sníží splátku o ${fK(spl2-novaSpl)}/měs a ušetří ${fK(usporaMimo)} na úrocích.`
+        };
+      }
+    }
+  ];
+
+  document.getElementById('rf-whatif-btns').innerHTML = wiBtns.map((b,i) =>
+    `<button class="whatif-btn" onclick="runWI_RF(${i})"><span>${b.q}</span><span class="wi-q">${b.sub}</span></button>`
+  ).join('');
+  window._rfWiBtns = wiBtns;
+}
+
+function runWI_RF(idx){
+  renderWI('rf-wi-content', 'rf-wi-answer', window._rfWiBtns[idx].fn());
+  document.getElementById('rf-wi-answer').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function runWI_RF_custom(){
+  const q = document.getElementById('rf-wi-custom').value.trim();
+  if(!q) return;
+  const stateStr = JSON.stringify({
+    jmeno: rfState.jmeno,
+    zustatek_uveru_Kc: rfState.zust,
+    zbyvajici_doba_let: rfState.doba,
+    sazba_stavajici: rfState.saz1,
+    sazba_konkurence: rfState.saz2,
+    fixace_konkurence_let: rfState.fix2,
+    naklady_refinance_Kc: rfState.nakl,
+    splatka_stavajici_Kc: Math.round(rfState.spl1),
+    splatka_konkurence_Kc: Math.round(rfState.spl2),
+    uspora_mesicne_Kc: Math.round(rfState.usporaMes),
+    uspora_za_fixaci_cistá_Kc: Math.round(rfState.usporaCista),
+    break_even_mesicu: isFinite(rfState.breakEven) ? Math.round(rfState.breakEven*10)/10 : null
+  });
+  wiCustomCall(q, stateStr, 'Kalkulátor refinancování hypotéky — porovnání stávající banky a konkurence. Klíčové: úspora měsíčně, break-even (kdy se vrátí náklady), úspora za dobu fixace.', 'rf-wi-content', 'rf-wi-answer');
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MODUL 6 — INVESTICE vs. MIMOŘÁDNÁ SPLÁTKA
+// ═══════════════════════════════════════════════════════
+let ivState = {};
+
+// Event listener pro přepínání jednorázové/měsíční
+document.addEventListener('DOMContentLoaded', () => {
+  const ivTyp = document.getElementById('iv-typ');
+  if(ivTyp){
+    ivTyp.addEventListener('change', () => {
+      const lbl = document.getElementById('iv-prostr-label');
+      const sl = document.getElementById('iv-prostr-sl');
+      const ni = document.getElementById('iv-prostr-ni');
+      const lblV = document.getElementById('iv-prostr-lbl');
+      if(ivTyp.value === 'mes'){
+        lbl.textContent = 'Volná částka měsíčně';
+        sl.min = 500; sl.max = 50000; sl.step = 500; sl.value = 5000;
+        ni.value = '5 000';
+        lblV.textContent = '5 000 Kč';
+      } else {
+        lbl.textContent = 'Volná částka (jednorázově)';
+        sl.min = 10000; sl.max = 2000000; sl.step = 10000; sl.value = 200000;
+        ni.value = '200 000';
+        lblV.textContent = '200 000 Kč';
+      }
+    });
+  }
+});
+
+function calcInvSplat(){
+  const jmeno = document.getElementById('iv-jmeno').value || 'klient';
+  const typ = document.getElementById('iv-typ').value;
+  const zust = parseK(document.getElementById('iv-zust-ni').value);
+  const saz = parseFloat(document.getElementById('iv-saz-sl').value)/100;
+  const doba = parseInt(document.getElementById('iv-doba').value);
+  const prostr = parseK(document.getElementById('iv-prostr-ni').value);
+  const vyn = parseFloat(document.getElementById('iv-vyn-sl').value)/100;
+
+  const spl = calcMonthly(zust, saz, doba);
+
+  // === SCÉNÁŘ A: Mimořádná splátka ===
+  // Jednorázová: zaplatit hned + investovat ušetřenou splátku? ne - splátka zůstává
+  // Pravidelná: snižovat úvěr extra částkou + investovat po splacení úvěru
+  let scenarA_majetek, scenarA_uroky, scenarA_roky;
+
+  if(typ === 'jednor'){
+    // Jednorázová splátka: sníží zůstatek → sníží splátku (nebo dobu)
+    const novaJistina = Math.max(0, zust - prostr);
+    const novaSpl = calcMonthly(novaJistina, saz, doba);
+    const usporaMes = spl - novaSpl;
+    // Po celou dobu doba let klient má úsporu usporaMes, tu investuje při vyn
+    const investUspory = calcFV(0, usporaMes, vyn, doba);
+    scenarA_majetek = investUspory; // majetek po doba let (kromě splaceného bydlení)
+    scenarA_uroky = novaSpl*doba*12 - novaJistina;
+    scenarA_roky = doba;
+  } else {
+    // Pravidelná mimořádná: přidáváme extra splátku k měsíční, až splatíme
+    const rm = saz/12;
+    let bal = zust, mes = 0;
+    const maxMes = doba*12;
+    while(bal > 0 && mes < maxMes){
+      bal = bal*(1+rm) - spl - prostr;
+      if(bal < 0) bal = 0;
+      mes++;
+    }
+    const letDoSplac = mes/12;
+    // Po splacení začne investovat celou volnou částku (prostr + spl) zbytek doby
+    const zbyvaRoky = Math.max(0, doba - letDoSplac);
+    const celkMes = prostr + spl;
+    const investPo = calcFV(0, celkMes, vyn, zbyvaRoky);
+    scenarA_majetek = investPo;
+    scenarA_uroky = (spl+prostr)*mes - zust;
+    scenarA_roky = letDoSplac;
+  }
+
+  // === SCÉNÁŘ B: Investovat vše ===
+  // Jednorázová: investovat celou částku + platit normální splátku
+  // Pravidelná: investovat volné měsíčně + platit normální splátku
+  let scenarB_majetek, scenarB_uroky;
+
+  if(typ === 'jednor'){
+    scenarB_majetek = calcFV(prostr, 0, vyn, doba);
+    scenarB_uroky = spl*doba*12 - zust;
+  } else {
+    scenarB_majetek = calcFV(0, prostr, vyn, doba);
+    scenarB_uroky = spl*doba*12 - zust;
+  }
+
+  const rozdil = scenarB_majetek - scenarA_majetek;
+  const doporB = rozdil > 0;
+
+  ivState = {jmeno, typ, zust, saz, doba, prostr, vyn, spl, scenarA_majetek, scenarA_uroky, scenarA_roky, scenarB_majetek, scenarB_uroky, rozdil, doporB};
+
+  document.getElementById('iv-res-jmeno').textContent = jmeno;
+  document.getElementById('iv-results').classList.add('show');
+
+  const typLbl = typ==='jednor'?'Jednorázově '+fK(prostr):'Měsíčně '+fK(prostr);
+
+  document.getElementById('iv-pc-name').textContent = jmeno;
+  document.getElementById('iv-pc-sub').textContent = `Úvěr ${fM(zust)} · Sazba ${fPct(saz*100)} · Horizont ${doba} let · ${typLbl}`;
+  document.getElementById('iv-pc-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${fPct(saz*100)}</div><div class="kpi-lbl">Sazba úvěru</div></div>
+    <div class="kpi"><div class="kpi-val">${fPct(vyn*100)}</div><div class="kpi-lbl">Výnos investice</div></div>
+    <div class="kpi"><div class="kpi-val">+${fPct((vyn-saz)*100)}</div><div class="kpi-lbl">Spread ve prospěch invest.</div></div>
+    <div class="kpi"><div class="kpi-val">${fK(spl)}</div><div class="kpi-lbl">Normální splátka</div></div>
+  `;
+
+  document.getElementById('iv-metrics').innerHTML = `
+    <div class="metric ${doporB?'':'green'}"><div class="metric-lbl">Scénář A — splátka úvěru</div><div class="metric-val">${fM(scenarA_majetek)}</div><div class="metric-sub">majetek po ${doba} letech (bez nemovitosti)</div></div>
+    <div class="metric ${doporB?'green':''}"><div class="metric-lbl">Scénář B — investice</div><div class="metric-val">${fM(scenarB_majetek)}</div><div class="metric-sub">majetek po ${doba} letech (+ úvěr splacený)</div></div>
+    <div class="metric ${doporB?'green':'amber'}"><div class="metric-lbl">Rozdíl B − A</div><div class="metric-val">${rozdil>=0?'+':''}${fM(rozdil)}</div><div class="metric-sub">${doporB?'investice vítězí':'splátka vítězí'}</div></div>
+    <div class="metric"><div class="metric-lbl">Úroky v scénáři A</div><div class="metric-val">${fM(scenarA_uroky)}</div><div class="metric-sub">${typ==='jednor'?'po mimořádné splátce':'rychlejší splacení'}</div></div>
+    <div class="metric"><div class="metric-lbl">Úroky v scénáři B</div><div class="metric-val">${fM(scenarB_uroky)}</div><div class="metric-sub">bez mimořádných splátek</div></div>
+    <div class="metric ${doporB?'green':''}"><div class="metric-lbl">Doporučení</div><div class="metric-val" style="font-size:15px">${doporB?'Investovat':'Splácet víc'}</div><div class="metric-sub">${doporB?'výnos > úrok':'bezpečná jistota'}</div></div>
+  `;
+
+  // Graf — porovnání majetku v čase
+  const labels = [];
+  const seriesA = [], seriesB = [];
+  const yearStep = Math.max(1, Math.floor(doba/15));
+  for(let y=0; y<=doba; y+=yearStep){
+    labels.push('Rok '+y);
+    if(typ === 'jednor'){
+      const novaJistina = Math.max(0, zust-prostr);
+      const novaSpl = calcMonthly(novaJistina, saz, doba);
+      const usporaMes = spl - novaSpl;
+      seriesA.push(Math.round(calcFV(0, usporaMes, vyn, y)));
+      seriesB.push(Math.round(calcFV(prostr, 0, vyn, y)));
+    } else {
+      // A: počítat co se děje
+      const rm = saz/12;
+      let bal = zust; let mes = 0;
+      const cilMes = y*12;
+      while(mes < cilMes && bal > 0){
+        bal = bal*(1+rm) - spl - prostr;
+        if(bal < 0){ bal = 0; break; }
+        mes++;
+      }
+      // Po splacení investuje celou měsíční částku
+      const splacen = mes < cilMes;
+      let invMes = 0;
+      if(splacen){
+        const zbyvaMes = cilMes - mes;
+        invMes = calcFV(0, prostr+spl, vyn, zbyvaMes/12);
+      }
+      seriesA.push(Math.round(invMes));
+      seriesB.push(Math.round(calcFV(0, prostr, vyn, y)));
+    }
+  }
+
+  document.getElementById('iv-legend').innerHTML = `
+    <span><span class="leg-dot" style="background:#CC0000"></span>Scénář A — splátka úvěru</span>
+    <span><span class="leg-dot" style="background:#1a6644"></span>Scénář B — investice</span>
+  `;
+  if(chartIV) chartIV.destroy();
+  chartIV = new Chart(document.getElementById('iv-chart'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'A', data:seriesA, borderColor:'#CC0000', borderWidth:2.5, pointRadius:0, tension:.25, fill:false},
+        {label:'B', data:seriesB, borderColor:'#1a6644', borderWidth:2.5, pointRadius:0, tension:.25, fill:false}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:11}}}, y:{ticks:{callback:v=>(v/1000000).toFixed(1)+' M', font:{size:11}}, min:0}}}
+  });
+
+  renderInvSplatWIButtons();
+
+  aiCall(`Finanční poradce srovnává s klientem ${jmeno} dva scénáře: A) využít volné prostředky na splátku úvěru (sazba ${fPct(saz*100)}), nebo B) investovat je (výnos ${fPct(vyn*100)}). ${typ==='jednor'?`Volná částka: ${fK(prostr)} jednorázově.`:`Volné prostředky: ${fK(prostr)}/měs.`} Úvěr: ${fM(zust)} na ${doba} let. Výsledek: scénář A dává majetek ${fM(scenarA_majetek)}, scénář B dává ${fM(scenarB_majetek)}. ${doporB?'Investice vítězí':'Splátka vítězí'} o ${fM(Math.abs(rozdil))}. Napiš vyvážený komentář — zmínit racionální matematiku, ale i psychologii dluhu, riziko a důležitost rezervy.`, 'iv-ai-text');
+
+  setTimeout(() => document.getElementById('iv-results').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
+
+function renderInvSplatWIButtons(){
+  const {jmeno, typ, zust, saz, doba, prostr, vyn, spl, scenarA_majetek, scenarB_majetek, rozdil} = ivState;
+
+  function recalc(novaSaz, novyVyn){
+    // zjednodušený přepočet rozdílu pro scénář B - A
+    if(typ === 'jednor'){
+      const novaJistina = Math.max(0, zust - prostr);
+      const novaSpl = calcMonthly(novaJistina, novaSaz, doba);
+      const normSpl = calcMonthly(zust, novaSaz, doba);
+      const usporaMes = normSpl - novaSpl;
+      const A = calcFV(0, usporaMes, novyVyn, doba);
+      const B = calcFV(prostr, 0, novyVyn, doba);
+      return {A, B, rozdil:B-A};
+    } else {
+      // měsíční: zjednodušeno
+      const rm = novaSaz/12;
+      const normSpl = calcMonthly(zust, novaSaz, doba);
+      let bal = zust, mes = 0;
+      while(bal > 0 && mes < doba*12){
+        bal = bal*(1+rm) - normSpl - prostr;
+        if(bal < 0) bal = 0;
+        mes++;
+      }
+      const zbyva = Math.max(0, doba - mes/12);
+      const A = calcFV(0, prostr+normSpl, novyVyn, zbyva);
+      const B = calcFV(0, prostr, novyVyn, doba);
+      return {A, B, rozdil:B-A};
+    }
+  }
+
+  const wiBtns = [
+    {
+      q: 'Výnos trhu klesne na 4 %',
+      sub: `konzervativní odhad`,
+      fn: () => {
+        const r = recalc(saz, 0.04);
+        return {
+          title: `Konzervativní výnos 4 % p.a. místo ${fPct(vyn*100)}`,
+          results: [
+            {label:'Scénář A (splátka)', value: fM(r.A), type:'neutral'},
+            {label:'Scénář B (invest.)', value: fM(r.B), type:'neutral'},
+            {label:'Rozdíl B − A', value: (r.rozdil>=0?'+':'')+fM(r.rozdil), type: r.rozdil > 0 ? 'positive' : 'negative'},
+            {label:'Vítěz', value: r.rozdil > 0 ? 'Investice' : 'Splátka', type: r.rozdil > 0 ? 'positive' : 'amber'}
+          ],
+          summary: r.rozdil > 0 
+            ? `I s nižším výnosem 4 % investice dává o ${fM(r.rozdil)} víc. Spread vůči sazbě úvěru je menší, ale stále pozitivní.`
+            : `S výnosem pod sazbou úvěru se splátka vyplatí víc — rozdíl ${fM(Math.abs(r.rozdil))} ve prospěch splátky.`
+        };
+      }
+    },
+    {
+      q: 'Výnos trhu stoupne na 10 %',
+      sub: 'agresivní strategie',
+      fn: () => {
+        const r = recalc(saz, 0.10);
+        return {
+          title: `Vyšší výnos 10 % p.a. (globální akcie historicky)`,
+          results: [
+            {label:'Scénář A (splátka)', value: fM(r.A), type:'neutral'},
+            {label:'Scénář B (invest.)', value: fM(r.B), type:'positive'},
+            {label:'Rozdíl B − A', value: '+' + fM(r.rozdil), type:'positive'},
+            {label:'Výhoda investice', value: Math.round(r.rozdil/r.A*100) + ' %', type:'positive'}
+          ],
+          summary: `Při 10% výnosu investice drtivě vítězí o ${fM(r.rozdil)}. Ale pozor — vyšší výnos = vyšší volatilita.`
+        };
+      }
+    },
+    {
+      q: 'Sazba úvěru stoupne na 7 %',
+      sub: 'horší podmínky',
+      fn: () => {
+        const r = recalc(0.07, vyn);
+        return {
+          title: `Sazba úvěru 7 % (po refixaci)`,
+          results: [
+            {label:'Scénář A (splátka)', value: fM(r.A), type:'neutral'},
+            {label:'Scénář B (invest.)', value: fM(r.B), type:'neutral'},
+            {label:'Rozdíl B − A', value: (r.rozdil>=0?'+':'')+fM(r.rozdil), type: r.rozdil > 0 ? 'positive' : 'negative'},
+            {label:'Vítěz', value: r.rozdil > 0 ? 'Investice' : 'Splátka', type: r.rozdil > 0 ? 'positive' : 'amber'}
+          ],
+          summary: r.rozdil > 0
+            ? `I při vyšší sazbě 7 % investice vítězí o ${fM(r.rozdil)} — díky stále pozitivnímu spreadu.`
+            : `Při sazbě 7 % je bezpečnější splatit — rozdíl ${fM(Math.abs(r.rozdil))} ve prospěch splátky.`
+        };
+      }
+    },
+    {
+      q: 'Propad trhu −30 % uprostřed',
+      sub: 'simulace krize',
+      fn: () => {
+        // scénář B s propadem v půlce
+        const pul = Math.floor(doba/2);
+        let A_maj, B_maj;
+        if(typ === 'jednor'){
+          const fv1B = calcFV(prostr, 0, vyn, pul);
+          const fv1B_pokles = fv1B*0.7;
+          B_maj = calcFV(fv1B_pokles, 0, vyn, doba-pul);
+          const novaJistina = Math.max(0, zust-prostr);
+          const novaSpl = calcMonthly(novaJistina, saz, doba);
+          const uspora = spl - novaSpl;
+          const a1 = calcFV(0, uspora, vyn, pul);
+          const a1_pokles = a1*0.7;
+          A_maj = calcFV(a1_pokles, uspora, vyn, doba-pul);
+        } else {
+          const b1 = calcFV(0, prostr, vyn, pul);
+          const b1p = b1*0.7;
+          B_maj = calcFV(b1p, prostr, vyn, doba-pul);
+          // A: nedá se přesně, zjednodušíme odhadem -15 % pro splacenou fázi
+          A_maj = scenarA_majetek * 0.85;
+        }
+        const rozdilP = B_maj - A_maj;
+        return {
+          title: `Propad trhu o 30 % v polovině horizontu`,
+          results: [
+            {label:'Scénář A (splátka)', value: fM(A_maj), type:'amber'},
+            {label:'Scénář B (invest.)', value: fM(B_maj), type:'amber'},
+            {label:'Rozdíl B − A', value: (rozdilP>=0?'+':'')+fM(rozdilP), type: rozdilP>0?'positive':'negative'},
+            {label:'Vítěz po krizi', value: rozdilP>0?'Investice':'Splátka', type: rozdilP>0?'positive':'amber'}
+          ],
+          summary: rozdilP > 0
+            ? `I s propadem trhu 30 % investice drží náskok ${fM(rozdilP)} díky dlouhému horizontu a pokračujícím vkladům.`
+            : `Po propadu se splátka stává výhodnější o ${fM(Math.abs(rozdilP))} — ukazuje to riziko investiční volatility.`
+        };
+      }
+    },
+    {
+      q: 'Dvojnásobná volná částka',
+      sub: `${fK(prostr*2)} místo ${fK(prostr)}`,
+      fn: () => {
+        // nepřepočítáváme přes recalc, ale lineárně škálujeme (zjednodušení)
+        const skal = 2;
+        const A = scenarA_majetek * skal;
+        const B = scenarB_majetek * skal;
+        return {
+          title: `Dvojnásobná volná částka`,
+          results: [
+            {label:'Scénář A (splátka)', value: fM(A), type:'neutral'},
+            {label:'Scénář B (invest.)', value: fM(B), type:'positive'},
+            {label:'Rozdíl', value: '+' + fM(B-A), type:'positive'},
+            {label:'Majetek navíc', value: '2× lépe', type:'positive'}
+          ],
+          summary: `S dvojnásobnou částkou se proporčně zvětší i rozdíl ve prospěch investice — celkově ${fM(B-A)} rozdíl.`
+        };
+      }
+    },
+    {
+      q: 'Kombinace 50/50',
+      sub: 'půl splátka, půl invest.',
+      fn: () => {
+        const A_pul = scenarA_majetek * 0.5;
+        const B_pul = scenarB_majetek * 0.5;
+        const kombi = A_pul + B_pul;
+        return {
+          title: `Rozdělit na 50 % splátka + 50 % investice`,
+          results: [
+            {label:'Jen splátka', value: fM(scenarA_majetek), type:'neutral'},
+            {label:'Jen investice', value: fM(scenarB_majetek), type:'neutral'},
+            {label:'Kombinace 50/50', value: fM(kombi), type:'positive'},
+            {label:'Riziko', value: 'nižší', type:'positive'}
+          ],
+          summary: `Rozdělení 50/50 je kompromisní cesta — vzdává se části výnosu za nižší riziko a psychologický klid z klesajícího úvěru.`
+        };
+      }
+    },
+    {
+      q: 'Klient platí daň z zisku (15 %)',
+      sub: 'reálný net výnos',
+      fn: () => {
+        const netVyn = vyn * (1 - 0.15); // zjednodušeno
+        const r = recalc(saz, netVyn);
+        return {
+          title: `Investice s daní 15 % ze zisku (netto výnos ${fPct(netVyn*100)})`,
+          results: [
+            {label:'Scénář A (splátka)', value: fM(r.A), type:'neutral'},
+            {label:'Scénář B (netto)', value: fM(r.B), type:'neutral'},
+            {label:'Rozdíl B − A', value: (r.rozdil>=0?'+':'')+fM(r.rozdil), type: r.rozdil>0?'positive':'negative'},
+            {label:'Pozor — časový test', value: '3 roky = bez daně', type:'amber'}
+          ],
+          summary: r.rozdil > 0
+            ? `I po zdanění 15 % investice ziskem ${fM(r.rozdil)} víc. Po 3letém časovém testu je zisk osvobozen — reálně bude výsledek ještě lepší.`
+            : `Po zdanění se náskok ztrácí — splátka je jistější. Časový test (3 roky) může rozhodnutí změnit.`
+        };
+      }
+    }
+  ];
+
+  document.getElementById('iv-whatif-btns').innerHTML = wiBtns.map((b,i) =>
+    `<button class="whatif-btn" onclick="runWI_IV(${i})"><span>${b.q}</span><span class="wi-q">${b.sub}</span></button>`
+  ).join('');
+  window._ivWiBtns = wiBtns;
+}
+
+function runWI_IV(idx){
+  renderWI('iv-wi-content', 'iv-wi-answer', window._ivWiBtns[idx].fn());
+  document.getElementById('iv-wi-answer').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function runWI_IV_custom(){
+  const q = document.getElementById('iv-wi-custom').value.trim();
+  if(!q) return;
+  const stateStr = JSON.stringify({
+    jmeno: ivState.jmeno,
+    typ_srovnani: ivState.typ,
+    zustatek_uveru_Kc: ivState.zust,
+    sazba_uveru: ivState.saz,
+    zbyvajici_doba_let: ivState.doba,
+    volna_castka_Kc: ivState.prostr,
+    ocekavany_vynos_investice: ivState.vyn,
+    scenar_A_splatka_majetek_Kc: Math.round(ivState.scenarA_majetek),
+    scenar_B_investice_majetek_Kc: Math.round(ivState.scenarB_majetek),
+    rozdil_B_minus_A_Kc: Math.round(ivState.rozdil)
+  });
+  wiCustomCall(q, stateStr, 'Porovnání: mimořádná splátka úvěru vs. investice. A = splatit část úvěru a investovat ušetřenou splátku. B = investovat celé a platit normální splátku. Klíčové: spread mezi výnosem a sazbou úvěru, volatilita, psychologie dluhu.', 'iv-wi-content', 'iv-wi-answer');
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// INIT — automatický výpočet prvního modulu
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if(typeof calcUver === 'function'){
+      try { calcUver(); } catch(e){ console.warn('Init calcUver failed:', e); }
+    }
+  }, 50);
+});
+</script>
+
+</body>
+</html>
