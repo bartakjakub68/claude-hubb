@@ -1535,6 +1535,37 @@ def at_eval():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/claude', methods=['POST'])
+@require_auth()
+def claude_proxy():
+    """Obecný Claude API proxy pro kalkulátory a ostatní appky."""
+    data = request.get_json()
+    system   = data.get('system', '')
+    messages = data.get('messages', [])
+    max_tokens = int(data.get('max_tokens', 1000))
+    model = data.get('model', 'claude-sonnet-4-6')
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY', ''))
+        kwargs = dict(model=model, max_tokens=max_tokens, messages=messages)
+        if system:
+            kwargs['system'] = system
+        resp = client.messages.create(**kwargs)
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO kh_token_usage (user_id, akce, vstupni_tokeny, vystupni_tokeny) VALUES (?,?,?,?)",
+            (request.user['id'], 'claude_proxy', resp.usage.input_tokens, resp.usage.output_tokens)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({
+            'content': [{'text': resp.content[0].text}],
+            'usage': {'input_tokens': resp.usage.input_tokens, 'output_tokens': resp.usage.output_tokens},
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/at/trainings', methods=['POST'])
 @require_auth()
 def at_save_training():

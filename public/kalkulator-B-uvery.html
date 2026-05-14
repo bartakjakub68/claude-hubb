@@ -232,11 +232,15 @@ input:checked+.toggle-slider:before{transform:translateX(16px)}
   .step-header h1{font-size:20px}
   .step-header p{font-size:11px}
   .heatmap-table td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:15mm 12mm}
+  .main{padding:0 !important}
+  .ai-box{border:1px solid #ddd !important;background:#fafafa !important}
+  .results-section .card{break-inside:avoid}
 }
 </style>
 </head>
 <body>
-
+<script src="/auth-check.js"></script>
 <header class="hub-topbar">
   <div class="hub-topbar__left">
     <a class="hub-topbar__logo" href="#">
@@ -247,11 +251,19 @@ input:checked+.toggle-slider:before{transform:translateX(16px)}
   </div>
   <div class="hub-topbar__right">
     <div class="hub-topbar__user">
-      <span class="hub-topbar__name">Finanční poradce</span>
-      <span class="hub-topbar__role">Komerční banka</span>
+      <span class="hub-topbar__name" id="topbar-user">—</span>
+      <span class="hub-topbar__role" id="topbar-role">—</span>
     </div>
+    <button class="hub-topbar__logout" onclick="typeof AuthUser!=='undefined'&&AuthUser.logout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.8);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">Odhlásit</button>
   </div>
 </header>
+<script>
+try {
+  var _rl={admin:'Administrátor',manazer:'Manažer',poradce:'Poradce'};
+  document.getElementById('topbar-user').textContent = AuthUser.jmeno;
+  document.getElementById('topbar-role').textContent = _rl[AuthUser.role] || AuthUser.role;
+} catch(e) {}
+</script>
 
 <div class="main">
   <div class="step-header">
@@ -259,7 +271,7 @@ input:checked+.toggle-slider:before{transform:translateX(16px)}
       <h1>Kalkulátor úvěrů a hypoték</h1>
       <p>Splátky, refixace, refinancování a srovnání: investovat nebo splatit dřív — s AI komentářem pro schůzku.</p>
     </div>
-    <button class="print-btn" onclick="window.print()">🖨️ Tisk / Export PDF</button>
+    <button class="print-btn" id="pdf-btn" onclick="handlePrint()">🖨️ Tisk / Export PDF</button>
   </div>
 
 
@@ -642,6 +654,17 @@ function fM(n){
 function fPct(n){ return parseFloat(n).toFixed(1).replace('.',',') + ' %'; }
 function parseK(s){ return parseFloat(String(s).replace(/\s/g,'').replace(',','.')) || 0; }
 
+function handlePrint() {
+  const btn = document.getElementById('pdf-btn');
+  btn.textContent = '⏳ Připravuji...';
+  btn.disabled = true;
+  setTimeout(() => {
+    window.print();
+    btn.innerHTML = '🖨️ Tisk / Export PDF';
+    btn.disabled = false;
+  }, 400);
+}
+
 function sv(slId, numId, lblId, suffix, isAge){
   const v = document.getElementById(slId).value;
   document.getElementById(numId).value = v;
@@ -767,7 +790,7 @@ async function aiCall(prompt, elId){
   try{
     const resp = await fetch('/api/claude', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers: (typeof AuthUser !== 'undefined' ? AuthUser.authHeader() : {'Content-Type':'application/json'}),
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
@@ -812,7 +835,7 @@ Hodnoty piš v čitelném formátu ("1 250 000 Kč", "12 500 Kč/měs", "+240 00
   try{
     const resp = await fetch('/api/claude', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers: (typeof AuthUser !== 'undefined' ? AuthUser.authHeader() : {'Content-Type':'application/json'}),
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:800,
