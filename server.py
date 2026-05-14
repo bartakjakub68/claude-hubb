@@ -1543,7 +1543,8 @@ def claude_proxy():
     system   = data.get('system', '')
     messages = data.get('messages', [])
     max_tokens = int(data.get('max_tokens', 1000))
-    model = data.get('model', 'claude-sonnet-4-6')
+    # Vždy použij ověřený model — ignoruj co pošle klient
+    model = 'claude-sonnet-4-6'
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY', ''))

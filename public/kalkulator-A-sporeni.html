@@ -792,16 +792,17 @@ async function aiCall(prompt, elId){
       method:'POST',
       headers: (typeof AuthUser !== 'undefined' ? AuthUser.authHeader() : {'Content-Type':'application/json'}),
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-6',
         max_tokens:1000,
         system:'Jsi zkušený finanční poradce v české komerční bance. Píšeš stručné, přesvědčivé komentáře pro poradce, kteří je čtou klientovi přímo na schůzce. Komentář má být lidský, konkrétní, motivující k akci. Piš plynulý odstavec 3–5 vět. Zmiň jméno klienta. Mluv v první osobě množného čísla (my, vám, společně). Vyhni se finančnímu žargonu. Formátování: žádné odrážky, jen odstavec.',
         messages:[{role:'user', content: prompt}]
       })
     });
     const data = await resp.json();
+    if(data.error){ el.textContent = 'Chyba: ' + data.error; return; }
     el.textContent = data.content?.[0]?.text || 'Komentář není dostupný.';
   } catch(e){
-    el.textContent = 'Komentář se nepodařilo vygenerovat.';
+    el.textContent = 'Chyba připojení: ' + e.message;
   }
 }
 
@@ -837,7 +838,7 @@ Hodnoty piš v čitelném formátu ("1 250 000 Kč", "12 500 Kč/měs", "+240 00
       method:'POST',
       headers: (typeof AuthUser !== 'undefined' ? AuthUser.authHeader() : {'Content-Type':'application/json'}),
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-6',
         max_tokens:800,
         system: systemPrompt,
         messages:[{role:'user', content: userQuestion}]
