@@ -46,15 +46,6 @@ _db_dir = os.path.dirname(DB_PATH)
 if _db_dir:
     os.makedirs(_db_dir, exist_ok=True)
 
-_db_initialized = False
-
-@app.before_request
-def ensure_db_initialized():
-    global _db_initialized
-    if not _db_initialized:
-        init_db()
-        _db_initialized = True
-
 @app.after_request
 def no_cache_html(response):
     """Zakáže cachování HTML souborů — uživatelé vždy vidí aktuální verzi."""
@@ -111,8 +102,14 @@ def jwt_verify(token):
 # ─── Database ────────────────────────────────────────────────────────────────
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
+    # WAL: víc čtenářů paralelně + jeden zápisatel bez vzájemného blokování
+    # busy_timeout: pokud je DB momentálně zamknutá, čekej až 5s místo okamžitého OperationalError
+    # foreign_keys: vynucuje REFERENCES (jinak SQLite ignoruje cascade delete a podobně)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
 def init_db():
@@ -2528,9 +2525,13 @@ def static_files(path):
     return send_from_directory('public', path)
 
 # ─── Start ────────────────────────────────────────────────────────────────────
+#
+# init_db() na module-level: spustí se vždy při importu modulu (gunicorn,
+# `python server.py`, `import server`). Eliminuje race condition, která
+# nastávala při lazy init z @before_request s víc workery.
+init_db()
 
 if __name__ == '__main__':
-    init_db()
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') != 'production'
     print(f"🚀 Auth server běží na portu {port}")
