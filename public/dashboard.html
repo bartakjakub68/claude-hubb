@@ -1138,6 +1138,26 @@ async function saveMarze() {
   loadCosts();
 }
 
+// Vynucený reload nákladů: resetuje flag, vyčistí UI, znovu zavolá loadCosts.
+// Volá se z tlačítka "↻ Aktualizovat" i z kliku na tab.
+function refreshCosts() {
+  costsLoaded = false;
+  const loading = document.getElementById('costs-loading');
+  if (loading) {
+    loading.textContent = 'Načítám…';
+    loading.style.display = 'block';
+  }
+  const summary = document.getElementById('costs-summary');
+  if (summary) summary.style.display = 'none';
+  const empty = document.getElementById('costs-empty');
+  if (empty) empty.style.display = 'none';
+  const mgrTbody = document.getElementById('costs-managers-tbody');
+  if (mgrTbody) mgrTbody.innerHTML = '';
+  const bdTbody = document.getElementById('costs-breakdown-tbody');
+  if (bdTbody) bdTbody.innerHTML = '';
+  loadCosts();
+}
+
 async function loadCosts() {
   if (costsLoaded) return;
 
