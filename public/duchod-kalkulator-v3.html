@@ -629,6 +629,25 @@ function starobniDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, isOSVC, r
 // FORMÁTOVÁNÍ
 // ═══════════════════════════════════════════════════════════
 const fKc = v => Math.round(v).toLocaleString('cs-CZ') + ' Kč';
+
+// Aktualizace num-inputu bez re-renderu celého formuláře (zachová focus)
+function updateNum(stateKey, field, defaultVal, el, formatFn) {
+  const v = +el.value || defaultVal;
+  state[stateKey][field] = v;
+  // Synchronizuj sibling slider
+  const slider = el.previousElementSibling;
+  if (slider && slider.type === 'range') slider.value = v;
+  // Aktualizuj label <strong> ve stejném .field
+  if (formatFn) {
+    const lbl = el.closest('.field')?.querySelector('.field-label strong');
+    if (lbl) lbl.textContent = formatFn(v);
+  }
+  recalc();
+}
+// Po opuštění pole překresli podmíněné části (rok narození mění viditelnost polí)
+function blurRenderFields(containerId, key, manzelMode) {
+  renderFields(containerId, key, manzelMode);
+}
 const fKp = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
 
 // ═══════════════════════════════════════════════════════════
@@ -647,7 +666,7 @@ function renderFields(containerId, key, manzelMode){
         <input type="range" min="10000" max="200000" step="1000" value="${s.prijem}"
           oninput="state['${key}'].prijem=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
         <input type="number" class="num-input" value="${s.prijem}" min="10000" max="200000" step="1000"
-          oninput="state['${key}'].prijem=+this.value||50000;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+          oninput="updateNum('${key}','prijem',50000,this,v=>fKc(v)+'/měs')">
       </div>
     </div>
 
@@ -660,7 +679,8 @@ function renderFields(containerId, key, manzelMode){
         <input type="range" min="1963" max="2006" step="1" value="${s.rokNarozeni}"
           oninput="state['${key}'].rokNarozeni=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
         <input type="number" class="num-input" value="${s.rokNarozeni}" min="1963" max="2006" step="1"
-          oninput="state['${key}'].rokNarozeni=+this.value||1986;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+          oninput="updateNum('${key}','rokNarozeni',1986,this,v=>v+' ('+(2026-v)+' let)')"
+          onblur="blurRenderFields('${containerId}','${key}',${manzelMode})">
       </div>
     </div>
 
@@ -682,7 +702,7 @@ function renderFields(containerId, key, manzelMode){
         <input type="range" min="0" max="5" step="1" value="${s.pocetVychDeti}"
           oninput="state['${key}'].pocetVychDeti=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
         <input type="number" class="num-input" value="${s.pocetVychDeti}" min="0" max="5" step="1"
-          oninput="state['${key}'].pocetVychDeti=+this.value||0;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+          oninput="updateNum('${key}','pocetVychDeti',0,this,v=>v)">
       </div>
     </div>
     ` : `
@@ -695,7 +715,7 @@ function renderFields(containerId, key, manzelMode){
         <input type="range" min="0" max="10" step="1" value="${s.pocetVychDeti}"
           oninput="state['${key}'].pocetVychDeti=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
         <input type="number" class="num-input" value="${s.pocetVychDeti}" min="0" max="10" step="1"
-          oninput="state['${key}'].pocetVychDeti=+this.value||0;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+          oninput="updateNum('${key}','pocetVychDeti',0,this,v=>v)">
       </div>
     </div>
     `}
@@ -709,7 +729,7 @@ function renderFields(containerId, key, manzelMode){
         <input type="range" min="1986" max="2025" step="1" value="${s.rokZacatku}"
           oninput="state['${key}'].rokZacatku=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
         <input type="number" class="num-input" value="${s.rokZacatku}" min="1986" max="2025" step="1"
-          oninput="state['${key}'].rokZacatku=+this.value||2000;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+          oninput="updateNum('${key}','rokZacatku',2000,this,v=>v)">
       </div>
     </div>
 
