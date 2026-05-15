@@ -504,9 +504,29 @@ function vdovskyDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, isOSVC, ma
   // 50 % procentní výměry zemřelého, s minimem 2 450 Kč (MPSV vyhláška 2026)
   const procVymVdov = Math.max(Math.round(procVymZemr * CSSZ.vdovskaPctVymery), CSSZ.vdovskaMinProc);
   const vdovDucBase = CSSZ.zakladVymera + procVymVdov;
+
+  // Bez dětí má pozůstalý/á nárok pouze 1 rok (§ 50 zák. 155/1995 Sb.).
+  // Celkovou jednorázovou částku (12× měsíční výše) rozprostíráme přes zbývající
+  // měsíce do důchodového věku — to dává klientovi srovnatelný "měsíční doplněk"
+  // pro účely finančního plánování.
+  let duchod = vdovDucBase;
+  let rozpoctenoMesicne = null;
+  if (!maDetiNeboZav) {
+    const aktualniRok = new Date().getFullYear();
+    const vek = aktualniRok - rokNarozeni;
+    const ducVekRokuFlt = duchodovyVekMesicu(rokNarozeni, pohlavi, pocetVychDeti) / 12;
+    const letDoDuch = Math.max(ducVekRokuFlt - vek, 1);
+    const mesicuDoDuch = Math.max(Math.round(letDoDuch * 12), 1);
+    const rocniSuma = vdovDucBase * 12; // co dostane za ten 1 rok
+    rozpoctenoMesicne = Math.round(rocniSuma / mesicuDoDuch);
+    duchod = rozpoctenoMesicne;
+  }
   return {
-    duchod: maDetiNeboZav ? vdovDucBase : Math.round(vdovDucBase / 12), // bez dětí = 1 rok → měsíční ekvivalent
+    duchod,
+    mesicniVyplata: vdovDucBase,        // skutečná měsíční částka po dobu nároku
     trvaly: maDetiNeboZav,
+    trvaniMesicu: maDetiNeboZav ? null : 12,
+    rozpoctenoMesicne,                  // rozpočet pro plánování (jen netrvalý vdovský)
     procVymZemr,
     procVymVdov,
     zakladVymera: CSSZ.zakladVymera,
@@ -947,14 +967,33 @@ function renderResults(containerId, s, maManzel, children){
         <span class="res-section-total">${fKc(vdov.duchod)}/měs</span>
       </div>
       <div class="res-rows">
+        ${vdov.trvaly ? `
         <div class="res-row">
           <span class="res-row-label">Výše důchodu</span>
           <span class="res-row-val">${fKc(vdov.duchod)}/měs</span>
         </div>
         <div class="res-row">
           <span class="res-row-label">Trvání</span>
-          <span class="res-row-val ${vdov.trvaly ? 'green' : ''}">${vdov.trvaly ? 'Trvalý (má závislé osoby)' : 'Dočasný — 1 rok'}</span>
+          <span class="res-row-val green">Trvalý (má závislé osoby)</span>
         </div>
+        ` : `
+        <div class="res-row">
+          <span class="res-row-label">Skutečná měsíční výplata (po dobu 1 roku)</span>
+          <span class="res-row-val">${fKc(vdov.mesicniVyplata)}/měs</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">Celková jednorázová suma (12 měsíců)</span>
+          <span class="res-row-val">${fKc(vdov.mesicniVyplata * 12)}</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">Rozpočet měsíčně do důchodového věku</span>
+          <span class="res-row-val">${fKc(vdov.rozpoctenoMesicne)}/měs</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">Trvání nároku</span>
+          <span class="res-row-val">Dočasný — 1 rok (bez závislých osob)</span>
+        </div>
+        `}
       </div>
       <div class="res-breakdown">
         <div class="res-breakdown-title">Výpočet</div>
