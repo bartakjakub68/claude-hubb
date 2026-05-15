@@ -483,11 +483,26 @@ def _rehash_if_needed(user_id, plain_pwd, needs_rehash):
         conn.close()
 
 # ─── CORS helper ─────────────────────────────────────────────────────────────
+#
+# Origin se povolí pouze, pokud odpovídá regexu v env proměnné
+# ALLOWED_ORIGIN_PATTERN. Default povoluje libovolnou Railway subdoménu
+# (kvůli preview deployům). Pro vlastní doménu pattern rozšiř, např.:
+#   ALLOWED_ORIGIN_PATTERN=^https://([a-z0-9-]+\.)*tvojefirma\.cz$|^https://[a-z0-9-]+\.up\.railway\.app$
+_DEFAULT_ORIGIN_PATTERN = r'^https://[a-z0-9-]+\.up\.railway\.app$'
+_ORIGIN_PATTERN = re.compile(os.environ.get('ALLOWED_ORIGIN_PATTERN', _DEFAULT_ORIGIN_PATTERN))
+
+def _origin_allowed(origin):
+    if not origin:
+        return False
+    return bool(_ORIGIN_PATTERN.match(origin))
 
 def cors(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    origin = request.headers.get('Origin', '')
+    if _origin_allowed(origin):
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Vary'] = 'Origin'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     return response
 
 @app.after_request
