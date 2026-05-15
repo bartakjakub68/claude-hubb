@@ -1639,6 +1639,19 @@ function calculate(){
     zpUver: gni('zp-uver'),
   };
 
+  // Blokující validace: bez příjmu nelze spočítat invalidní krytí
+  // (INV_CAP by byl 0 a všechny stupně by byly falešně označeny jako "✓ Pokryto").
+  if (D.prijem <= 0) {
+    alert('Zadejte prosím měsíční čistý příjem klienta — bez něj nelze spočítat invalidní krytí.\n\nPokud klient nemá příjem (např. před návratem do práce), výpočet pojistné ochrany nedává smysl, dokud se příjem neobnoví.');
+    document.getElementById('prijem-ni')?.focus();
+    return;
+  }
+  if (D.vydaje <= 0) {
+    alert('Zadejte prosím měsíční výdaje domácnosti.');
+    document.getElementById('vydaje-ni')?.focus();
+    return;
+  }
+
   runEngineForData(D, '');
 
   // ═══ PARTNER CALCULATION ═══
@@ -1772,9 +1785,8 @@ function runEngineForData(D, target){
   const prijmyCelkem = D.prijem + (maPartnera ? D.prijPart : 0);
   if(D.vydaje > prijmyCelkem * 1.5) warnings.push('Výdaje jsou výrazně vyšší než celkové příjmy domácnosti — zkontrolujte prosím zadání.');
   if(D.splatky > D.vydaje) warnings.push('Splátka hyp./úvěrů je vyšší než celkové výdaje — splátka by měla být součástí výdajů.');
-  if(D.prijem <= 0) warnings.push('Příjem klienta je 0 — zadejte alespoň orientační měsíční příjem.');
   if(D.hyp > 0 && D.splatky <= 0) warnings.push('Máte hypotéku, ale nulovou splátku — zkontrolujte prosím pole „Z toho splátka hypotéky".');
-  if(D.vydaje <= 0){ alert('Zadejte prosím výdaje domácnosti.'); return; }
+  // Pozn.: prijem<=0 a vydaje<=0 jsou blokované již v calculate() před voláním runEngineForData.
 
   // Portfolio
   const nomVynos  = portfolioVynos(D.vek);
