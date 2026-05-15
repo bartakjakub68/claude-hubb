@@ -1140,10 +1140,19 @@ async function saveMarze() {
 
 async function loadCosts() {
   if (costsLoaded) return;
-  costsLoaded = true;
 
-  const res  = await apiFetch('/api/hub/costs', { headers });
-  const data = await res.json();
+  let res, data;
+  try {
+    res = await apiFetch('/api/hub/costs', { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+  } catch (err) {
+    console.error('loadCosts failed:', err);
+    document.getElementById('costs-loading').textContent =
+      'Chyba při načítání nákladů: ' + err.message + '. Zkus tlačítko „Aktualizovat".';
+    return; // costsLoaded zůstává false — další kliknutí to zkusí znova
+  }
+  costsLoaded = true;
 
   document.getElementById('costs-loading').style.display = 'none';
 
@@ -1218,10 +1227,19 @@ let billingLoaded = false;
 
 async function loadBilling() {
   if (billingLoaded) return;
-  billingLoaded = true;
 
-  const res  = await apiFetch('/api/hub/billing', { headers });
-  const rows = await res.json();
+  let res, rows;
+  try {
+    res = await apiFetch('/api/hub/billing', { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    rows = await res.json();
+  } catch (err) {
+    console.error('loadBilling failed:', err);
+    document.getElementById('billing-loading').textContent =
+      'Chyba při načítání fakturace: ' + err.message + '. Zkus znovu kliknout na tab.';
+    return; // billingLoaded zůstává false — další pokus znova načte
+  }
+  billingLoaded = true;
 
   document.getElementById('billing-loading').style.display = 'none';
 
