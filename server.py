@@ -12,12 +12,34 @@ import json
 import time
 import base64
 import re
+import secrets
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, send_from_directory, send_file
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__, static_folder='public')
+
+# Rate limiter: in-memory backend. Funguje per-proces, takže pro produkci
+# používáme `--workers 1 --threads N` (SQLite stejně škrtí na víc workerů).
+# Pokud bys někdy potřeboval víc workerů, přidej Redis a nastav `storage_uri`.
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    storage_uri="memory://",
+    strategy="fixed-window",
+    headers_enabled=True,
+)
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({
+        'error': 'Příliš mnoho požadavků, zkuste to za chvíli znovu.',
+        'detail': str(e.description) if hasattr(e, 'description') else 'rate limit'
+    }), 429
 
 DB_PATH = os.environ.get('DB_PATH', 'auth.db')
 _db_dir = os.path.dirname(DB_PATH)
@@ -42,7 +64,12 @@ def no_cache_html(response):
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
     return response
-JWT_SECRET = os.environ.get('JWT_SECRET', 'change-this-secret-in-production-2024')
+JWT_SECRET = os.environ.get('JWT_SECRET', '')
+if not JWT_SECRET or len(JWT_SECRET) < 32:
+    raise RuntimeError(
+        "JWT_SECRET env var musí být nastavena na alespoň 32 znaků. "
+        "Vygenerovat lze např.: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+    )
 JWT_EXPIRY = 8 * 60 * 60  # 8 hodin
 
 # ─── JWT (bez knihovny) ───────────────────────────────────────────────────────
@@ -399,28 +426,83 @@ def init_db():
             ('Kalkulačka důchodů', '/duchod-kalkulator-v3.html', '🧓', 'Kalkulačka důchodového spoření', 8)
         )
 
-    # Výchozí admin účet
+    # Výchozí admin účet (pouze pokud žádný admin neexistuje)
     existing = c.execute("SELECT id FROM users WHERE role='admin'").fetchone()
     if not existing:
-        heslo_hash = hashlib.sha256('admin123'.encode()).hexdigest()
+        # Pokud je v env ADMIN_INITIAL_PASSWORD, použij ho (užitečné pro lokální dev).
+        # Jinak vygeneruj náhodné heslo a vypiš do logu.
+        pwd = os.environ.get('ADMIN_INITIAL_PASSWORD') or secrets.token_urlsafe(16)
+        admin_email = os.environ.get('ADMIN_INITIAL_EMAIL', 'admin@admin.cz')
         c.execute(
             "INSERT INTO users (jmeno, email, heslo_hash, role) VALUES (?, ?, ?, ?)",
-            ('Admin', 'admin@admin.cz', heslo_hash, 'admin')
+            ('Admin', admin_email, hash_password(pwd), 'admin')
         )
-        print("✅ Výchozí admin: admin@admin.cz / admin123")
+        # Banner do logu (Railway logs). Heslo se zobrazí JEN JEDNOU, při inicializaci DB.
+        print("=" * 70, flush=True)
+        print("[INIT] Vytvořen výchozí admin účet:", flush=True)
+        print(f"[INIT]   Email:  {admin_email}", flush=True)
+        print(f"[INIT]   Heslo:  {pwd}", flush=True)
+        print("[INIT] PŘIHLAS SE A IHNED ZMĚŇ HESLO PŘES /api/me/password!", flush=True)
+        print("=" * 70, flush=True)
 
     conn.commit()
     conn.close()
 
 def hash_password(pwd):
-    return hashlib.sha256(pwd.encode()).hexdigest()
+    # Werkzeug scrypt: solený a pomalý hash. Formát: "scrypt:N:r:p$salt$hash"
+    return generate_password_hash(pwd, method='scrypt')
+
+def _legacy_sha256_match(pwd, db_hash):
+    # Starý formát hesla: 64 hex znaků = SHA-256 bez saltu.
+    return (len(db_hash) == 64 and all(c in '0123456789abcdef' for c in db_hash.lower())
+            and hashlib.sha256(pwd.encode()).hexdigest() == db_hash)
+
+def verify_password(pwd, db_hash):
+    """Vrátí (ok: bool, needs_rehash: bool).
+    needs_rehash=True znamená, že hash je v legacy formátu a má se přepsat na nový."""
+    if not db_hash:
+        return False, False
+    if '$' in db_hash or db_hash.startswith('pbkdf2:') or db_hash.startswith('scrypt:'):
+        try:
+            return check_password_hash(db_hash, pwd), False
+        except Exception:
+            return False, False
+    if _legacy_sha256_match(pwd, db_hash):
+        return True, True
+    return False, False
+
+def _rehash_if_needed(user_id, plain_pwd, needs_rehash):
+    if not needs_rehash:
+        return
+    new_hash = hash_password(plain_pwd)
+    conn = get_db()
+    try:
+        conn.execute("UPDATE users SET heslo_hash=? WHERE id=?", (new_hash, user_id))
+        conn.commit()
+    finally:
+        conn.close()
 
 # ─── CORS helper ─────────────────────────────────────────────────────────────
+#
+# Origin se povolí pouze, pokud odpovídá regexu v env proměnné
+# ALLOWED_ORIGIN_PATTERN. Default povoluje libovolnou Railway subdoménu
+# (kvůli preview deployům). Pro vlastní doménu pattern rozšiř, např.:
+#   ALLOWED_ORIGIN_PATTERN=^https://([a-z0-9-]+\.)*tvojefirma\.cz$|^https://[a-z0-9-]+\.up\.railway\.app$
+_DEFAULT_ORIGIN_PATTERN = r'^https://[a-z0-9-]+\.up\.railway\.app$'
+_ORIGIN_PATTERN = re.compile(os.environ.get('ALLOWED_ORIGIN_PATTERN', _DEFAULT_ORIGIN_PATTERN))
+
+def _origin_allowed(origin):
+    if not origin:
+        return False
+    return bool(_ORIGIN_PATTERN.match(origin))
 
 def cors(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    origin = request.headers.get('Origin', '')
+    if _origin_allowed(origin):
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Vary'] = 'Origin'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     return response
 
 @app.after_request
@@ -453,20 +535,48 @@ def require_auth(roles=None):
 
 # ─── API Routes ──────────────────────────────────────────────────────────────
 
+def _login_email_key():
+    """Klíč per-email pro rate limiter loginu. Bezpečně získá email z JSON body."""
+    try:
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip().lower()
+        return email or get_remote_address()
+    except Exception:
+        return get_remote_address()
+
+def _user_or_ip_key():
+    """Klíč per-uživatel pro AI endpointy. Fallback na IP, pokud token chybí/neplatný."""
+    try:
+        auth = request.headers.get('Authorization', '')
+        if auth.startswith('Bearer '):
+            payload = jwt_verify(auth[7:])
+            if payload and 'id' in payload:
+                return f"user:{payload['id']}"
+    except Exception:
+        pass
+    return f"ip:{get_remote_address()}"
+
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("10 per minute", key_func=get_remote_address)
+@limiter.limit("100 per hour",  key_func=get_remote_address)
+@limiter.limit("10 per hour",   key_func=_login_email_key)
 def login():
-    data = request.get_json()
-    email = data.get('email', '').strip().lower()
-    heslo = data.get('heslo', '')
-    
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip().lower()
+    heslo = data.get('heslo') or ''
+
     conn = get_db()
     user = conn.execute(
         "SELECT * FROM users WHERE email=? AND aktivni=1", (email,)
     ).fetchone()
     conn.close()
-    
-    if not user or user['heslo_hash'] != hash_password(heslo):
+
+    if not user:
         return jsonify({'error': 'Nesprávný email nebo heslo'}), 401
+    ok, needs_rehash = verify_password(heslo, user['heslo_hash'])
+    if not ok:
+        return jsonify({'error': 'Nesprávný email nebo heslo'}), 401
+    _rehash_if_needed(user['id'], heslo, needs_rehash)
     
     token = jwt_create({
         'id': user['id'],
@@ -482,6 +592,36 @@ def login():
 @require_auth()
 def me():
     return jsonify(request.user)
+
+@app.route('/api/me/password', methods=['PUT'])
+@require_auth()
+def change_my_password():
+    data = request.get_json(silent=True) or {}
+    stare = data.get('stare_heslo', '')
+    nove = data.get('nove_heslo', '')
+
+    if not stare or not nove:
+        return jsonify({'error': 'Vyplňte staré i nové heslo'}), 400
+    if len(nove) < 6:
+        return jsonify({'error': 'Nové heslo musí mít alespoň 6 znaků'}), 400
+    if stare == nove:
+        return jsonify({'error': 'Nové heslo se musí lišit od stávajícího'}), 400
+
+    user_id = request.user['id']
+    conn = get_db()
+    user = conn.execute("SELECT heslo_hash FROM users WHERE id=? AND aktivni=1", (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        return jsonify({'error': 'Uživatel nenalezen'}), 404
+    ok, _ = verify_password(stare, user['heslo_hash'])
+    if not ok:
+        conn.close()
+        return jsonify({'error': 'Nesprávné stávající heslo'}), 401
+
+    conn.execute("UPDATE users SET heslo_hash=? WHERE id=?", (hash_password(nove), user_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
 
 # ─── Aplikace ─────────────────────────────────────────────────────────────────
 
@@ -1482,6 +1622,7 @@ def kh_get_usage():
 # ─── Advisor Training ────────────────────────────────────────────────────────
 
 @app.route('/api/at/chat', methods=['POST'])
+@limiter.limit("30 per minute; 300 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def at_chat():
     data = request.get_json()
@@ -1513,6 +1654,7 @@ def at_chat():
 
 
 @app.route('/api/at/eval', methods=['POST'])
+@limiter.limit("30 per minute; 300 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def at_eval():
     data = request.get_json()
@@ -1544,6 +1686,7 @@ def at_eval():
 
 
 @app.route('/api/claude', methods=['POST'])
+@limiter.limit("30 per minute; 300 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def claude_proxy():
     """Obecný Claude API proxy pro kalkulátory a ostatní appky."""
@@ -1755,6 +1898,7 @@ def at_add_note():
 
 
 @app.route('/api/at/tts', methods=['POST'])
+@limiter.limit("60 per minute; 600 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def at_tts():
     data = request.get_json()
@@ -2049,6 +2193,7 @@ def met_delete_exception(exc_id):
 
 
 @app.route('/api/met/chat', methods=['POST'])
+@limiter.limit("30 per minute; 300 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def met_chat():
     data = request.get_json()

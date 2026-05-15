@@ -65,9 +65,34 @@
       <span class="topbar__user-name" id="user-name"></span>
       <span class="topbar__user-role" id="user-role"></span>
     </div>
+    <button class="btn-logout" id="btn-change-pwd" type="button" style="margin-right:8px;">Změnit heslo</button>
     <button class="btn-logout" onclick="AuthUser.logout()">Odhlásit se</button>
   </div>
 </header>
+
+<div class="modal" id="modal-change-pwd" style="display:none;">
+  <div class="modal__backdrop" data-close-pwd-modal></div>
+  <div class="modal__panel">
+    <h2>Změna hesla</h2>
+    <div class="form-row">
+      <label>Stávající heslo</label>
+      <input type="password" id="pwd-old" autocomplete="current-password">
+    </div>
+    <div class="form-row">
+      <label>Nové heslo (min. 6 znaků)</label>
+      <input type="password" id="pwd-new" autocomplete="new-password">
+    </div>
+    <div class="form-row">
+      <label>Potvrzení nového hesla</label>
+      <input type="password" id="pwd-new2" autocomplete="new-password">
+    </div>
+    <div id="pwd-msg" style="min-height:20px; margin:8px 0; font-size:14px;"></div>
+    <div class="modal__actions">
+      <button class="btn-secondary" type="button" data-close-pwd-modal>Zrušit</button>
+      <button class="btn-primary" id="pwd-save" type="button">Uložit</button>
+    </div>
+  </div>
+</div>
 
 <div class="page-wrap">
   <div class="container">
@@ -517,6 +542,60 @@ document.getElementById('user-role').textContent = roleLabels[role] || role;
 document.getElementById('greeting').textContent  = `Dobrý den, ${AuthUser.jmeno}`;
 document.getElementById('page-sub').textContent  = roleLabels[role] || role;
 
+// ── Změna vlastního hesla ────────────────────────────────────────────────────
+(function setupPasswordChange(){
+  const modal = document.getElementById('modal-change-pwd');
+  const oldI  = document.getElementById('pwd-old');
+  const newI  = document.getElementById('pwd-new');
+  const new2I = document.getElementById('pwd-new2');
+  const msg   = document.getElementById('pwd-msg');
+  const btnSave = document.getElementById('pwd-save');
+
+  function open(){
+    oldI.value = newI.value = new2I.value = '';
+    msg.textContent = '';
+    msg.style.color = '';
+    modal.style.display = 'flex';
+    setTimeout(() => oldI.focus(), 50);
+  }
+  function close(){ modal.style.display = 'none'; }
+
+  document.getElementById('btn-change-pwd').addEventListener('click', open);
+  modal.querySelectorAll('[data-close-pwd-modal]').forEach(el => el.addEventListener('click', close));
+
+  btnSave.addEventListener('click', async () => {
+    const stare = oldI.value;
+    const nove  = newI.value;
+    const nove2 = new2I.value;
+    msg.style.color = '#c0392b';
+    if (!stare || !nove || !nove2) { msg.textContent = 'Vyplňte všechna pole.'; return; }
+    if (nove.length < 6)            { msg.textContent = 'Nové heslo musí mít alespoň 6 znaků.'; return; }
+    if (nove !== nove2)             { msg.textContent = 'Nová hesla se neshodují.'; return; }
+    if (nove === stare)             { msg.textContent = 'Nové heslo se musí lišit od stávajícího.'; return; }
+
+    btnSave.disabled = true;
+    try {
+      const res = await fetch('/api/me/password', {
+        method: 'PUT',
+        headers: AuthUser.authHeader(),
+        body: JSON.stringify({ stare_heslo: stare, nove_heslo: nove })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        msg.textContent = data.error || 'Chyba při změně hesla.';
+        btnSave.disabled = false;
+        return;
+      }
+      msg.style.color = '#27ae60';
+      msg.textContent = 'Heslo bylo změněno. Odhlašuji…';
+      setTimeout(() => AuthUser.logout(), 1500);
+    } catch (e) {
+      msg.textContent = 'Síťová chyba: ' + e.message;
+      btnSave.disabled = false;
+    }
+  });
+})();
+
 if (role !== 'poradce') {
   document.getElementById('page-tabs').style.display = 'flex';
   document.getElementById('ptab-users').classList.add('visible');
@@ -647,19 +726,22 @@ function renderUsers() {
     const manageriHtml = (u.manageri || []).map(m =>
       `${escHtml(m.jmeno)}${m.je_billing ? ' <span title="billing" style="color:#92550A;font-size:0.72rem">₿</span>' : ''}`
     ).join(', ') || '—';
+    const userJson = escAttrJson(u);
+    const manageriJson = escAttrJson(u.manageri || []);
+    const jmenoAttr = escAttr(u.jmeno);
     return `
     <tr>
       <td>${escHtml(u.jmeno)}</td>
       <td style="color:var(--muted)">${escHtml(u.email)}</td>
-      <td><span class="badge badge-${u.role}">${u.role}</span></td>
+      <td><span class="badge badge-${escHtml(u.role)}">${escHtml(u.role)}</span></td>
       ${role === 'admin' ? `<td style="color:var(--muted);font-size:0.82rem">${manageriHtml}</td>` : ''}
       <td><span class="status ${u.aktivni ? 'status-on' : 'status-off'}">${u.aktivni ? 'Aktivní' : 'Neaktivní'}</span></td>
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick='openUserModal(${JSON.stringify(u)})'>Upravit</button>
-          ${(u.role === 'poradce' || u.role === 'manazer') ? `<button class="btn btn-outline btn-sm" onclick="openPermsModal(${u.id},'${escHtml(u.jmeno)}')">Oprávnění</button>` : ''}
-          ${u.role === 'poradce' && role === 'admin' ? `<button class="btn btn-outline btn-sm" onclick="openManagersModal(${u.id},'${escHtml(u.jmeno)}',${JSON.stringify(u.manageri||[])})">Manažeři</button>` : ''}
-          <button class="btn btn-danger-ghost" onclick="toggleUser(${u.id},${u.aktivni})">${u.aktivni ? 'Deaktivovat' : 'Aktivovat'}</button>
+          <button class="btn btn-outline btn-sm" data-act="edit-user" data-user="${userJson}">Upravit</button>
+          ${(u.role === 'poradce' || u.role === 'manazer') ? `<button class="btn btn-outline btn-sm" data-act="perms" data-uid="${u.id}" data-uname="${jmenoAttr}">Oprávnění</button>` : ''}
+          ${u.role === 'poradce' && role === 'admin' ? `<button class="btn btn-outline btn-sm" data-act="managers" data-uid="${u.id}" data-uname="${jmenoAttr}" data-managers="${manageriJson}">Manažeři</button>` : ''}
+          <button class="btn btn-danger-ghost" data-act="toggle-user" data-uid="${u.id}" data-active="${u.aktivni}">${u.aktivni ? 'Deaktivovat' : 'Aktivovat'}</button>
         </div>
       </td>
     </tr>`;
@@ -677,7 +759,10 @@ async function loadAppsTable() {
     return;
   }
 
-  tbody.innerHTML = apps.map(a => `
+  tbody.innerHTML = apps.map(a => {
+    const appJson = escAttrJson(a);
+    const safeAppUrl = safeUrl(a.url);
+    return `
     <tr style="${a.aktivni ? '' : 'opacity:0.5'}">
       <td style="font-size:1.3rem;text-align:center">${escHtml(a.ikona)}</td>
       <td>
@@ -685,20 +770,20 @@ async function loadAppsTable() {
         ${a.aktivni ? '' : '<span style="font-size:0.72rem;color:var(--muted);margin-left:6px;font-style:italic">neaktivní</span>'}
       </td>
       <td style="color:var(--muted);font-size:0.8rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        <a href="${escHtml(a.url)}" target="_blank" style="color:var(--muted);text-decoration:none" title="${escHtml(a.url)}">${escHtml(a.url)}</a>
+        <a href="${escAttr(safeAppUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none" title="${escAttr(a.url)}">${escHtml(a.url)}</a>
       </td>
       <td style="color:var(--muted);font-size:0.8rem">${escHtml(a.popis || '—')}</td>
-      <td style="text-align:center;color:var(--muted)">${a.poradi}</td>
+      <td style="text-align:center;color:var(--muted)">${Number(a.poradi) || 0}</td>
       <td>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-outline btn-sm" onclick='openAppModal(${JSON.stringify(a)})'>Upravit</button>
-          <button class="btn btn-${a.aktivni ? 'danger-ghost' : 'outline'} btn-sm" onclick="toggleApp(${a.id}, ${a.aktivni})">
+          <button class="btn btn-outline btn-sm" data-act="edit-app" data-app="${appJson}">Upravit</button>
+          <button class="btn btn-${a.aktivni ? 'danger-ghost' : 'outline'} btn-sm" data-act="toggle-app" data-aid="${a.id}" data-active="${a.aktivni}">
             ${a.aktivni ? 'Deaktivovat' : 'Aktivovat'}
           </button>
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 // ── Modal: Uživatel ───────────────────────────────────────────────────────────
@@ -961,8 +1046,47 @@ function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 function escHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/`/g,'&#96;');
+}
+
+// Delegovaný listener pro tabulky uživatelů a aplikací (data-act atributy).
+// Nahrazuje inline onclick s interpolací — chrání před XSS.
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const act = btn.dataset.act;
+  try {
+    if (act === 'edit-user')   { openUserModal(JSON.parse(btn.dataset.user)); }
+    else if (act === 'edit-app')    { openAppModal(JSON.parse(btn.dataset.app)); }
+    else if (act === 'perms')       { openPermsModal(+btn.dataset.uid, btn.dataset.uname); }
+    else if (act === 'managers')    { openManagersModal(+btn.dataset.uid, btn.dataset.uname, JSON.parse(btn.dataset.managers)); }
+    else if (act === 'toggle-user') { toggleUser(+btn.dataset.uid, +btn.dataset.active); }
+    else if (act === 'toggle-app')  { toggleApp(+btn.dataset.aid, +btn.dataset.active); }
+  } catch (err) {
+    console.error('Action handler failed:', act, err);
+  }
+});
+// Escape pro vložení do HTML atributu (vč. apostrofů a backslash).
+function escAttr(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+    .replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\/g,'&#92;');
+}
+// Escape JSON pro vložení do HTML atributu (data-* attributes).
+function escAttrJson(obj) {
+  return escAttr(JSON.stringify(obj));
+}
+// Bezpečné URL: povolí jen http/https schémata (chrání před javascript: URL).
+function safeUrl(u) {
+  if (!u) return '#';
+  try {
+    const p = new URL(u, window.location.origin);
+    return ['http:', 'https:'].includes(p.protocol) ? p.href : '#';
+  } catch { return '#'; }
 }
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
