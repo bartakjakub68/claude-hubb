@@ -541,6 +541,23 @@ const role    = AuthUser.role;
 const headers = AuthUser.authHeader();
 const roleLabels = { admin:'Administrátor', manazer:'Manažer', poradce:'Poradce' };
 
+// Wrapper kolem fetch(): detekuje 401 (expirovaný/neplatný token) a okamžitě
+// odhlásí uživatele místo tichého zobrazení prázdných tabulek.
+// Pro endpointy, kde 401 znamená něco jiného (např. /api/me/password = špatné
+// stávající heslo), předej `skipAuthRedirect: true`.
+async function apiFetch(url, opts = {}) {
+  const skipAuthRedirect = opts.skipAuthRedirect === true;
+  const fetchOpts = { ...opts };
+  delete fetchOpts.skipAuthRedirect;
+
+  const res = await fetch(url, fetchOpts);
+  if (res.status === 401 && !skipAuthRedirect) {
+    AuthUser.logout();
+    throw new Error('Session expired');
+  }
+  return res;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.getElementById('user-name').textContent = AuthUser.jmeno;
 document.getElementById('user-role').textContent = roleLabels[role] || role;
@@ -576,10 +593,11 @@ document.getElementById('page-sub').textContent  = roleLabels[role] || role;
 
     btnSave.disabled = true;
     try {
-      const res = await fetch('/api/me/password', {
+      const res = await apiFetch('/api/me/password', {
         method: 'PUT',
         headers: AuthUser.authHeader(),
-        body: JSON.stringify({ stare_heslo: stare, nove_heslo: nove })
+        body: JSON.stringify({ stare_heslo: stare, nove_heslo: nove }),
+        skipAuthRedirect: true  // 401 zde = špatné stávající heslo, ne expired session
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -628,7 +646,7 @@ function showTab(name, btn) {
 // ── Aplikace (dashboard grid) ──────────────────────────────────────────────────
 async function loadNews() {
   try {
-    const res = await fetch('/api/news', { headers });
+    const res = await apiFetch('/api/news', { headers });
     if (!res.ok) return;
     const articles = await res.json();
     const top3 = articles.slice(0, 3);
@@ -646,7 +664,7 @@ async function loadNews() {
 }
 
 async function loadApps() {
-  const res  = await fetch('/api/apps', { headers });
+  const res  = await apiFetch('/api/apps', { headers });
   const apps = await res.json();
   const grid = document.getElementById('apps-grid');
 
@@ -675,7 +693,7 @@ let allUsers = [];
 let activeRoleFilter = '';
 
 async function loadUsers() {
-  const res = await fetch('/api/users', { headers });
+  const res = await apiFetch('/api/users', { headers });
   if (!res.ok) {
     console.error('loadUsers chyba:', res.status, await res.text());
     return;
@@ -751,7 +769,7 @@ function renderUsers() {
 
 // ── Správa aplikací (tabulka) ─────────────────────────────────────────────────
 async function loadAppsTable() {
-  const res  = await fetch('/api/apps?all=1', { headers });
+  const res  = await apiFetch('/api/apps?all=1', { headers });
   const apps = await res.json();
   const tbody = document.getElementById('apps-tbody');
 
@@ -874,7 +892,7 @@ async function saveUser() {
 
   const url    = id ? `/api/users/${id}` : '/api/users';
   const method = id ? 'PUT' : 'POST';
-  const res    = await fetch(url, { method, headers, body: JSON.stringify(body) });
+  const res    = await apiFetch(url, { method, headers, body: JSON.stringify(body) });
   const data   = await res.json();
 
   if (!res.ok) {
@@ -893,7 +911,7 @@ async function saveUser() {
 async function toggleUser(id, aktivni) {
   const text = aktivni ? 'Deaktivovat tohoto uživatele?' : 'Aktivovat tohoto uživatele?';
   if (!confirm(text)) return;
-  await fetch(`/api/users/${id}`, { method:'PUT', headers, body: JSON.stringify({ aktivni: aktivni ? 0 : 1 }) });
+  await apiFetch(`/api/users/${id}`, { method:'PUT', headers, body: JSON.stringify({ aktivni: aktivni ? 0 : 1 }) });
   loadUsers();
 }
 
@@ -957,7 +975,7 @@ async function saveManagers() {
   const managers = [{ manazer_id: m1id, je_billing: m1id === billingId ? 1 : 0 }];
   if (m2id) managers.push({ manazer_id: m2id, je_billing: m2id === billingId ? 1 : 0 });
 
-  const res  = await fetch(`/api/users/${userId}/managers`, { method: 'PUT', headers, body: JSON.stringify({ managers }) });
+  const res  = await apiFetch(`/api/users/${userId}/managers`, { method: 'PUT', headers, body: JSON.stringify({ managers }) });
   const data = await res.json();
   if (!res.ok) { errEl.textContent = data.error || 'Chyba'; errEl.style.display = 'block'; return; }
   closeModal('modal-managers');
@@ -970,8 +988,8 @@ async function openPermsModal(userId, jmeno) {
   document.getElementById('perms-user-id').value     = userId;
 
   const [appsRes, permsRes] = await Promise.all([
-    fetch('/api/apps', { headers }),
-    fetch(`/api/users/${userId}/permissions`, { headers })
+    apiFetch('/api/apps', { headers }),
+    apiFetch(`/api/users/${userId}/permissions`, { headers })
   ]);
   const apps  = await appsRes.json();
   const perms = await permsRes.json();
@@ -989,7 +1007,7 @@ async function openPermsModal(userId, jmeno) {
 async function savePerms() {
   const userId  = document.getElementById('perms-user-id').value;
   const checked = [...document.querySelectorAll('#perms-grid input:checked')].map(i => parseInt(i.value));
-  await fetch(`/api/users/${userId}/permissions`, {
+  await apiFetch(`/api/users/${userId}/permissions`, {
     method:'PUT', headers, body: JSON.stringify({ app_ids: checked })
   });
   closeModal('modal-perms');
@@ -1023,7 +1041,7 @@ async function saveApp() {
 
   const url    = id ? `/api/apps/${id}` : '/api/apps';
   const method = id ? 'PUT' : 'POST';
-  const res    = await fetch(url, { method, headers, body: JSON.stringify(body) });
+  const res    = await apiFetch(url, { method, headers, body: JSON.stringify(body) });
   if (!res.ok) {
     errEl.textContent = 'Chyba při ukládání aplikace';
     errEl.style.display = 'block';
@@ -1037,7 +1055,7 @@ async function saveApp() {
 async function toggleApp(id, aktualniStav) {
   const akce = aktualniStav ? 'deaktivovat' : 'aktivovat';
   if (!confirm(`Opravdu ${akce} tuto aplikaci?`)) return;
-  await fetch(`/api/apps/${id}/toggle`, { method:'POST', headers });
+  await apiFetch(`/api/apps/${id}/toggle`, { method:'POST', headers });
   loadApps();
   loadAppsTable();
 }
@@ -1107,7 +1125,7 @@ function fakturuj(cost_usd, marze) {
 
 async function saveMarze() {
   const val = parseFloat(document.getElementById('marze-input').value) || 0;
-  await fetch('/api/hub/settings', { method: 'PUT', headers, body: JSON.stringify({ api_marze_procent: val }) });
+  await apiFetch('/api/hub/settings', { method: 'PUT', headers, body: JSON.stringify({ api_marze_procent: val }) });
   const saved = document.getElementById('marze-saved');
   saved.style.display = 'inline';
   setTimeout(() => saved.style.display = 'none', 2000);
@@ -1124,7 +1142,7 @@ async function loadCosts() {
   if (costsLoaded) return;
   costsLoaded = true;
 
-  const res  = await fetch('/api/hub/costs', { headers });
+  const res  = await apiFetch('/api/hub/costs', { headers });
   const data = await res.json();
 
   document.getElementById('costs-loading').style.display = 'none';
@@ -1202,7 +1220,7 @@ async function loadBilling() {
   if (billingLoaded) return;
   billingLoaded = true;
 
-  const res  = await fetch('/api/hub/billing', { headers });
+  const res  = await apiFetch('/api/hub/billing', { headers });
   const rows = await res.json();
 
   document.getElementById('billing-loading').style.display = 'none';
@@ -1271,7 +1289,7 @@ async function confirmCloseMonth() {
   btn.disabled = true;
   btn.textContent = 'Uzavírám…';
 
-  const res  = await fetch('/api/hub/billing/close', { method: 'POST', headers, body: JSON.stringify({ mesic }) });
+  const res  = await apiFetch('/api/hub/billing/close', { method: 'POST', headers, body: JSON.stringify({ mesic }) });
   const data = await res.json();
 
   btn.disabled = false;
