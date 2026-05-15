@@ -18,8 +18,28 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__, static_folder='public')
+
+# Rate limiter: in-memory backend. Funguje per-proces, takže pro produkci
+# používáme `--workers 1 --threads N` (SQLite stejně škrtí na víc workerů).
+# Pokud bys někdy potřeboval víc workerů, přidej Redis a nastav `storage_uri`.
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    storage_uri="memory://",
+    strategy="fixed-window",
+    headers_enabled=True,
+)
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({
+        'error': 'Příliš mnoho požadavků, zkuste to za chvíli znovu.',
+        'detail': str(e.description) if hasattr(e, 'description') else 'rate limit'
+    }), 429
 
 DB_PATH = os.environ.get('DB_PATH', 'auth.db')
 _db_dir = os.path.dirname(DB_PATH)
@@ -500,7 +520,31 @@ def require_auth(roles=None):
 
 # ─── API Routes ──────────────────────────────────────────────────────────────
 
+def _login_email_key():
+    """Klíč per-email pro rate limiter loginu. Bezpečně získá email z JSON body."""
+    try:
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip().lower()
+        return email or get_remote_address()
+    except Exception:
+        return get_remote_address()
+
+def _user_or_ip_key():
+    """Klíč per-uživatel pro AI endpointy. Fallback na IP, pokud token chybí/neplatný."""
+    try:
+        auth = request.headers.get('Authorization', '')
+        if auth.startswith('Bearer '):
+            payload = jwt_verify(auth[7:])
+            if payload and 'id' in payload:
+                return f"user:{payload['id']}"
+    except Exception:
+        pass
+    return f"ip:{get_remote_address()}"
+
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("10 per minute", key_func=get_remote_address)
+@limiter.limit("100 per hour",  key_func=get_remote_address)
+@limiter.limit("10 per hour",   key_func=_login_email_key)
 def login():
     data = request.get_json(silent=True) or {}
     email = (data.get('email') or '').strip().lower()
@@ -1563,6 +1607,7 @@ def kh_get_usage():
 # ─── Advisor Training ────────────────────────────────────────────────────────
 
 @app.route('/api/at/chat', methods=['POST'])
+@limiter.limit("30 per minute; 300 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def at_chat():
     data = request.get_json()
@@ -1594,6 +1639,7 @@ def at_chat():
 
 
 @app.route('/api/at/eval', methods=['POST'])
+@limiter.limit("30 per minute; 300 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def at_eval():
     data = request.get_json()
@@ -1625,6 +1671,7 @@ def at_eval():
 
 
 @app.route('/api/claude', methods=['POST'])
+@limiter.limit("30 per minute; 300 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def claude_proxy():
     """Obecný Claude API proxy pro kalkulátory a ostatní appky."""
@@ -1836,6 +1883,7 @@ def at_add_note():
 
 
 @app.route('/api/at/tts', methods=['POST'])
+@limiter.limit("60 per minute; 600 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def at_tts():
     data = request.get_json()
@@ -2130,6 +2178,7 @@ def met_delete_exception(exc_id):
 
 
 @app.route('/api/met/chat', methods=['POST'])
+@limiter.limit("30 per minute; 300 per hour", key_func=_user_or_ip_key)
 @require_auth()
 def met_chat():
     data = request.get_json()
