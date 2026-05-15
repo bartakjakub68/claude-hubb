@@ -391,6 +391,14 @@ def init_db():
             ('Úvěry test', '/kalkulator-B-uvery.html', '📊', 'Kalkulačka úvěrů test', 7)
         )
 
+    # Kalkulačka důchodů
+    dk_exists = c.execute("SELECT id FROM apps WHERE nazev='Kalkulačka důchodů'").fetchone()
+    if not dk_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Kalkulačka důchodů', '/duchod-kalkulator-v3.html', '🧓', 'Kalkulačka důchodového spoření', 8)
+        )
+
     # Výchozí admin účet
     existing = c.execute("SELECT id FROM users WHERE role='admin'").fetchone()
     if not existing:
