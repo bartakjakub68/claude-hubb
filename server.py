@@ -1763,8 +1763,21 @@ def at_get_trainings():
 @app.route('/api/at/evaluations', methods=['POST'])
 @require_auth()
 def at_save_evaluation():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+    training_id = data.get('training_id')
+    if not training_id:
+        return jsonify({'error': 'training_id je povinné'}), 400
+
     conn = get_db()
+    # IDOR ochrana: training musí patřit volajícímu (jen vlastník nebo admin)
+    training = conn.execute("SELECT user_id FROM at_trainings WHERE id=?", (training_id,)).fetchone()
+    if not training:
+        conn.close()
+        return jsonify({'error': 'Training nenalezen'}), 404
+    if training['user_id'] != request.user['id'] and request.user['role'] != 'admin':
+        conn.close()
+        return jsonify({'error': 'Nedostatečná oprávnění'}), 403
+
     cur = conn.execute('''
         INSERT INTO at_evaluations
         (training_id, user_id, overall_score, result, highlight_discovered,
@@ -1773,7 +1786,7 @@ def at_save_evaluation():
          ideal_approach, summary, quiz_score, quiz_total)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     ''', (
-        data.get('training_id'), request.user['id'],
+        training_id, training['user_id'],
         data.get('overall_score', 0), data.get('result', ''),
         int(data.get('highlight_discovered', False)),
         int(data.get('highlight_product_offered', False)),
@@ -1884,11 +1897,30 @@ def at_advisor_evaluations(advisor_id):
 @app.route('/api/at/manager/notes', methods=['POST'])
 @require_auth(['admin', 'manazer'])
 def at_add_note():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+    evaluation_id = data.get('evaluation_id')
+    note_text = (data.get('note') or '').strip()
+    if not evaluation_id or not note_text:
+        return jsonify({'error': 'evaluation_id a note jsou povinné'}), 400
+
     conn = get_db()
+    # IDOR ochrana: manažer může psát noty jen k evaluacím poradců ze svého týmu.
+    ev = conn.execute("SELECT user_id FROM at_evaluations WHERE id=?", (evaluation_id,)).fetchone()
+    if not ev:
+        conn.close()
+        return jsonify({'error': 'Evaluace nenalezena'}), 404
+    if request.user['role'] == 'manazer':
+        is_my_advisor = conn.execute(
+            "SELECT 1 FROM user_managers WHERE poradce_id=? AND manazer_id=?",
+            (ev['user_id'], request.user['id'])
+        ).fetchone()
+        if not is_my_advisor:
+            conn.close()
+            return jsonify({'error': 'Nedostatečná oprávnění'}), 403
+
     cur = conn.execute(
         "INSERT INTO at_manager_notes (evaluation_id, manager_id, note) VALUES (?,?,?)",
-        (data['evaluation_id'], request.user['id'], data['note'])
+        (evaluation_id, request.user['id'], note_text)
     )
     note_id = cur.lastrowid
     conn.commit()
