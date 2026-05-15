@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulačka státních dávek — ČSSZ 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#f7f5f0;--white:#fff;--ink:#141210;--ink2:#2e2a25;--ink3:#6b6560;--ink4:#a09a94;
+  --gold:#b8922a;--gold-pale:#f5edd8;--gold-border:#e8d5a8;
+  --border:#e5dfd6;--border2:#d0c8bc;
+  --red:#c0392b;--red-pale:#fdf0ee;--red-border:#f0c0ba;
+  --blue:#1e4a8a;--blue-pale:#e8eef7;--blue-border:#b8cce8;
+  --green:#1a6644;--green-pale:#e8f4ee;--green-border:#a8d4bc;
+  --sh-sm:0 1px 3px rgba(20,18,16,.05);--sh:0 4px 20px rgba(20,18,16,.08);
+  --r:20px;--rs:12px;--rx:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.5}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 85% 5%,rgba(184,146,42,.04)0%,transparent 50%),radial-gradient(ellipse 60% 60% at 5% 90%,rgba(30,74,138,.03)0%,transparent 50%);pointer-events:none;z-index:0}
+
+.header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(229,223,214,.7);padding:0 24px}
+.header-inner{max-width:1120px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo-group{display:flex;align-items:center;gap:14px}
+.logo-mark{width:38px;height:38px;background:var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0}
+.logo-mark::after{content:'';position:absolute;top:-2px;right:-2px;width:15px;height:15px;background:var(--gold);border-radius:0 10px 0 10px}
+.logo-mark span{font-family:'DM Serif Display',serif;font-size:18px;color:white;position:relative;z-index:1}
+.logo-text strong{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.3px;display:block}
+.logo-text small{font-size:11px;color:var(--ink4)}
+.header-badge{font-size:10px;font-weight:600;color:var(--ink3);background:var(--cream);border:1px solid var(--border);border-radius:20px;padding:5px 14px;letter-spacing:.05em;text-transform:uppercase}
+
+.main{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:28px 20px 80px}
+.page-hdr{margin-bottom:28px}
+.page-hdr h1{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-.5px;margin-bottom:4px}
+.page-hdr p{font-size:13px;color:var(--ink3);font-weight:500}
+
+/* MODE TOGGLE */
+.mode-wrap{margin-bottom:24px}
+.mode-toggle{display:inline-flex;border:1.5px solid var(--border);border-radius:var(--rs);overflow:hidden;background:var(--white)}
+.mode-btn{padding:9px 24px;font-size:13px;font-weight:600;color:var(--ink3);background:transparent;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;white-space:nowrap}
+.mode-btn+.mode-btn{border-left:1px solid var(--border)}
+.mode-btn.active{background:var(--ink);color:var(--white)}
+
+/* GRID */
+.grid{display:grid;gap:20px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-1{grid-template-columns:1fr}
+@media(max-width:740px){.grid-2{grid-template-columns:1fr}}
+
+/* CARD */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:22px;box-shadow:var(--sh-sm)}
+.card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.card-icon{width:34px;height:34px;background:var(--gold-pale);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.card-title{font-size:14px;font-weight:700;color:var(--ink2);letter-spacing:-.2px}
+.card-sub{font-size:11px;color:var(--ink4);margin-top:1px}
+
+/* FIELDS */
+.field{margin-bottom:16px}.field:last-child{margin-bottom:0}
+.field-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.field-label span{font-size:12px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.field-label strong{font-size:15px;font-weight:700;color:var(--ink);font-family:'DM Serif Display',serif}
+.slider-wrap{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--white);border:2.5px solid var(--gold);box-shadow:0 2px 8px rgba(184,146,42,.25);cursor:pointer;transition:all .2s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+.num-input{width:110px;flex-shrink:0;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:7px 10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;text-align:right;outline:none;transition:all .2s;-moz-appearance:textfield}
+.num-input::-webkit-inner-spin-button,.num-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.num-input:focus{border-color:var(--gold);background:var(--white);box-shadow:0 0 0 3px rgba(184,146,42,.1)}
+
+/* SEGMENTED CONTROL */
+.seg{display:flex;gap:0;border:1.5px solid var(--border);border-radius:var(--rx);overflow:hidden;background:var(--cream)}
+.seg-btn{flex:1;padding:7px 10px;font-size:12px;font-weight:600;color:var(--ink3);background:transparent;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;text-align:center}
+.seg-btn+.seg-btn{border-left:1px solid var(--border)}
+.seg-btn.active{background:var(--ink);color:var(--white)}
+.seg-label{font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+
+/* CHILDREN */
+.children-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.children-row:last-child{margin-bottom:0}
+.child-tag{font-size:12px;color:var(--ink3);font-weight:500;flex-shrink:0;width:60px}
+.child-age-inp{width:72px;background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);color:var(--ink);padding:6px 8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;text-align:center;outline:none;-moz-appearance:textfield;transition:border-color .2s}
+.child-age-inp::-webkit-inner-spin-button{-webkit-appearance:none}
+.child-age-inp:focus{border-color:var(--gold)}
+.add-child-btn,.rem-child-btn{background:none;border:1.5px solid var(--border);border-radius:var(--rx);padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink3);font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s}
+.add-child-btn:hover{border-color:var(--gold);color:var(--gold)}
+.rem-child-btn:hover{border-color:var(--red);color:var(--red)}
+.children-controls{display:flex;gap:8px;margin-top:10px}
+
+/* DIVIDER */
+.sdiv{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 12px;padding-top:14px;border-top:1px solid var(--border)}
+.sdiv:first-child{margin-top:0;padding-top:0;border-top:none}
+
+/* RESULTS */
+.results-wrap{display:flex;flex-direction:column;gap:12px}
+.res-section{background:var(--cream);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden}
+.res-section-hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--white);border-bottom:1px solid var(--border)}
+.res-section-icon{font-size:16px}
+.res-section-title{font-size:13px;font-weight:700;color:var(--ink2);flex:1}
+.res-section-total{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink);letter-spacing:-.3px}
+.res-rows{padding:10px 16px;display:flex;flex-direction:column;gap:4px}
+.res-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(229,223,214,.5)}
+.res-row:last-child{border-bottom:none}
+.res-row-label{font-size:12px;color:var(--ink3)}
+.res-row-val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--ink)}
+.res-row-val.green{color:var(--green)}
+.res-row-val.red{color:var(--red)}
+.res-row-val.blue{color:var(--blue)}
+.res-breakdown{padding:8px 16px 12px;background:var(--cream);border-top:1px dashed var(--border2)}
+.res-breakdown-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin-bottom:6px}
+.breakdown-steps{display:flex;flex-direction:column;gap:3px}
+.bs{font-size:11px;color:var(--ink3);display:flex;justify-content:space-between}
+.bs span:last-child{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink2)}
+
+/* PN BREAKDOWN */
+.pn-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px 16px 12px}
+.pn-cell{background:var(--white);border:1px solid var(--border);border-radius:var(--rx);padding:8px 10px;text-align:center}
+.pn-cell-label{font-size:10px;color:var(--ink4);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.pn-cell-val{font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink)}
+.pn-cell-sub{font-size:10px;color:var(--ink3);margin-top:2px}
+
+/* DUPLEX — manžel/ka vedle sebe */
+.duplex{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:740px){.duplex{grid-template-columns:1fr}}
+.duplex-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.duplex-label.k1{border-color:var(--gold)}
+.duplex-label.k2{border-color:var(--blue)}
+
+/* BADGE */
+.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:20px}
+.badge-gold{background:var(--gold-pale);color:var(--gold);border:1px solid var(--gold-border)}
+.badge-blue{background:var(--blue-pale);color:var(--blue);border:1px solid var(--blue-border)}
+.badge-green{background:var(--green-pale);color:var(--green);border:1px solid var(--green-border)}
+
+/* NOTE */
+.note{font-size:11px;color:var(--ink3);line-height:1.6;background:var(--gold-pale);border:1px solid var(--gold-border);border-radius:var(--rx);padding:10px 14px;margin-top:12px}
+
+/* MANZEL TOGGLE ROW */
+.rstav-row{display:grid;grid-template-columns:1fr;gap:10px}
+
+/* INVISIBLE INPUT */
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-group">
+      <div class="logo-mark"><span>K</span></div>
+      <div class="logo-text">
+        <strong>PORTÁL</strong>
+        <small>Kalkulačka státních dávek</small>
+      </div>
+    </div>
+    <div class="header-badge">ČSSZ 2026</div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="page-hdr">
+    <h1>Státní dávky</h1>
+    <p>Invalidní důchod · Pracovní neschopnost · Vdovský a sirotčí důchod — dle metodiky ČSSZ 2026</p>
+  </div>
+
+  <div class="mode-wrap">
+    <div class="mode-toggle">
+      <button class="mode-btn active" onclick="setMode('single')">Jedna osoba</button>
+      <button class="mode-btn" onclick="setMode('manzele')">Manželé</button>
+    </div>
+  </div>
+
+  <!-- SINGLE MODE -->
+  <div id="mode-single">
+    <div class="grid grid-2">
+      <div id="input-card-1" class="card">
+        <div class="card-hdr">
+          <div class="card-icon">👤</div>
+          <div>
+            <div class="card-title">Vstupní údaje</div>
+            <div class="card-sub">Příjem, věk, rodinná situace</div>
+          </div>
+        </div>
+        <div id="fields-1"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-icon">📊</div>
+          <div>
+            <div class="card-title">Výsledky</div>
+            <div class="card-sub">Výpočet dle aktuální legislativy</div>
+          </div>
+        </div>
+        <div id="results-1" class="results-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANZELE MODE -->
+  <div id="mode-manzele" class="hidden">
+    <!-- Společné děti -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-hdr">
+        <div class="card-icon">👨‍👩‍👧</div>
+        <div>
+          <div class="card-title">Společné děti</div>
+          <div class="card-sub">Věk každého dítěte — pro výpočet sirotčího důchodu</div>
+        </div>
+      </div>
+      <div id="children-shared-wrap"></div>
+    </div>
+
+    <!-- Dva sloupce -->
+    <div class="duplex">
+      <div>
+        <div class="duplex-label k1">Klient 1</div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-hdr">
+            <div class="card-icon">👤</div>
+            <div><div class="card-title">Vstupní údaje</div></div>
+          </div>
+          <div id="fields-m1"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-icon">📊</div>
+            <div><div class="card-title">Výsledky</div></div>
+          </div>
+          <div id="results-m1" class="results-wrap"></div>
+        </div>
+      </div>
+      <div>
+        <div class="duplex-label k2">Klient 2</div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-hdr">
+            <div class="card-icon">👤</div>
+            <div><div class="card-title">Vstupní údaje</div></div>
+          </div>
+          <div id="fields-m2"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-icon">📊</div>
+            <div><div class="card-title">Výsledky</div></div>
+          </div>
+          <div id="results-m2" class="results-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ČSSZ KONSTANTY 2026
+// ═══════════════════════════════════════════════════════════
+const CSSZ = {
+  rh1: 21546, rh2: 195868, rh1zapocet: 0.99,
+  zakladVymera: 4900,
+  dnp_rh1: 1633, dnp_rh2: 2449, dnp_rh3: 4897,
+  vdovskaPctVymery: 0.50,
+  sirotciPctVymery: 0.40,
+  // Minima procentních výměr (§ 33, MPSV vyhláška 2026)
+  sirotciMinProc: 1960,
+  vdovskaMinProc: 2450,
+  // Minimum celkového důchodu — reforma 2026 (§ 107, 14 % průměrné mzdy 48 967)
+  sirotciMinCelkem: 6860,
+  // Měsíční hranice pro 23 % sazbu daně 2026 = 3× průměrná mzda 48 967
+  danHranice23: 146901,
+};
+
+// Valorizační koeficienty ČSSZ 2026 (zdroj: nařízení vlády, naseduchody.cz)
+// Každý rok hrubé mzdy se násobí příslušným koeficientem → přepočet na dnešní hodnotu
+const VALORIZACE_2026 = {
+  1986:16.5205,1987:16.1820,1988:15.8212,1989:15.4469,1990:14.9016,
+  1991:12.9132,1992:10.5441,1993:8.4179, 1994:7.1007, 1995:5.9920,
+  1996:5.0606, 1997:4.5780, 1998:4.1877, 1999:3.8694, 2000:3.6299,
+  2001:3.3447, 2002:3.1167, 2003:2.9201, 2004:2.7383, 2005:2.6034,
+  2006:2.4422, 2007:2.2747, 2008:2.1034, 2009:2.0326, 2010:1.9965,
+  2011:1.9514, 2012:1.8904, 2013:1.8904, 2014:1.8578, 2015:1.8032,
+  2016:1.7333, 2017:1.6238, 2018:1.5062, 2019:1.4085, 2020:1.3557,
+  2021:1.2787, 2022:1.2049, 2023:1.1210, 2024:1.0581, 2025:1.0000,
+};
+
+// ═══════════════════════════════════════════════════════════
+// DŮCHODOVÝ VĚK — příloha zák. 155/1995 Sb. (po reformě 2024)
+// ═══════════════════════════════════════════════════════════
+// Vrací důchodový věk v měsících (např. 65 let 8 měsíců = 788)
+function duchodovyVekMesicu(rokNarozeni, pohlavi, pocetDeti){
+  // Pohlaví: 'M' nebo 'F'; pocetDeti: 0..5+
+  // Muži a bezdětné ženy: tabulka muž; ženy s dětmi mají snížený věk (jen ročníky do 1971/72)
+  
+  // Pro narozené po 1988: 67 let (strop dle reformy 2024)
+  if(rokNarozeni > 1988) return 67 * 12;
+  
+  // Pro narozené 1974–1988: 65 let 8 měsíců + (rok − 1973) měsíců
+  if(rokNarozeni >= 1974 && rokNarozeni <= 1988){
+    const zaklad = 65*12 + 8;
+    return zaklad + (rokNarozeni - 1973);
+  }
+  
+  // Pro 1936–1973: tabulka — pro muže a bezdětné ženy jednotná
+  // Pro ženy s dětmi v ročnících 1936–1971: snížený věk
+  // Zde implementujeme zjednodušeně dle přílohy k zák. 155/1995 (po novele 2024):
+  
+  // Tabulka muži / bezdětné ženy (rok narození → věk v letech a měsících)
+  // Zdroj: příloha zák. 155/1995 + důchodová reforma 2024 (strop posunut na 67)
+  const tabM = {
+    1953:[63,2], 1954:[63,4], 1955:[63,6], 1956:[63,8], 1957:[63,10],
+    1958:[64,0], 1959:[64,2], 1960:[64,4], 1961:[64,6], 1962:[64,8],
+    1963:[64,10],
+    1964:[65,0], 1965:[65,0], 1966:[65,1], 1967:[65,2], 1968:[65,3],
+    1969:[65,4], 1970:[65,5], 1971:[65,6], 1972:[65,7], 1973:[65,8],
+  };
+  
+  let baseMesicu;
+  if(tabM[rokNarozeni]){
+    baseMesicu = tabM[rokNarozeni][0]*12 + tabM[rokNarozeni][1];
+  } else if(rokNarozeni < 1953){
+    baseMesicu = 63 * 12; // hodně staří — ti už jsou v důchodu
+  } else {
+    baseMesicu = 65 * 12 + 8;
+  }
+  
+  // Ženy s dětmi: snížení v měsících (zjednodušený model dle přílohy)
+  // Po reformě 2024: efekt dětí mizí postupně u ročníků 1972+
+  if(pohlavi === 'F' && pocetDeti > 0 && rokNarozeni <= 1971){
+    // Aproximace dle § 32 + příl.: ročníky cca 1936–1965 mají plný efekt,
+    // 1966–1971 efekt postupně mizí (zákon stanoví přesné měsíce v tabulce)
+    const snizeniPerDite = {1: 4, 2: 8, 3: 14, 4: 14, 5: 20}; // měsíců
+    const snizeni = snizeniPerDite[Math.min(pocetDeti, 5)] || 20;
+    // Pro 1966–1971 lineárně klesá efekt
+    let efekt = 1.0;
+    if(rokNarozeni >= 1966) efekt = Math.max(0, (1972 - rokNarozeni) / 6);
+    baseMesicu = Math.max(60*12, baseMesicu - Math.round(snizeni * efekt));
+  }
+  
+  return baseMesicu;
+}
+
+// Procentní sazba za rok pojištění dle roku přiznání (MPSV)
+function sazbaProcentniVymery(rokPriznani){
+  if(rokPriznani < 2026) return 0.015;
+  if(rokPriznani === 2026) return 0.01495;
+  if(rokPriznani === 2027) return 0.01490;
+  if(rokPriznani === 2028) return 0.01485;
+  if(rokPriznani === 2029) return 0.01480;
+  if(rokPriznani === 2030) return 0.01475;
+  if(rokPriznani === 2031) return 0.01470;
+  if(rokPriznani === 2032) return 0.01465;
+  // pokračování −0,005 % p.a., minimum 0,01450 (rok 2035+)
+  if(rokPriznani >= 2035) return 0.01450;
+  return 0.01465 - 0.00005 * (rokPriznani - 2032);
+}
+
+// Zápočet do první redukční hranice dle roku přiznání (reforma 2026: 99% klesá o 1%/rok do 90%)
+function zapocetRh1(rokPriznani){
+  if(rokPriznani < 2026) return 1.00;
+  if(rokPriznani >= 2035) return 0.90;
+  return 1.00 - 0.01 * (rokPriznani - 2025);
+}
+
+// ═══════════════════════════════════════════════════════════
+// STAV APLIKACE
+// ═══════════════════════════════════════════════════════════
+let mode = 'single';
+
+const state = {
+  1: { prijem: 50000, rokNarozeni: 1986, pohlavi: 'M', pocetVychDeti: 0, rokZacatku: 2010, isOSVC: false, maManzel: true, children: [] },
+  m1:{ prijem: 50000, rokNarozeni: 1986, pohlavi: 'M', pocetVychDeti: 0, rokZacatku: 2010, isOSVC: false, children: [] },
+  m2:{ prijem: 40000, rokNarozeni: 1988, pohlavi: 'F', pocetVychDeti: 0, rokZacatku: 2012, isOSVC: false, children: [] },
+  sharedChildren: [],
+};
+
+// ═══════════════════════════════════════════════════════════
+// VÝPOČETNÍ FUNKCE
+// ═══════════════════════════════════════════════════════════
+function cistyNaHruby(cisty){
+  let hruba = cisty * 1.35;
+  const hranice23 = CSSZ.danHranice23; // 146 901 Kč/měs (3× průměrná mzda 2026)
+  for(let i=0;i<10;i++){
+    const odvody = hruba * 0.11;
+    let dan = hruba <= hranice23
+      ? Math.max(hruba * 0.15 - 2570, 0)
+      : Math.max(hranice23 * 0.15 + (hruba - hranice23) * 0.23 - 2570, 0);
+    const diff = cisty - (hruba - odvody - dan);
+    if(Math.abs(diff) < 50) break;
+    hruba += diff * 0.8;
+  }
+  return Math.round(hruba);
+}
+
+function odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, isOSVC, rokZacatku){
+  // ─── Aktuální hrubá mzda / VZ ───
+  let hrubaMes;
+  if(isOSVC){
+    // OSVČ: VZ = 50 % daňového základu — iterace z čistého
+    let zaklad = prijemCisty * 1.7;
+    for(let i=0;i<20;i++){
+      const vz = zaklad * 0.50;
+      const sp = vz * 0.292, zp = vz * 0.135;
+      const dan = Math.max((zaklad - sp - zp) * 0.15 - 30840, 0);
+      const diff = prijemCisty - (zaklad - sp - zp - dan);
+      if(Math.abs(diff) < 100) break;
+      zaklad += diff * 0.8;
+    }
+    hrubaMes = zaklad * 0.50; // VZ OSVČ
+  } else {
+    hrubaMes = cistyNaHruby(prijemCisty);
+  }
+
+  // ─── OVZ: průměr valorizovaných příjmů za celou kariéru ───
+  const vek = 2026 - rokNarozeni;
+  const rokPojisteni = rokZacatku || (2026 - Math.max(vek - 18, 1));
+  const prvniRok = Math.max(rokPojisteni, 1986);
+  const posledniRok = 2025; // rozhodné období končí rokem před přiznáním
+
+  let sumValVZ = 0;
+  let pocetDni = 0;
+
+  for(let rok = prvniRok; rok <= posledniRok; rok++){
+    const koef = VALORIZACE_2026[rok] || 1.0;
+    const odhadHrubaRok = hrubaMes * 12 / koef;
+    sumValVZ += odhadHrubaRok * koef;
+    pocetDni += 365;
+  }
+  const ovzMes = Math.round(sumValVZ / pocetDni * 30.4167);
+
+  // ─── Redukce OVZ → výpočtový základ ───
+  const {rh1, rh2, rh1zapocet, zakladVymera} = CSSZ;
+  let redOVZ;
+  if(ovzMes <= rh1)      redOVZ = ovzMes * rh1zapocet;
+  else if(ovzMes <= rh2) redOVZ = rh1 * rh1zapocet + (ovzMes - rh1) * 0.26;
+  else                   redOVZ = rh1 * rh1zapocet + (rh2 - rh1) * 0.26;
+  redOVZ = Math.ceil(redOVZ); // § 16 zák. 155/1995: zaokrouhlení nahoru
+
+  // ─── Doba pojištění: odpracovaná + dopočtená do skutečného důchodového věku ───
+  const odprac = posledniRok - prvniRok + 1;
+  const ducVekRoku = duchodovyVekMesicu(rokNarozeni, pohlavi, pocetVychDeti) / 12;
+  const dopoctena = Math.max(Math.round(ducVekRoku - vek), 0);
+  const celk = odprac + dopoctena;
+
+  // ─── Procentní výměra ───
+  const plnaIII = redOVZ * celk * 0.01495;
+  const mult = {I:1/3, II:1/2, III:1.0}[stupen];
+  const minProcVym = {I:1634, II:2450, III:4900}[stupen];
+  const procVym = Math.max(Math.round(plnaIII * mult), minProcVym);
+
+  return {
+    duchod: Math.round(zakladVymera + procVym),
+    zakladVymera,
+    procVym,
+    redOVZ,
+    celkDoba: celk,
+    odprac,
+    dopoctena,
+    ovzMes,
+    rokZacatku: prvniRok,
+    ducVekRoku,
+  };
+}
+
+function vypocetPN(prijemCisty){
+  const hruba = cistyNaHruby(prijemCisty);
+  const dvz = hruba * 12 / 365;
+  let raw = Math.min(dvz, CSSZ.dnp_rh1) * 0.90;
+  if(dvz > CSSZ.dnp_rh1) raw += Math.min(dvz - CSSZ.dnp_rh1, CSSZ.dnp_rh2 - CSSZ.dnp_rh1) * 0.60;
+  if(dvz > CSSZ.dnp_rh2) raw += Math.min(dvz - CSSZ.dnp_rh2, CSSZ.dnp_rh3 - CSSZ.dnp_rh2) * 0.30;
+  const redDvz = Math.ceil(raw);
+  const d15_30 = Math.ceil(redDvz * 0.60);
+  const d31_60 = Math.ceil(redDvz * 0.66);
+  const d61p   = Math.ceil(redDvz * 0.72);
+  // Náhrada mzdy 1–14 dní
+  const nm_rh1 = Math.ceil(CSSZ.dnp_rh1 * 0.175 * 100) / 100;
+  const nm_rh2 = Math.ceil(CSSZ.dnp_rh2 * 0.175 * 100) / 100;
+  const nm_rh3 = Math.ceil(CSSZ.dnp_rh3 * 0.175 * 100) / 100;
+  const hod = hruba / (21.5 * 8);
+  let rHod = Math.min(hod, nm_rh1) * 0.90;
+  if(hod > nm_rh1) rHod += Math.min(hod - nm_rh1, nm_rh2 - nm_rh1) * 0.60;
+  if(hod > nm_rh2) rHod += Math.min(hod - nm_rh2, nm_rh3 - nm_rh2) * 0.30;
+  const nmPracDen = rHod * 0.60 * 8;
+  const nm14 = nmPracDen * 10;
+  // Průměr za 12 měsíců (celý rok PN)
+  const celkem = nm14 + 16*d15_30 + 30*d31_60 + 305*d61p;
+  const prumerMes = Math.round(celkem / 12);
+  return {
+    prumerMes,
+    nm14: Math.round(nm14),
+    d15_30, d31_60, d61p,
+    mesNm: Math.round(nm14 + 16*d15_30), // ~měsíc náhrada
+    mes1: Math.round(nm14 + 16*d15_30),
+    mes2: Math.round(30*d31_60),
+    mes3: Math.round(Math.min(305,30)*d61p),
+    redDvz,
+    dvzDenni: Math.round(dvz * 100) / 100,
+    hruba,
+  };
+}
+
+function vdovskyDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, isOSVC, maDetiNeboZav, rokZacatku){
+  const inv3 = odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, 'III', isOSVC, rokZacatku);
+  const procVymZemr = Math.max(inv3.procVym, 0);
+  // 50 % procentní výměry zemřelého, s minimem 2 450 Kč (MPSV vyhláška 2026)
+  const procVymVdov = Math.max(Math.round(procVymZemr * CSSZ.vdovskaPctVymery), CSSZ.vdovskaMinProc);
+  const vdovDucBase = CSSZ.zakladVymera + procVymVdov;
+  return {
+    duchod: maDetiNeboZav ? vdovDucBase : Math.round(vdovDucBase / 12), // bez dětí = 1 rok → měsíční ekvivalent
+    trvaly: maDetiNeboZav,
+    procVymZemr,
+    procVymVdov,
+    zakladVymera: CSSZ.zakladVymera,
+  };
+}
+
+function sirotciDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, isOSVC, detiVeky, rokZacatku){
+  const inv3 = odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, 'III', isOSVC, rokZacatku);
+  const procVymZemr = Math.max(inv3.procVym, 0);
+  // § 33: 40 % procentní výměry zemřelého, min. 1 960 Kč
+  const sirotciProcVym = Math.max(procVymZemr * CSSZ.sirotciPctVymery, CSSZ.sirotciMinProc);
+  let naDite = Math.round(CSSZ.zakladVymera + sirotciProcVym);
+  // Reforma 2026 (§ 107): dorovnání na 14 % průměrné mzdy = 6 860 Kč
+  const dorovnano = naDite < CSSZ.sirotciMinCelkem;
+  if(dorovnano) naDite = CSSZ.sirotciMinCelkem;
+  return {
+    naDite,
+    celkem: naDite * detiVeky.length,
+    pocet: detiVeky.length,
+    procVymZemr,
+    sirotciProcVym: Math.round(sirotciProcVym),
+    dorovnano,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// STAROBNÍ DŮCHOD — projekce do budoucna
+// ═══════════════════════════════════════════════════════════
+function starobniDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, isOSVC, rokZacatku){
+  // Důchodový věk osoby
+  const ducVekMes = duchodovyVekMesicu(rokNarozeni, pohlavi, pocetVychDeti);
+  const ducVekRoku = Math.floor(ducVekMes / 12);
+  const ducVekMesicu = ducVekMes % 12;
+  const rokPriznani = rokNarozeni + ducVekRoku + (ducVekMesicu > 0 ? 1 : 0);
+  
+  // Aktuální hrubá mzda
+  let hrubaMes;
+  if(isOSVC){
+    let zaklad = prijemCisty * 1.7;
+    for(let i=0;i<20;i++){
+      const vz = zaklad * 0.50;
+      const sp = vz * 0.292, zp = vz * 0.135;
+      const dan = Math.max((zaklad - sp - zp) * 0.15 - 30840, 0);
+      const diff = prijemCisty - (zaklad - sp - zp - dan);
+      if(Math.abs(diff) < 100) break;
+      zaklad += diff * 0.8;
+    }
+    hrubaMes = zaklad * 0.50;
+  } else {
+    hrubaMes = cistyNaHruby(prijemCisty);
+  }
+  
+  // OVZ: za celou kariéru až do roku před přiznáním (předpokládáme stejnou mzdovou úroveň
+  // do budoucna a stejné valorizační koeficienty pro budoucí roky, tj. budoucí příjem se
+  // dnes ohodnotí 1.0× — to je standardní předpoklad pro odhad)
+  const vek = 2026 - rokNarozeni;
+  const rokPojisteni = rokZacatku || (2026 - Math.max(vek - 18, 1));
+  const prvniRok = Math.max(rokPojisteni, 1986);
+  const posledniRok = Math.min(rokPriznani - 1, 2099);
+  
+  let sumValVZ = 0;
+  let pocetDni = 0;
+  for(let rok = prvniRok; rok <= posledniRok; rok++){
+    const koef = VALORIZACE_2026[rok] || 1.0; // budoucí roky: 1.0
+    const odhadHrubaRok = hrubaMes * 12 / koef;
+    sumValVZ += odhadHrubaRok * koef;
+    pocetDni += 365;
+  }
+  const ovzMes = pocetDni > 0 ? Math.round(sumValVZ / pocetDni * 30.4167) : 0;
+  
+  // Redukce: zápočet do 1. RH se každoročně snižuje (reforma 2026)
+  const zap1 = zapocetRh1(rokPriznani);
+  let redOVZ;
+  if(ovzMes <= CSSZ.rh1)      redOVZ = ovzMes * zap1;
+  else if(ovzMes <= CSSZ.rh2) redOVZ = CSSZ.rh1 * zap1 + (ovzMes - CSSZ.rh1) * 0.26;
+  else                        redOVZ = CSSZ.rh1 * zap1 + (CSSZ.rh2 - CSSZ.rh1) * 0.26;
+  redOVZ = Math.ceil(redOVZ);
+  
+  // Celková doba pojištění (do důchodového věku)
+  const celkLet = posledniRok - prvniRok + 1;
+  
+  // Sazba procentní výměry (klesá z 1,5 % na 1,45 %)
+  const sazba = sazbaProcentniVymery(rokPriznani);
+  const procVym = Math.round(redOVZ * celkLet * sazba);
+  
+  // Výchovné: 500 Kč za každé vychované dítě (od 2026, dříve 503 Kč v 2025)
+  const vychovne = pocetVychDeti * 500;
+  
+  // Základní výměra + procentní + výchovné
+  let duchod = CSSZ.zakladVymera + procVym + vychovne;
+  
+  // Garantované minimum: 20 % průměrné mzdy = 9 800 Kč (reforma 2026)
+  // (V budoucích letech poroste podle průměrné mzdy — pro odhad používáme 9 800 Kč)
+  const minDuchod = 9800;
+  const dorovnano = duchod < minDuchod;
+  if(dorovnano) duchod = minDuchod;
+  
+  // Roky do důchodu
+  const letDoDuchodu = rokPriznani - 2026;
+  
+  return {
+    duchod,
+    procVym,
+    vychovne,
+    zakladVymera: CSSZ.zakladVymera,
+    redOVZ,
+    ovzMes,
+    celkLet,
+    sazba,
+    zap1,
+    ducVekRoku, ducVekMesicu,
+    rokPriznani,
+    letDoDuchodu,
+    dorovnano,
+    minDuchod,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// FORMÁTOVÁNÍ
+// ═══════════════════════════════════════════════════════════
+const fKc = v => Math.round(v).toLocaleString('cs-CZ') + ' Kč';
+const fKp = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
+
+// ═══════════════════════════════════════════════════════════
+// RENDER VSTUPNÍCH POLÍ
+// ═══════════════════════════════════════════════════════════
+function renderFields(containerId, key, manzelMode){
+  const el = document.getElementById(containerId);
+  const s = state[key];
+  el.innerHTML = `
+    <div class="field">
+      <div class="field-label">
+        <span>Čistý příjem</span>
+        <strong>${fKc(s.prijem)}/měs</strong>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" min="10000" max="200000" step="1000" value="${s.prijem}"
+          oninput="state['${key}'].prijem=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+        <input type="number" class="num-input" value="${s.prijem}" min="10000" max="200000" step="1000"
+          oninput="state['${key}'].prijem=+this.value||50000;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">
+        <span>Rok narození</span>
+        <strong>${s.rokNarozeni} (${2026 - s.rokNarozeni} let)</strong>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" min="1963" max="2006" step="1" value="${s.rokNarozeni}"
+          oninput="state['${key}'].rokNarozeni=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+        <input type="number" class="num-input" value="${s.rokNarozeni}" min="1963" max="2006" step="1"
+          oninput="state['${key}'].rokNarozeni=+this.value||1986;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="seg-label">Pohlaví</div>
+      <div class="seg">
+        <button class="seg-btn${s.pohlavi==='M'?' active':''}" onclick="state['${key}'].pohlavi='M';renderFields('${containerId}','${key}',${manzelMode});recalc()">Muž</button>
+        <button class="seg-btn${s.pohlavi==='F'?' active':''}" onclick="state['${key}'].pohlavi='F';renderFields('${containerId}','${key}',${manzelMode});recalc()">Žena</button>
+      </div>
+    </div>
+
+    ${s.pohlavi==='F' && s.rokNarozeni<=1971 ? `
+    <div class="field">
+      <div class="field-label">
+        <span>Vychované děti (pro důchodový věk)</span>
+        <strong>${s.pocetVychDeti}</strong>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" min="0" max="5" step="1" value="${s.pocetVychDeti}"
+          oninput="state['${key}'].pocetVychDeti=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+        <input type="number" class="num-input" value="${s.pocetVychDeti}" min="0" max="5" step="1"
+          oninput="state['${key}'].pocetVychDeti=+this.value||0;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+      </div>
+    </div>
+    ` : `
+    <div class="field">
+      <div class="field-label">
+        <span>Vychované děti (pro výchovné)</span>
+        <strong>${s.pocetVychDeti}</strong>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" min="0" max="10" step="1" value="${s.pocetVychDeti}"
+          oninput="state['${key}'].pocetVychDeti=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+        <input type="number" class="num-input" value="${s.pocetVychDeti}" min="0" max="10" step="1"
+          oninput="state['${key}'].pocetVychDeti=+this.value||0;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+      </div>
+    </div>
+    `}
+
+    <div class="field">
+      <div class="field-label">
+        <span>Rok začátku pojištění</span>
+        <strong>${s.rokZacatku}</strong>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" min="1986" max="2025" step="1" value="${s.rokZacatku}"
+          oninput="state['${key}'].rokZacatku=+this.value;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+        <input type="number" class="num-input" value="${s.rokZacatku}" min="1986" max="2025" step="1"
+          oninput="state['${key}'].rokZacatku=+this.value||2000;renderFields('${containerId}','${key}',${manzelMode});recalc()">
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="seg-label">Typ výdělku</div>
+      <div class="seg">
+        <button class="seg-btn${!s.isOSVC?' active':''}" onclick="state['${key}'].isOSVC=false;renderFields('${containerId}','${key}',${manzelMode});recalc()">Zaměstnanec</button>
+        <button class="seg-btn${s.isOSVC?' active':''}" onclick="state['${key}'].isOSVC=true;renderFields('${containerId}','${key}',${manzelMode});recalc()">OSVČ</button>
+      </div>
+    </div>
+
+    ${!manzelMode ? `
+    <div class="sdiv">Rodinná situace</div>
+    <div class="field">
+      <div class="seg-label">Rodinný stav</div>
+      <div class="seg">
+        <button class="seg-btn${s.maManzel?' active':''}" onclick="state['${key}'].maManzel=true;renderFields('${containerId}','${key}',${manzelMode});recalc()">Ženatý/vdaná</button>
+        <button class="seg-btn${!s.maManzel?' active':''}" onclick="state['${key}'].maManzel=false;renderFields('${containerId}','${key}',${manzelMode});recalc()">Svobodný/á</button>
+      </div>
+    </div>
+    <div class="sdiv">Děti</div>
+    ${renderChildrenFields(key, containerId, manzelMode)}
+    ` : ''}
+
+    ${s.isOSVC ? `<div class="note">⚠️ OSVČ: PN nenáleží (pokud nemáte dobrovolné nemocenské pojištění). Invalidní důchod se počítá z vyměřovacího základu.</div>` : ''}
+  `;
+}
+
+function renderChildrenFields(key, containerId, manzelMode){
+  const children = state[key].children || [];
+  let html = '';
+  children.forEach((age, i) => {
+    html += `<div class="children-row">
+      <span class="child-tag">Dítě ${i+1}</span>
+      <input type="number" class="child-age-inp" value="${age}" min="0" max="25" placeholder="věk"
+        oninput="state['${key}'].children[${i}]=+this.value||0;recalc()">
+      <span style="font-size:11px;color:var(--ink4)">let</span>
+      <button class="rem-child-btn" onclick="state['${key}'].children.splice(${i},1);renderFields('${containerId}','${key}',${manzelMode});recalc()">✕</button>
+    </div>`;
+  });
+  html += `<div class="children-controls">
+    <button class="add-child-btn" onclick="state['${key}'].children.push(5);renderFields('${containerId}','${key}',${manzelMode});recalc()">+ Přidat dítě</button>
+  </div>`;
+  return html;
+}
+
+function renderSharedChildren(){
+  const el = document.getElementById('children-shared-wrap');
+  const children = state.sharedChildren;
+  let html = '';
+  children.forEach((age, i) => {
+    html += `<div class="children-row">
+      <span class="child-tag">Dítě ${i+1}</span>
+      <input type="number" class="child-age-inp" value="${age}" min="0" max="25" placeholder="věk"
+        oninput="state.sharedChildren[${i}]=+this.value||0;recalc()">
+      <span style="font-size:11px;color:var(--ink4)">let</span>
+      <button class="rem-child-btn" onclick="state.sharedChildren.splice(${i},1);renderSharedChildren();recalc()">✕</button>
+    </div>`;
+  });
+  html += `<div class="children-controls">
+    <button class="add-child-btn" onclick="state.sharedChildren.push(5);renderSharedChildren();recalc()">+ Přidat dítě</button>
+  </div>`;
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER VÝSLEDKŮ
+// ═══════════════════════════════════════════════════════════
+function renderResults(containerId, s, maManzel, children){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+
+  // Výpočty
+  const invI  = odhadInvDuc(s.prijem, s.rokNarozeni, s.pohlavi, s.pocetVychDeti, 'I',  s.isOSVC, s.rokZacatku);
+  const invII = odhadInvDuc(s.prijem, s.rokNarozeni, s.pohlavi, s.pocetVychDeti, 'II', s.isOSVC, s.rokZacatku);
+  const invIII= odhadInvDuc(s.prijem, s.rokNarozeni, s.pohlavi, s.pocetVychDeti, 'III',s.isOSVC, s.rokZacatku);
+  const pn    = s.isOSVC ? null : vypocetPN(s.prijem);
+  const vdov  = maManzel ? vdovskyDuc(s.prijem, s.rokNarozeni, s.pohlavi, s.pocetVychDeti, s.isOSVC, children.length > 0, s.rokZacatku) : null;
+  const sirot = children.length > 0 ? sirotciDuc(s.prijem, s.rokNarozeni, s.pohlavi, s.pocetVychDeti, s.isOSVC, children, s.rokZacatku) : null;
+  const starob = starobniDuc(s.prijem, s.rokNarozeni, s.pohlavi, s.pocetVychDeti, s.isOSVC, s.rokZacatku);
+
+  // Pct příjmu
+  const pctI   = Math.round(invI.duchod  / s.prijem * 100);
+  const pctII  = Math.round(invII.duchod / s.prijem * 100);
+  const pctIII = Math.round(invIII.duchod/ s.prijem * 100);
+  const pctStar= Math.round(starob.duchod/ s.prijem * 100);
+
+  el.innerHTML = `
+
+    <!-- STAROBNÍ DŮCHOD (projekce) -->
+    <div class="res-section">
+      <div class="res-section-hdr">
+        <span class="res-section-icon">👴</span>
+        <span class="res-section-title">Starobní důchod (projekce)</span>
+        <span class="res-section-total">${fKc(starob.duchod)}/měs</span>
+      </div>
+      <div class="res-rows">
+        <div class="res-row">
+          <span class="res-row-label">Důchodový věk</span>
+          <span class="res-row-val">${starob.ducVekRoku} let${starob.ducVekMesicu ? ' '+starob.ducVekMesicu+' měs.' : ''}</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">Rok přiznání důchodu</span>
+          <span class="res-row-val blue">${starob.rokPriznani} (za ${starob.letDoDuchodu} let)</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">Odhadovaná výše <span style="font-size:10px;color:var(--ink4)">(${pctStar} % příjmu)</span></span>
+          <span class="res-row-val ${pctStar>=70?'green':pctStar>=50?'':' red'}">${fKc(starob.duchod)}/měs</span>
+        </div>
+        ${starob.dorovnano ? `<div class="res-row"><span class="res-row-label" style="color:var(--green)">Dorovnáno na garantované minimum</span><span class="res-row-val green">${fKc(starob.minDuchod)}</span></div>` : ''}
+      </div>
+      <div class="res-breakdown">
+        <div class="res-breakdown-title">Výpočet (předpoklad stejného příjmu po celou kariéru)</div>
+        <div class="breakdown-steps">
+          <div class="bs"><span>OVZ — průměr valorizovaných příjmů (${starob.celkLet} let kariéry)</span><span>${fKc(starob.ovzMes)}/měs</span></div>
+          <div class="bs"><span>Redukovaný OVZ (zápočet do RH1: ${(starob.zap1*100).toFixed(0)} %)</span><span>${fKc(starob.redOVZ)}</span></div>
+          <div class="bs"><span>Procentní výměra (${(starob.sazba*100).toFixed(3)} % × ${starob.celkLet} let)</span><span>${fKc(starob.procVym)}</span></div>
+          ${starob.vychovne > 0 ? `<div class="bs"><span>+ Výchovné (${s.pocetVychDeti} × 500 Kč)</span><span>${fKc(starob.vychovne)}</span></div>` : ''}
+          <div class="bs"><span>+ Základní výměra</span><span>${fKc(starob.zakladVymera)}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVALIDNÍ DŮCHOD -->
+    <div class="res-section">
+      <div class="res-section-hdr">
+        <span class="res-section-icon">🦽</span>
+        <span class="res-section-title">Invalidní důchod</span>
+        <span class="badge badge-gold">odhad</span>
+      </div>
+      <div class="res-rows">
+        <div class="res-row">
+          <span class="res-row-label">I. stupeň <span style="font-size:10px;color:var(--ink4)">(${pctI} % příjmu)</span></span>
+          <span class="res-row-val ${pctI>=70?'green':pctI>=50?'':' red'}">${fKc(invI.duchod)}/měs</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">II. stupeň <span style="font-size:10px;color:var(--ink4)">(${pctII} % příjmu)</span></span>
+          <span class="res-row-val ${pctII>=70?'green':pctII>=50?'':' red'}">${fKc(invII.duchod)}/měs</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">III. stupeň <span style="font-size:10px;color:var(--ink4)">(${pctIII} % příjmu)</span></span>
+          <span class="res-row-val${pctIII>=70?' green':pctIII>=50?'':' red'}">${fKc(invIII.duchod)}/měs</span>
+        </div>
+      </div>
+      <div class="res-breakdown">
+        <div class="res-breakdown-title">Výpočtový základ (III. stupeň)</div>
+        <div class="breakdown-steps">
+          <div class="bs"><span>Rozhodné období</span><span>${invIII.rokZacatku} – 2025 (${invIII.odprac} let)</span></div>
+          <div class="bs"><span>OVZ — průměr valorizovaných příjmů</span><span>${fKc(invIII.ovzMes)}/měs</span></div>
+          <div class="bs"><span>Redukovaný OVZ (výpočtový základ)</span><span>${fKc(invIII.redOVZ)}</span></div>
+          <div class="bs"><span>Dopočtená doba (do 65 let)</span><span>+ ${invIII.dopoctena} let → celkem ${invIII.celkDoba} let</span></div>
+          <div class="bs"><span>Procentní výměra III. st. (1,495 % × ${invIII.celkDoba} let)</span><span>${fKc(invIII.procVym)}</span></div>
+          <div class="bs"><span>+ Základní výměra</span><span>${fKc(invIII.zakladVymera)}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PN -->
+    ${s.isOSVC ? `
+    <div class="res-section">
+      <div class="res-section-hdr">
+        <span class="res-section-icon">🏥</span>
+        <span class="res-section-title">Pracovní neschopnost</span>
+      </div>
+      <div class="res-rows">
+        <div class="res-row">
+          <span class="res-row-label">Nárok na nemocenskou</span>
+          <span class="res-row-val red">0 Kč — OSVČ bez dobr. nem. poj.</span>
+        </div>
+      </div>
+    </div>
+    ` : `
+    <div class="res-section">
+      <div class="res-section-hdr">
+        <span class="res-section-icon">🏥</span>
+        <span class="res-section-title">Pracovní neschopnost</span>
+        <span class="res-section-total">${fKc(pn.prumerMes)}/měs</span>
+      </div>
+      <div class="pn-grid">
+        <div class="pn-cell">
+          <div class="pn-cell-label">Dny 1–14</div>
+          <div class="pn-cell-val">${fKc(Math.round(pn.nm14/14))}</div>
+          <div class="pn-cell-sub">/ den · náhrada mzdy</div>
+        </div>
+        <div class="pn-cell">
+          <div class="pn-cell-label">Dny 15–60</div>
+          <div class="pn-cell-val">${fKc(pn.d15_30)}–${fKc(pn.d31_60)}</div>
+          <div class="pn-cell-sub">/ den · 60–66 %</div>
+        </div>
+        <div class="pn-cell">
+          <div class="pn-cell-label">Od dne 61</div>
+          <div class="pn-cell-val">${fKc(pn.d61p)}</div>
+          <div class="pn-cell-sub">/ den · 72 %</div>
+        </div>
+      </div>
+      <div class="res-breakdown">
+        <div class="res-breakdown-title">Průměr za 12 měsíců PN</div>
+        <div class="breakdown-steps">
+          <div class="bs"><span>Hrubá mzda (odhad)</span><span>${fKc(pn.hruba)}</span></div>
+          <div class="bs"><span>Denní vyměřovací základ</span><span>${pn.dvzDenni.toFixed(2)} Kč</span></div>
+          <div class="bs"><span>Redukovaný DVZ</span><span>${fKc(pn.redDvz)}</span></div>
+          <div class="bs"><span>Průměrný měsíční příjem v PN</span><span style="color:var(--ink);font-weight:700">${fKc(pn.prumerMes)}</span></div>
+          <div class="bs"><span style="color:var(--red)">Výpadek vůči čistému příjmu</span><span style="color:var(--red)">${fKc(s.prijem - pn.prumerMes)}/měs</span></div>
+        </div>
+      </div>
+    </div>
+    `}
+
+    <!-- VDOVSKÝ/VDOVECKÝ -->
+    ${maManzel ? `
+    <div class="res-section">
+      <div class="res-section-hdr">
+        <span class="res-section-icon">💍</span>
+        <span class="res-section-title">Vdovský / vdovecký důchod</span>
+        <span class="res-section-total">${fKc(vdov.duchod)}/měs</span>
+      </div>
+      <div class="res-rows">
+        <div class="res-row">
+          <span class="res-row-label">Výše důchodu</span>
+          <span class="res-row-val">${fKc(vdov.duchod)}/měs</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">Trvání</span>
+          <span class="res-row-val ${vdov.trvaly ? 'green' : ''}">${vdov.trvaly ? 'Trvalý (má závislé osoby)' : 'Dočasný — 1 rok'}</span>
+        </div>
+      </div>
+      <div class="res-breakdown">
+        <div class="res-breakdown-title">Výpočet</div>
+        <div class="breakdown-steps">
+          <div class="bs"><span>Procentní výměra zemřelého (III. st.)</span><span>${fKc(vdov.procVymZemr)}</span></div>
+          <div class="bs"><span>50 % procentní výměry (min. ${fKc(2450)})</span><span>${fKc(vdov.procVymVdov)}</span></div>
+          <div class="bs"><span>+ Základní výměra</span><span>${fKc(vdov.zakladVymera)}</span></div>
+        </div>
+      </div>
+    </div>
+    ` : `
+    <div class="res-section" style="opacity:.5">
+      <div class="res-section-hdr">
+        <span class="res-section-icon">💍</span>
+        <span class="res-section-title">Vdovský důchod</span>
+        <span style="font-size:11px;color:var(--ink4)">Nevzniká — svobodný/á</span>
+      </div>
+    </div>
+    `}
+
+    <!-- SIROTČÍ -->
+    ${sirot ? `
+    <div class="res-section">
+      <div class="res-section-hdr">
+        <span class="res-section-icon">👶</span>
+        <span class="res-section-title">Sirotčí důchod</span>
+        <span class="res-section-total">${fKc(sirot.celkem)}/měs</span>
+      </div>
+      <div class="res-rows">
+        <div class="res-row">
+          <span class="res-row-label">Na jedno dítě</span>
+          <span class="res-row-val">${fKc(sirot.naDite)}/měs</span>
+        </div>
+        <div class="res-row">
+          <span class="res-row-label">Celkem (${sirot.pocet} ${sirot.pocet===1?'dítě':sirot.pocet<5?'děti':'dětí'})</span>
+          <span class="res-row-val blue">${fKc(sirot.celkem)}/měs</span>
+        </div>
+      </div>
+      <div class="res-breakdown">
+        <div class="res-breakdown-title">Výpočet (§ 33, § 107 zák. o důch. poj.)</div>
+        <div class="breakdown-steps">
+          <div class="bs"><span>Procentní výměra zemřelého (III. st.)</span><span>${fKc(sirot.procVymZemr)}</span></div>
+          <div class="bs"><span>40 % procentní výměry (min. ${fKc(CSSZ.sirotciMinProc)})</span><span>${fKc(sirot.sirotciProcVym)}</span></div>
+          <div class="bs"><span>+ Základní výměra</span><span>${fKc(CSSZ.zakladVymera)}</span></div>
+          ${sirot.dorovnano ? `<div class="bs"><span style="color:var(--green)">Dorovnáno na min. dle reformy 2026 (14 % prům. mzdy)</span><span style="color:var(--green)">${fKc(CSSZ.sirotciMinCelkem)}</span></div>` : ''}
+        </div>
+      </div>
+    </div>
+    ` : `
+    <div class="res-section" style="opacity:.5">
+      <div class="res-section-hdr">
+        <span class="res-section-icon">👶</span>
+        <span class="res-section-title">Sirotčí důchod</span>
+        <span style="font-size:11px;color:var(--ink4)">Žádné děti</span>
+      </div>
+    </div>
+    `}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECALC
+// ═══════════════════════════════════════════════════════════
+function recalc(){
+  if(mode === 'single'){
+    const s = state[1];
+    renderResults('results-1', s, s.maManzel, s.children);
+  } else {
+    const ch = state.sharedChildren;
+    renderResults('results-m1', state.m1, true, ch);
+    renderResults('results-m2', state.m2, true, ch);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODE TOGGLE
+// ═══════════════════════════════════════════════════════════
+function setMode(m){
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('mode-single').classList.toggle('hidden', m !== 'single');
+  document.getElementById('mode-manzele').classList.toggle('hidden', m !== 'manzele');
+  recalc();
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+// Nastav defaultní rok začátku pojištění (cca 18 let po narození)
+function defaultRokZacatku(s){
+  return Math.max(s.rokNarozeni + 18, 1986);
+}
+state[1].rokZacatku = state[1].rokZacatku || defaultRokZacatku(state[1]);
+state.m1.rokZacatku = state.m1.rokZacatku || defaultRokZacatku(state.m1);
+state.m2.rokZacatku = state.m2.rokZacatku || defaultRokZacatku(state.m2);
+renderFields('fields-1', 1, false);
+renderFields('fields-m1', 'm1', true);
+renderFields('fields-m2', 'm2', true);
+renderSharedChildren();
+recalc();
+</script>
+</body>
+</html>
