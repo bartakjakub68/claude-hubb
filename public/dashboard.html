@@ -70,26 +70,31 @@
   </div>
 </header>
 
-<div class="modal" id="modal-change-pwd" style="display:none;">
-  <div class="modal__backdrop" data-close-pwd-modal></div>
-  <div class="modal__panel">
-    <h2>Změna hesla</h2>
-    <div class="form-row">
-      <label>Stávající heslo</label>
-      <input type="password" id="pwd-old" autocomplete="current-password">
+<!-- ── Modal: Změna vlastního hesla ─────────────────── -->
+<div class="modal-overlay" id="modal-change-pwd">
+  <div class="modal">
+    <div class="modal__header">
+      <span class="modal__title">Změna hesla</span>
+      <button class="modal__close" type="button" onclick="closeModal('modal-change-pwd')">&times;</button>
     </div>
-    <div class="form-row">
-      <label>Nové heslo (min. 6 znaků)</label>
-      <input type="password" id="pwd-new" autocomplete="new-password">
+    <div class="modal__body">
+      <div class="field">
+        <label>Stávající heslo</label>
+        <input type="password" id="pwd-old" autocomplete="current-password" placeholder="Vaše současné heslo">
+      </div>
+      <div class="field">
+        <label>Nové heslo (min. 6 znaků)</label>
+        <input type="password" id="pwd-new" autocomplete="new-password" placeholder="Nové heslo">
+      </div>
+      <div class="field">
+        <label>Potvrzení nového hesla</label>
+        <input type="password" id="pwd-new2" autocomplete="new-password" placeholder="Zopakujte nové heslo">
+      </div>
+      <div id="pwd-msg" style="min-height:20px; margin-top:8px; font-size:0.875rem;"></div>
     </div>
-    <div class="form-row">
-      <label>Potvrzení nového hesla</label>
-      <input type="password" id="pwd-new2" autocomplete="new-password">
-    </div>
-    <div id="pwd-msg" style="min-height:20px; margin:8px 0; font-size:14px;"></div>
-    <div class="modal__actions">
-      <button class="btn-secondary" type="button" data-close-pwd-modal>Zrušit</button>
-      <button class="btn-primary" id="pwd-save" type="button">Uložit</button>
+    <div class="modal__footer">
+      <button class="btn btn-outline" type="button" onclick="closeModal('modal-change-pwd')">Zrušit</button>
+      <button class="btn btn-primary" id="pwd-save" type="button">Uložit</button>
     </div>
   </div>
 </div>
@@ -544,24 +549,20 @@ document.getElementById('page-sub').textContent  = roleLabels[role] || role;
 
 // ── Změna vlastního hesla ────────────────────────────────────────────────────
 (function setupPasswordChange(){
-  const modal = document.getElementById('modal-change-pwd');
   const oldI  = document.getElementById('pwd-old');
   const newI  = document.getElementById('pwd-new');
   const new2I = document.getElementById('pwd-new2');
   const msg   = document.getElementById('pwd-msg');
   const btnSave = document.getElementById('pwd-save');
 
-  function open(){
+  document.getElementById('btn-change-pwd').addEventListener('click', () => {
     oldI.value = newI.value = new2I.value = '';
     msg.textContent = '';
     msg.style.color = '';
-    modal.style.display = 'flex';
+    btnSave.disabled = false;
+    openModal('modal-change-pwd');
     setTimeout(() => oldI.focus(), 50);
-  }
-  function close(){ modal.style.display = 'none'; }
-
-  document.getElementById('btn-change-pwd').addEventListener('click', open);
-  modal.querySelectorAll('[data-close-pwd-modal]').forEach(el => el.addEventListener('click', close));
+  });
 
   btnSave.addEventListener('click', async () => {
     const stare = oldI.value;
