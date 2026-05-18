@@ -271,18 +271,17 @@ const CSSZ = {
   danHranice23: 146901,
 };
 
-// Valorizační koeficienty ČSSZ 2026 (zdroj: nařízení vlády, naseduchody.cz)
-// Každý rok hrubé mzdy se násobí příslušným koeficientem → přepočet na dnešní hodnotu
-const VALORIZACE_2026 = {
-  1986:16.5205,1987:16.1820,1988:15.8212,1989:15.4469,1990:14.9016,
-  1991:12.9132,1992:10.5441,1993:8.4179, 1994:7.1007, 1995:5.9920,
-  1996:5.0606, 1997:4.5780, 1998:4.1877, 1999:3.8694, 2000:3.6299,
-  2001:3.3447, 2002:3.1167, 2003:2.9201, 2004:2.7383, 2005:2.6034,
-  2006:2.4422, 2007:2.2747, 2008:2.1034, 2009:2.0326, 2010:1.9965,
-  2011:1.9514, 2012:1.8904, 2013:1.8904, 2014:1.8578, 2015:1.8032,
-  2016:1.7333, 2017:1.6238, 2018:1.5062, 2019:1.4085, 2020:1.3557,
-  2021:1.2787, 2022:1.2049, 2023:1.1210, 2024:1.0581, 2025:1.0000,
-};
+// Modelový reálný růst mzdy klienta nad inflací (% p.a.).
+// Použito k odhadu historických a budoucích mezd z dnešní mzdy:
+//   mzda_v_roce_X (v dnešní hodnotě) = dnešní_mzda / (1 + růst)^(2026 − rok)
+// Tj. v minulosti byly mzdy nižší (kariérní růst), v budoucnu vyšší.
+// Default 1,5 % odpovídá průměrné kariéře v ČR; pro plochou kariéru → 0.
+const MZDOVY_RUST_REAL = 0.015;
+
+// Pozn.: dřívější tabulka VALORIZACE_2026 (koeficienty ČSSZ) byla nahrazena
+// modelem reálného růstu. Důvod: uživatel nezadává historické mzdy, takže
+// valorizace se v iteraci vyrušila — koef × (mzda/koef) = mzda. Modelový růst
+// dává realistický OVZ nižší než dnešní mzda (kariéra rostla).
 
 // ═══════════════════════════════════════════════════════════
 // DŮCHODOVÝ VĚK — příloha zák. 155/1995 Sb. (po reformě 2024)
@@ -412,7 +411,9 @@ function odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, i
     hrubaMes = cistyNaHruby(prijemCisty);
   }
 
-  // ─── OVZ: průměr valorizovaných příjmů za celou kariéru ───
+  // ─── OVZ: průměr příjmů za celou kariéru v dnešní hodnotě ───
+  // Model: klient si zachovává reálnou mzdu s růstem MZDOVY_RUST_REAL p.a.
+  // Historická mzda (v dnešní hodnotě) = dnešní / (1+růst)^let_zpět.
   const vek = 2026 - rokNarozeni;
   const rokPojisteni = rokZacatku || (2026 - Math.max(vek - 18, 1));
   const prvniRok = Math.max(rokPojisteni, 1986);
@@ -422,12 +423,12 @@ function odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, i
   let pocetDni = 0;
 
   for(let rok = prvniRok; rok <= posledniRok; rok++){
-    const koef = VALORIZACE_2026[rok] || 1.0;
-    const odhadHrubaRok = hrubaMes * 12 / koef;
-    sumValVZ += odhadHrubaRok * koef;
+    const letOdDneska = 2026 - rok; // > 0 pro minulé roky
+    const realnaMzdaVRoceX = hrubaMes / Math.pow(1 + MZDOVY_RUST_REAL, letOdDneska);
+    sumValVZ += realnaMzdaVRoceX * 12;
     pocetDni += 365;
   }
-  const ovzMes = Math.round(sumValVZ / pocetDni * 30.4167);
+  const ovzMes = pocetDni > 0 ? Math.round(sumValVZ / pocetDni * 30.4167) : 0;
 
   // ─── Redukce OVZ → výpočtový základ ───
   // Invalidní důchod počítáme hypoteticky "kdyby vznikla teď" (rok 2026),
@@ -588,20 +589,23 @@ function starobniDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, isOSVC, r
     hrubaMes = cistyNaHruby(prijemCisty);
   }
   
-  // OVZ: za celou kariéru až do roku před přiznáním (předpokládáme stejnou mzdovou úroveň
-  // do budoucna a stejné valorizační koeficienty pro budoucí roky, tj. budoucí příjem se
-  // dnes ohodnotí 1.0× — to je standardní předpoklad pro odhad)
+  // OVZ: průměr příjmů za celou kariéru v dnešní hodnotě.
+  // Model reálného růstu mzdy MZDOVY_RUST_REAL (default 1,5 %): minulé roky
+  // měly nižší mzdu (kariéra rostla), budoucí roky budou vyšší (kariéra
+  // poroste dál). Mzda_v_roce_X (v dnešní hodnotě) = dnešní / (1+růst)^(2026−X).
+  // Pro mladé klienty s dlouhou budoucností bude OVZ > dnešní mzda;
+  // pro klienty blízko důchodu (kariéra dominuje minulost) OVZ < dnešní mzda.
   const vek = 2026 - rokNarozeni;
   const rokPojisteni = rokZacatku || (2026 - Math.max(vek - 18, 1));
   const prvniRok = Math.max(rokPojisteni, 1986);
   const posledniRok = Math.min(rokPriznani - 1, 2099);
-  
+
   let sumValVZ = 0;
   let pocetDni = 0;
   for(let rok = prvniRok; rok <= posledniRok; rok++){
-    const koef = VALORIZACE_2026[rok] || 1.0; // budoucí roky: 1.0
-    const odhadHrubaRok = hrubaMes * 12 / koef;
-    sumValVZ += odhadHrubaRok * koef;
+    const letOdDneska = 2026 - rok; // > 0 minulost, < 0 budoucnost
+    const realnaMzdaVRoceX = hrubaMes / Math.pow(1 + MZDOVY_RUST_REAL, letOdDneska);
+    sumValVZ += realnaMzdaVRoceX * 12;
     pocetDni += 365;
   }
   const ovzMes = pocetDni > 0 ? Math.round(sumValVZ / pocetDni * 30.4167) : 0;
