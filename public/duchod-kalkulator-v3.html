@@ -396,12 +396,13 @@ function odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, i
   // ─── Aktuální hrubá mzda / VZ ───
   let hrubaMes;
   if(isOSVC){
-    // OSVČ: VZ = 50 % daňového základu — iterace z čistého
+    // OSVČ: VZ = 50 % daňového základu — iterace z čistého (vše měsíční).
+    // Sleva na poplatníka = 2 570 Kč/měs (= 30 840 Kč/rok / 12), stejná jako pro zaměstnance.
     let zaklad = prijemCisty * 1.7;
     for(let i=0;i<20;i++){
       const vz = zaklad * 0.50;
       const sp = vz * 0.292, zp = vz * 0.135;
-      const dan = Math.max((zaklad - sp - zp) * 0.15 - 30840, 0);
+      const dan = Math.max((zaklad - sp - zp) * 0.15 - 2570, 0);
       const diff = prijemCisty - (zaklad - sp - zp - dan);
       if(Math.abs(diff) < 100) break;
       zaklad += diff * 0.8;
@@ -429,11 +430,16 @@ function odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, i
   const ovzMes = Math.round(sumValVZ / pocetDni * 30.4167);
 
   // ─── Redukce OVZ → výpočtový základ ───
-  const {rh1, rh2, rh1zapocet, zakladVymera} = CSSZ;
+  // Invalidní důchod počítáme hypoteticky "kdyby vznikla teď" (rok 2026),
+  // takže používáme zápočet a sazbu pro aktuální rok přiznání.
+  // Funkce zapocetRh1/sazbaProcentniVymery v dalších letech klesají dle reformy 2024.
+  const rokPriznaniInv = 2026;
+  const {rh1, rh2, zakladVymera} = CSSZ;
+  const zap1 = zapocetRh1(rokPriznaniInv);
   let redOVZ;
-  if(ovzMes <= rh1)      redOVZ = ovzMes * rh1zapocet;
-  else if(ovzMes <= rh2) redOVZ = rh1 * rh1zapocet + (ovzMes - rh1) * 0.26;
-  else                   redOVZ = rh1 * rh1zapocet + (rh2 - rh1) * 0.26;
+  if(ovzMes <= rh1)      redOVZ = ovzMes * zap1;
+  else if(ovzMes <= rh2) redOVZ = rh1 * zap1 + (ovzMes - rh1) * 0.26;
+  else                   redOVZ = rh1 * zap1 + (rh2 - rh1) * 0.26;
   redOVZ = Math.ceil(redOVZ); // § 16 zák. 155/1995: zaokrouhlení nahoru
 
   // ─── Doba pojištění: odpracovaná + dopočtená do skutečného důchodového věku ───
@@ -443,7 +449,8 @@ function odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, i
   const celk = odprac + dopoctena;
 
   // ─── Procentní výměra ───
-  const plnaIII = redOVZ * celk * 0.01495;
+  const sazba = sazbaProcentniVymery(rokPriznaniInv);
+  const plnaIII = redOVZ * celk * sazba;
   const mult = {I:1/3, II:1/2, III:1.0}[stupen];
   const minProcVym = {I:1634, II:2450, III:4900}[stupen];
   const procVym = Math.max(Math.round(plnaIII * mult), minProcVym);
@@ -564,13 +571,14 @@ function starobniDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, isOSVC, r
   const rokPriznani = rokNarozeni + ducVekRoku + (ducVekMesicu > 0 ? 1 : 0);
   
   // Aktuální hrubá mzda
+  // Sleva na poplatníka v měsíční iteraci = 2 570 Kč (= 30 840 / 12). OSVČ má stejnou jako zaměstnanec.
   let hrubaMes;
   if(isOSVC){
     let zaklad = prijemCisty * 1.7;
     for(let i=0;i<20;i++){
       const vz = zaklad * 0.50;
       const sp = vz * 0.292, zp = vz * 0.135;
-      const dan = Math.max((zaklad - sp - zp) * 0.15 - 30840, 0);
+      const dan = Math.max((zaklad - sp - zp) * 0.15 - 2570, 0);
       const diff = prijemCisty - (zaklad - sp - zp - dan);
       if(Math.abs(diff) < 100) break;
       zaklad += diff * 0.8;
