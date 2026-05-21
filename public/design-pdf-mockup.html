@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF mockup — Analýza pojistné ochrany</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #FAFAF8;
+  --paper-soft: #F4F3EE;
+  --ink: #0F1419;
+  --ink-soft: #2A2F36;
+  --gray-700: #3A3F45;
+  --gray-500: #6B7178;
+  --gray-300: #B8BCC1;
+  --gray-200: #DCDEDF;
+  --gray-100: #EBEDEC;
+  --emerald: #047857;
+  --emerald-bright: #10B981;
+  --emerald-soft: #ECFDF5;
+  --emerald-line: rgba(4,120,87,0.2);
+  --amber: #D97706;
+  --amber-soft: #FEF3C7;
+  --rose: #BE185D;
+  --rose-soft: #FCE7F3;
+  --indigo: #4F46E5;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #1a1a1a;
+  color: var(--ink);
+  padding: 30px 20px;
+  min-height: 100vh;
+}
+
+/* ── Toolbar ──────────────────────────────────────────── */
+.toolbar {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  background: rgba(20,20,20,0.95);
+  border: 1px solid #333;
+  border-radius: 999px;
+  padding: 10px 20px;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.toolbar button {
+  background: #10B981;
+  color: #0a0a0a;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.toolbar button:hover { background: #047857; color: #fff; }
+
+/* ── A4 page ──────────────────────────────────────────── */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  background: var(--paper);
+  margin: 24px auto;
+  padding: 18mm 16mm;
+  position: relative;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  page-break-after: always;
+  font-size: 11pt;
+  color: var(--ink);
+}
+.page::after {
+  content: 'Stránka ' counter(page) ' / 3';
+  position: absolute;
+  bottom: 8mm;
+  right: 16mm;
+  font-size: 9pt;
+  color: var(--gray-500);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Header (each page) ───────────────────────────────── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 24px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 13pt;
+  font-family: 'Inter Tight', sans-serif;
+  letter-spacing: -0.01em;
+}
+.brand .mark {
+  width: 24px; height: 24px;
+  background: var(--emerald-bright);
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+}
+.brand .mark::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 0; right: 0; height: 50%;
+  background: var(--emerald);
+}
+.doc-meta {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9pt;
+  color: var(--gray-500);
+  letter-spacing: 0.02em;
+}
+.doc-meta strong { color: var(--ink); display: block; font-size: 10pt; }
+
+/* ── Cover (page 1) ───────────────────────────────────── */
+.cover-hero {
+  margin-bottom: 36px;
+}
+.cover-hero .breadcrumb {
+  font-size: 9pt;
+  color: var(--gray-500);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+.cover-hero h1 {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 32pt;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 10px;
+}
+.cover-hero h1 .accent { color: var(--emerald); }
+.cover-hero .lead {
+  font-size: 11pt;
+  color: var(--gray-700);
+  max-width: 130mm;
+  line-height: 1.5;
+}
+
+.client-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.client-card .field {
+  border-left: 2px solid var(--emerald);
+  padding-left: 12px;
+}
+.client-card .label {
+  font-size: 8.5pt;
+  color: var(--gray-500);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+.client-card .value {
+  font-size: 11pt;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Section heading ──────────────────────────────────── */
+.section-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 22px 0 14px;
+}
+.section-h h2 {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 14pt;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.section-h .kicker {
+  font-size: 8.5pt;
+  color: var(--gray-500);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Recommendation tiles ─────────────────────────────── */
+.recos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.reco {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.reco.priority::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; bottom: 0; width: 3px;
+  background: var(--emerald);
+}
+.reco.priority.warn::before { background: var(--amber); }
+.reco-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 10px;
+}
+.reco-title {
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reco-title .ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  background: var(--emerald-soft);
+  color: var(--emerald);
+  border-radius: 5px;
+  font-weight: 700;
+  font-size: 9.5pt;
+  font-family: 'JetBrains Mono', monospace;
+}
+.reco-status {
+  font-size: 8.5pt;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.status-ok { background: var(--emerald-soft); color: var(--emerald); }
+.status-warn { background: var(--amber-soft); color: var(--amber); }
+.status-miss { background: var(--rose-soft); color: var(--rose); }
+.reco-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18pt;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.reco-amount .unit { font-size: 11pt; color: var(--gray-500); font-weight: 500; }
+.reco-note {
+  font-size: 8.5pt;
+  color: var(--gray-500);
+  line-height: 1.45;
+}
+
+/* ── Detailní tabulka (page 2) ────────────────────────── */
+.detail-table {
+  width: 100%;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+}
+.detail-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 8.5pt;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  background: var(--paper-soft);
+  border-bottom: 1px solid var(--gray-200);
+  font-family: 'JetBrains Mono', monospace;
+}
+.detail-table td {
+  padding: 12px 14px;
+  font-size: 9.5pt;
+  border-bottom: 1px solid var(--gray-100);
+  vertical-align: top;
+}
+.detail-table tr:last-child td { border-bottom: none; }
+.detail-table td.num { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.detail-table td.cat { font-weight: 600; }
+.detail-table td.note { color: var(--gray-700); font-size: 9pt; line-height: 1.5; }
+
+/* ── State info (page 3) ──────────────────────────────── */
+.state-info {
+  background: var(--paper-soft);
+  border-left: 3px solid var(--emerald);
+  padding: 16px 18px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+.state-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--gray-200);
+  font-size: 10pt;
+}
+.state-info-row:last-child { border-bottom: none; }
+.state-info-row .label { color: var(--gray-700); }
+.state-info-row .val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+/* ── Recommendation box ───────────────────────────────── */
+.rec-box {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 8px;
+  padding: 22px 24px;
+  margin-top: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.rec-box::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 60mm; height: 100%;
+  background: linear-gradient(135deg, transparent 30%, rgba(16,185,129,0.15) 100%);
+  pointer-events: none;
+}
+.rec-box h3 {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 14pt;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.rec-box .lead {
+  font-size: 9.5pt;
+  color: rgba(250,250,248,0.7);
+  margin-bottom: 14px;
+  max-width: 130mm;
+  line-height: 1.5;
+}
+.rec-box .total {
+  display: flex; align-items: flex-end; gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(250,250,248,0.15);
+}
+.rec-box .total .lbl {
+  font-size: 8.5pt;
+  color: rgba(250,250,248,0.5);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.rec-box .total .big {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26pt;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--emerald-bright);
+}
+.rec-box .total .sep { color: rgba(250,250,248,0.3); font-size: 18pt; margin: 0 4px; }
+.rec-box .total .ok {
+  font-size: 9pt;
+  color: rgba(250,250,248,0.6);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.4;
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+.advisor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gray-200);
+}
+.advisor-left { font-size: 9pt; color: var(--gray-700); }
+.advisor-left strong { color: var(--ink); display: block; font-size: 10pt; }
+.advisor-right { font-family: 'JetBrains Mono', monospace; font-size: 8.5pt; color: var(--gray-500); text-align: right; }
+
+.disclaimer {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: var(--paper-soft);
+  border-radius: 6px;
+  font-size: 8pt;
+  color: var(--gray-500);
+  line-height: 1.5;
+}
+
+/* ── Risk meter ──────────────────────────────────────── */
+.risk-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 14px 0;
+}
+.risk-cell {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.risk-cell .label {
+  font-size: 8.5pt;
+  color: var(--gray-500);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.risk-bar {
+  height: 6px;
+  background: var(--gray-100);
+  border-radius: 3px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.risk-bar .fill { height: 100%; background: var(--emerald); }
+.risk-bar .fill.warn { background: var(--amber); }
+.risk-bar .fill.miss { background: var(--rose); }
+.risk-cell .pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11pt;
+  font-weight: 700;
+}
+
+/* ── Print styles ─────────────────────────────────────── */
+@media print {
+  body { background: white; padding: 0; }
+  .toolbar { display: none; }
+  .page { margin: 0; box-shadow: none; }
+  @page { size: A4; margin: 0; }
+}
+
+@media (max-width: 900px) {
+  .page { width: 100%; padding: 24px 18px; min-height: 0; }
+  .client-card { grid-template-columns: repeat(2, 1fr); }
+  .recos { grid-template-columns: 1fr; }
+  .risk-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span>📄 PDF mockup — Analýza pojistné ochrany</span>
+  <button onclick="window.print()">Vytisknout do PDF (Ctrl+P)</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 1: COVER + SUMMARY
+     ════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="brand">
+      <span class="mark"></span>
+      Portál finančního poradce
+    </div>
+    <div class="doc-meta">
+      <strong>POJ-2026/05/0214</strong>
+      21. května 2026
+    </div>
+  </div>
+
+  <div class="cover-hero">
+    <div class="breadcrumb">ANALÝZA / POJISTNÁ OCHRANA / KLIENT #0214</div>
+    <h1>Pojistná <span class="accent">ochrana</span> — analýza potřeb a doporučení</h1>
+    <p class="lead">Tato analýza vychází z aktuální životní situace klienta, jeho příjmů, závazků a rodinné odpovědnosti. Doporučení respektují metodiku ČSSZ 2026 a aktuální zákonný rámec.</p>
+  </div>
+
+  <div class="client-card">
+    <div class="field">
+      <div class="label">Klient</div>
+      <div class="value">Jan Novák</div>
+    </div>
+    <div class="field">
+      <div class="label">Věk · Pohlaví</div>
+      <div class="value">37 let · muž</div>
+    </div>
+    <div class="field">
+      <div class="label">Typ práce</div>
+      <div class="value">OSVČ — IT</div>
+    </div>
+    <div class="field">
+      <div class="label">Rodinný stav</div>
+      <div class="value">Ženatý, 2 děti</div>
+    </div>
+    <div class="field">
+      <div class="label">Měsíční příjem</div>
+      <div class="value">85 000 Kč čistého</div>
+    </div>
+    <div class="field">
+      <div class="label">Výdaje domácnosti</div>
+      <div class="value">62 000 Kč/měs</div>
+    </div>
+    <div class="field">
+      <div class="label">Hypotéka</div>
+      <div class="value">3 200 000 Kč</div>
+    </div>
+    <div class="field">
+      <div class="label">Splátka úvěrů</div>
+      <div class="value">18 500 Kč/měs</div>
+    </div>
+  </div>
+
+  <div class="section-h">
+    <h2>Souhrn doporučených pojistných částek</h2>
+    <span class="kicker">8 položek</span>
+  </div>
+
+  <div class="recos">
+    <div class="reco priority">
+      <div class="reco-head">
+        <div class="reco-title"><span class="ico">†</span>Smrt</div>
+        <span class="reco-status status-miss">CHYBÍ</span>
+      </div>
+      <div class="reco-amount">3 500 000 <span class="unit">Kč</span></div>
+      <div class="reco-note">Klesající PČ na dobu hypotéky + zabezpečení rodiny na 5 let.</div>
+    </div>
+
+    <div class="reco priority">
+      <div class="reco-head">
+        <div class="reco-title"><span class="ico">III</span>Invalidita III. st.</div>
+        <span class="reco-status status-warn">NEDOSTATEČNÉ</span>
+      </div>
+      <div class="reco-amount">6 000 000 <span class="unit">Kč</span></div>
+      <div class="reco-note">Konstantní PČ. Stávající: 1,5 M Kč. Doplnit: 4,5 M Kč.</div>
+    </div>
+
+    <div class="reco priority">
+      <div class="reco-head">
+        <div class="reco-title"><span class="ico">II</span>Invalidita II. st.</div>
+        <span class="reco-status status-miss">CHYBÍ</span>
+      </div>
+      <div class="reco-amount">4 000 000 <span class="unit">Kč</span></div>
+      <div class="reco-note">Konstantní PČ. Klesající příjem o ~50 %.</div>
+    </div>
+
+    <div class="reco">
+      <div class="reco-head">
+        <div class="reco-title"><span class="ico">I</span>Invalidita I. st.</div>
+        <span class="reco-status status-ok">POKRYTO</span>
+      </div>
+      <div class="reco-amount">2 500 000 <span class="unit">Kč</span></div>
+      <div class="reco-note">Lze řešit z rezervy. Doplňkové krytí volitelné.</div>
+    </div>
+
+    <div class="reco priority warn">
+      <div class="reco-head">
+        <div class="reco-title"><span class="ico">ZO</span>Závažné onemocnění</div>
+        <span class="reco-status status-warn">DOPLNIT</span>
+      </div>
+      <div class="reco-amount">500 000 <span class="unit">Kč</span></div>
+      <div class="reco-note">Pevná částka pro pokrytí nadstandardní léčby.</div>
+    </div>
+
+    <div class="reco priority">
+      <div class="reco-head">
+        <div class="reco-title"><span class="ico">PN</span>Pracovní neschopnost</div>
+        <span class="reco-status status-miss">CHYBÍ</span>
+      </div>
+      <div class="reco-amount">800 <span class="unit">Kč/den</span></div>
+      <div class="reco-note">OSVČ bez nemocenské. Karence 15. den.</div>
+    </div>
+
+    <div class="reco">
+      <div class="reco-head">
+        <div class="reco-title"><span class="ico">TN</span>Trvalé následky úrazu</div>
+        <span class="reco-status status-ok">POKRYTO</span>
+      </div>
+      <div class="reco-amount">1 500 000 <span class="unit">Kč</span></div>
+      <div class="reco-note">Progresivní plnění od 10 % TNÚ.</div>
+    </div>
+
+    <div class="reco">
+      <div class="reco-head">
+        <div class="reco-title"><span class="ico">‡</span>Pohřebné</div>
+        <span class="reco-status status-ok">POKRYTO</span>
+      </div>
+      <div class="reco-amount">100 000 <span class="unit">Kč</span></div>
+      <div class="reco-note">Standardní balíček.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 2: DETAILNÍ ROZPIS
+     ════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="brand">
+      <span class="mark"></span>
+      Portál finančního poradce
+    </div>
+    <div class="doc-meta">
+      <strong>POJ-2026/05/0214</strong>
+      Detailní rozpis · str. 2
+    </div>
+  </div>
+
+  <div class="section-h">
+    <h2>Detailní rozpis a metodika výpočtu</h2>
+    <span class="kicker">CSSZ 2026</span>
+  </div>
+
+  <table class="detail-table">
+    <thead>
+      <tr>
+        <th style="width:24%">Kategorie</th>
+        <th class="num" style="width:18%">Doporučeno</th>
+        <th class="num" style="width:18%">Stávající</th>
+        <th class="num" style="width:14%">Mezera</th>
+        <th>Výpočet</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cat">Smrt</td>
+        <td class="num">3 500 000 Kč</td>
+        <td class="num" style="color:var(--rose)">0 Kč</td>
+        <td class="num" style="color:var(--rose)">3 500 000</td>
+        <td class="note">Hypotéka 3,2 M + 5 let výdajů 62k × 12 = 3,72 M, zaokrouhleno + odečet státní pomoci 220k.</td>
+      </tr>
+      <tr>
+        <td class="cat">Invalidita III. stupeň</td>
+        <td class="num">6 000 000 Kč</td>
+        <td class="num">1 500 000 Kč</td>
+        <td class="num" style="color:var(--amber)">4 500 000</td>
+        <td class="note">Cíl = příjem 85k − inv. důchod ČSSZ ~15,1k = mezera 70k/měs × 12 × afInv(11.7) = ~9,8 M, ořezáno INV_CAP 10× ročního příjmu.</td>
+      </tr>
+      <tr>
+        <td class="cat">Invalidita II. stupeň</td>
+        <td class="num">4 000 000 Kč</td>
+        <td class="num" style="color:var(--rose)">0 Kč</td>
+        <td class="num" style="color:var(--rose)">4 000 000</td>
+        <td class="note">Cíl 75 % příjmu × 12 × afInv. Retention pro IT obor 25 % (mírnější dopad než manuální profese).</td>
+      </tr>
+      <tr>
+        <td class="cat">Invalidita I. stupeň</td>
+        <td class="num">2 500 000 Kč</td>
+        <td class="num">2 500 000 Kč</td>
+        <td class="num" style="color:var(--emerald)">0</td>
+        <td class="note">Retention 55 %. Pokryto rezervou + stávající smlouvou.</td>
+      </tr>
+      <tr>
+        <td class="cat">Závažné onemocnění</td>
+        <td class="num">500 000 Kč</td>
+        <td class="num">200 000 Kč</td>
+        <td class="num" style="color:var(--amber)">300 000</td>
+        <td class="note">Fixní částka pro pokrytí nadstandardní péče (protonová léčba, zahraniční léčba, výpadek příjmu během rekonvalescence).</td>
+      </tr>
+      <tr>
+        <td class="cat">Pracovní neschopnost</td>
+        <td class="num">800 Kč/den</td>
+        <td class="num" style="color:var(--rose)">0</td>
+        <td class="num" style="color:var(--rose)">800/den</td>
+        <td class="note">OSVČ bez dobrovolné nemocenské. (čistý 85k − výdaje 62k) / 30 dní = 766 Kč/den, zaokrouhleno nahoru.</td>
+      </tr>
+      <tr>
+        <td class="cat">Trvalé následky úrazu</td>
+        <td class="num">1 500 000 Kč</td>
+        <td class="num">1 500 000 Kč</td>
+        <td class="num" style="color:var(--emerald)">0</td>
+        <td class="note">Progresivní plnění od 10 % TNÚ. Aktuální smlouva pokrývá.</td>
+      </tr>
+      <tr>
+        <td class="cat">Pohřebné</td>
+        <td class="num">100 000 Kč</td>
+        <td class="num">100 000 Kč</td>
+        <td class="num" style="color:var(--emerald)">0</td>
+        <td class="note">Standardní krytí pohřbu + jednorázové výdaje.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-h">
+    <h2>Hypotéka a úvěry — balíček</h2>
+    <span class="kicker">Zajištění</span>
+  </div>
+
+  <table class="detail-table">
+    <thead>
+      <tr>
+        <th>Závazek</th>
+        <th class="num">Zůstatek</th>
+        <th class="num">Měsíční splátka</th>
+        <th>Stav zajištění</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cat">Hypotéka</td>
+        <td class="num">3 200 000 Kč</td>
+        <td class="num">17 800 Kč</td>
+        <td class="note"><span class="reco-status status-miss" style="font-size:8pt">NEZAJIŠTĚNO</span> — zahrnuto do PČ smrti 3,5 M Kč</td>
+      </tr>
+      <tr>
+        <td class="cat">Spotřebitelský úvěr</td>
+        <td class="num">120 000 Kč</td>
+        <td class="num">700 Kč</td>
+        <td class="note"><span class="reco-status status-ok" style="font-size:8pt">ZAJIŠTĚNO</span> — pojištění schopnosti splácet</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 3: STÁTNÍ DÁVKY + DOPORUČENÍ
+     ════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="brand">
+      <span class="mark"></span>
+      Portál finančního poradce
+    </div>
+    <div class="doc-meta">
+      <strong>POJ-2026/05/0214</strong>
+      Stát a doporučení · str. 3
+    </div>
+  </div>
+
+  <div class="section-h">
+    <h2>Co vám pokryje stát</h2>
+    <span class="kicker">ČSSZ · MPSV 2026</span>
+  </div>
+
+  <p style="font-size:10pt;color:var(--gray-700);line-height:1.5;margin-bottom:12px">
+    Následující dávky stát vyplácí klientovi nebo pozůstalým podle aktuální metodiky ČSSZ pro rok 2026. Jsou již odečteny od doporučených pojistných částek.
+  </p>
+
+  <div class="state-info">
+    <div style="font-weight:700;font-size:10pt;margin-bottom:8px;color:var(--ink)">Při invaliditě III. stupně</div>
+    <div class="state-info-row"><span class="label">Invalidní důchod (procentní výměra)</span><span class="val">10 200 Kč/měs</span></div>
+    <div class="state-info-row"><span class="label">+ Základní výměra</span><span class="val">4 900 Kč/měs</span></div>
+    <div class="state-info-row"><span class="label">Celkem / měsíc</span><span class="val" style="color:var(--emerald)">15 100 Kč/měs</span></div>
+    <div class="state-info-row"><span class="label">Ročně</span><span class="val">181 200 Kč/rok</span></div>
+  </div>
+
+  <div class="state-info">
+    <div style="font-weight:700;font-size:10pt;margin-bottom:8px;color:var(--ink)">Při úmrtí klienta (vdovský + sirotčí)</div>
+    <div class="state-info-row"><span class="label">Vdovský důchod (50 % + zákl. výměra)</span><span class="val">7 350 Kč/měs</span></div>
+    <div class="state-info-row"><span class="label">Sirotčí důchod (na dítě)</span><span class="val">6 860 Kč/měs</span></div>
+    <div class="state-info-row"><span class="label">Sirotčí pro 2 děti</span><span class="val">13 720 Kč/měs</span></div>
+    <div class="state-info-row"><span class="label">Celkem rodina</span><span class="val" style="color:var(--emerald)">21 070 Kč/měs</span></div>
+  </div>
+
+  <div class="section-h">
+    <h2>Risk profil klienta</h2>
+    <span class="kicker">Pokrytí jednotlivých rizik</span>
+  </div>
+
+  <div class="risk-grid">
+    <div class="risk-cell">
+      <div class="label">Smrt</div>
+      <div class="risk-bar"><div class="fill miss" style="width:5%"></div></div>
+      <div class="pct" style="color:var(--rose)">5 %</div>
+    </div>
+    <div class="risk-cell">
+      <div class="label">Invalidita</div>
+      <div class="risk-bar"><div class="fill warn" style="width:32%"></div></div>
+      <div class="pct" style="color:var(--amber)">32 %</div>
+    </div>
+    <div class="risk-cell">
+      <div class="label">PN / nemoc</div>
+      <div class="risk-bar"><div class="fill miss" style="width:0%"></div></div>
+      <div class="pct" style="color:var(--rose)">0 %</div>
+    </div>
+    <div class="risk-cell">
+      <div class="label">Úraz</div>
+      <div class="risk-bar"><div class="fill" style="width:88%"></div></div>
+      <div class="pct" style="color:var(--emerald)">88 %</div>
+    </div>
+  </div>
+
+  <div class="rec-box">
+    <h3>Doporučujeme přidat 3 produkty</h3>
+    <p class="lead">
+      Hlavní rizika klienta — úmrtí, invalidita II/III a pracovní neschopnost OSVČ —
+      jsou aktuálně z velké části nepokryta. Doporučená skladba níže pokryje 92 % rizikové expozice
+      za odhadované měsíční pojistné <strong style="color:var(--emerald-bright)">2 850 Kč</strong>.
+    </p>
+    <div class="total">
+      <div>
+        <div class="lbl">Celková doporučená PČ</div>
+        <div class="big">8 800 000 Kč</div>
+      </div>
+      <div class="sep">·</div>
+      <div>
+        <div class="lbl">Měsíční pojistné (odhad)</div>
+        <div class="big" style="font-size:18pt">2 850 Kč</div>
+      </div>
+      <div style="margin-left:auto" class="ok">
+        Pokrytí stoupne<br/>z 28 % na <span style="color:var(--emerald-bright);font-weight:600">92 %</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="advisor">
+    <div class="advisor-left">
+      <strong>Jakub Barták</strong>
+      Finanční poradce · IČ 12345678<br/>
+      jakub.bartak@portal.cz · +420 777 123 456
+    </div>
+    <div class="advisor-right">
+      Dokument: POJ-2026/05/0214<br/>
+      Vystaveno: 21. 5. 2026 14:23<br/>
+      Platnost analýzy: 6 měsíců
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    Tato analýza je nezávazným doporučením vycházejícím ze zadaných dat klienta a aktuální metodiky ČSSZ pro rok 2026.
+    Konečné pojistné částky a podmínky se mohou lišit dle vyhodnocení zdravotního stavu, výsledku underwritingu a aktuální nabídky pojišťoven.
+    Doporučujeme analyzu aktualizovat při změně životní situace (rodina, příjem, závazky, profese) nebo při významné zákonné novele.
+  </div>
+</div>
+
+</body>
+</html>
