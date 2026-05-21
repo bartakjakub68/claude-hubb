@@ -6,123 +6,194 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Přihlášení — Portál</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --red:#CC0000; --red-dark:#A80000; --red-light:#F9EDED;
-  --black:#1A1A1A; --white:#FFFFFF; --paper:#F6F5F3;
-  --border:#E2E0DC; --muted:#8F8C87; --text:#1A1A1A;
+  --paper:#FAFAF8; --paper-soft:#F4F3EE;
+  --ink:#0F1419; --ink-soft:#2A2F36;
+  --emerald:#047857; --emerald-bright:#10B981; --emerald-soft:#ECFDF5;
+  --rose:#BE185D; --rose-soft:#FCE7F3;
+  --border:#DCDEDF; --muted:#6B7178; --text:#0F1419;
+  --font-sans:'Inter',system-ui,sans-serif;
+  --font-display:'Inter Tight','Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
 }
 body {
-  font-family:'IBM Plex Sans',sans-serif;
-  min-height:100vh; display:grid; grid-template-columns:1fr 1fr;
+  font-family:var(--font-sans);
+  min-height:100vh; display:grid; grid-template-columns:1.1fr 1fr;
   -webkit-font-smoothing:antialiased;
+  font-feature-settings:'cv11','ss01';
+  color:var(--text);
 }
+
+/* ── Left panel (dark, brand) ── */
 .panel-left {
-  background:var(--black); display:flex; flex-direction:column;
-  justify-content:space-between; padding:48px; position:relative; overflow:hidden;
+  background:var(--ink); display:flex; flex-direction:column;
+  justify-content:space-between; padding:52px 48px; position:relative; overflow:hidden;
 }
 .panel-left::after {
-  content:''; position:absolute; bottom:-80px; right:-80px;
-  width:320px; height:320px; border:60px solid rgba(204,0,0,0.1);
+  content:''; position:absolute; bottom:-120px; right:-120px;
+  width:380px; height:380px; border:60px solid rgba(16,185,129,0.08);
   border-radius:50%; pointer-events:none;
 }
 .panel-left::before {
-  content:''; position:absolute; top:-40px; left:-40px;
-  width:200px; height:200px; border:40px solid rgba(255,255,255,0.03);
+  content:''; position:absolute; top:-60px; left:-60px;
+  width:240px; height:240px; border:40px solid rgba(255,255,255,0.025);
   border-radius:50%; pointer-events:none;
 }
-.left-logo { display:flex; align-items:center; gap:12px; }
-.logo-mark { width:36px; height:36px; position:relative; }
+.left-logo { display:flex; align-items:center; gap:10px; position:relative; z-index:1; }
+.logo-mark {
+  width:32px; height:32px; position:relative; border-radius:7px; overflow:hidden;
+}
 .logo-mark::before {
   content:''; position:absolute; inset:0;
-  background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.18);
+  background:var(--emerald-bright);
 }
 .logo-mark::after {
   content:''; position:absolute; left:0; right:0; bottom:0;
-  height:45%; background:var(--red);
+  height:50%; background:var(--emerald);
 }
 .logo-name {
-  font-family:'IBM Plex Mono',monospace; font-size:0.875rem;
-  font-weight:500; color:var(--white); letter-spacing:0.16em; text-transform:uppercase;
+  font-family:var(--font-display); font-size:1.05rem;
+  font-weight:700; color:#FAFAF8; letter-spacing:-0.01em;
 }
-.left-content { flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px 0; }
+
+.left-live {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 10px; background:rgba(16,185,129,0.12);
+  border:1px solid rgba(16,185,129,0.2);
+  border-radius:999px; font-size:0.7rem; font-weight:500;
+  color:var(--emerald-bright); font-family:var(--font-mono);
+  margin-top:14px; align-self:flex-start;
+}
+.left-live::before {
+  content:''; width:6px; height:6px; background:var(--emerald-bright);
+  border-radius:50%; animation:pulse 2s infinite;
+}
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+.left-content { flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px 0; position:relative; z-index:1; }
 .left-headline {
-  font-size:2.25rem; font-weight:600; color:var(--white);
-  line-height:1.2; letter-spacing:-0.02em; margin-bottom:16px;
+  font-family:var(--font-display);
+  font-size:2.6rem; font-weight:700; color:#FAFAF8;
+  line-height:1.05; letter-spacing:-0.03em; margin-bottom:18px;
 }
-.left-headline span { color:var(--red); }
-.left-sub { font-size:0.9375rem; color:rgba(255,255,255,0.4); font-weight:300; line-height:1.6; max-width:300px; }
-.left-features { margin-top:36px; display:flex; flex-direction:column; gap:14px; }
-.feature { display:flex; align-items:center; gap:12px; font-size:0.8125rem; color:rgba(255,255,255,0.45); font-weight:300; }
-.feature::before { content:''; width:20px; height:1px; background:var(--red); flex-shrink:0; }
-.left-footer { font-size:0.68rem; color:rgba(255,255,255,0.18); letter-spacing:0.06em; font-family:'IBM Plex Mono',monospace; }
+.left-headline span { color:var(--emerald-bright); }
+.left-sub {
+  font-size:0.98rem; color:rgba(250,250,248,0.55);
+  font-weight:400; line-height:1.6; max-width:340px;
+}
+
+.left-features { margin-top:40px; display:flex; flex-direction:column; gap:14px; }
+.feature {
+  display:flex; align-items:center; gap:14px; font-size:0.875rem;
+  color:rgba(250,250,248,0.7); font-weight:500;
+}
+.feature::before {
+  content:''; width:22px; height:1.5px; background:var(--emerald-bright);
+  flex-shrink:0;
+}
+
+.left-footer {
+  font-size:0.7rem; color:rgba(250,250,248,0.3);
+  letter-spacing:0.08em; font-family:var(--font-mono);
+  position:relative; z-index:1;
+}
+
+/* ── Right panel (paper, form) ── */
 .panel-right {
-  background:var(--red); display:flex; align-items:center;
-  justify-content:center; padding:48px; position:relative;
+  background:var(--paper); display:flex; align-items:center;
+  justify-content:center; padding:48px;
 }
-.panel-right::before {
-  content:''; position:absolute; top:0; left:0;
-  width:1px; height:100%; background:rgba(0,0,0,0.12);
-}
+
 .login-card {
-  background:var(--white); padding:44px 40px; width:100%; max-width:400px;
-  box-shadow:0 24px 64px rgba(0,0,0,0.22); animation:cardIn 0.38s ease both;
+  background:#fff; padding:44px 40px; width:100%; max-width:420px;
+  border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 12px 40px rgba(15,20,25,0.08), 0 2px 8px rgba(15,20,25,0.04);
+  animation:cardIn 0.4s ease both;
 }
 @keyframes cardIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-.card-title { font-size:1.375rem; font-weight:600; color:var(--text); letter-spacing:-0.01em; margin-bottom:4px; }
-.card-sub { font-size:0.8125rem; color:var(--muted); font-weight:300; margin-bottom:32px; }
-.field { margin-bottom:18px; }
+
+.card-title {
+  font-family:var(--font-display);
+  font-size:1.6rem; font-weight:700; color:var(--text);
+  letter-spacing:-0.025em; margin-bottom:6px;
+}
+.card-sub {
+  font-size:0.8625rem; color:var(--muted);
+  font-weight:400; margin-bottom:32px;
+}
+
+.field { margin-bottom:16px; }
 .field label {
-  display:block; font-size:0.68rem; font-weight:600;
-  text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:6px;
+  display:block; font-size:0.72rem; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.08em;
+  color:var(--muted); margin-bottom:7px;
+  font-family:var(--font-mono);
 }
 .field input {
   width:100%; padding:11px 14px; border:1px solid var(--border);
-  background:var(--paper); font-family:'IBM Plex Sans',sans-serif;
-  font-size:0.9rem; color:var(--text); outline:none;
-  transition:border-color 0.18s,box-shadow 0.18s,background 0.18s;
+  background:#fff; border-radius:6px;
+  font-family:var(--font-sans); font-size:0.9rem;
+  color:var(--text); outline:none;
+  transition:border-color 0.18s, box-shadow 0.18s;
 }
-.field input:focus { border-color:var(--black); background:var(--white); box-shadow:0 0 0 3px rgba(26,26,26,0.07); }
-.field input::placeholder { color:var(--muted); font-weight:300; }
+.field input:focus {
+  border-color:var(--emerald); background:#fff;
+  box-shadow:0 0 0 3px var(--emerald-soft);
+}
+.field input::placeholder { color:#B8BCC1; font-weight:400; }
+
 .alert-error {
-  background:var(--red-light); border-left:3px solid var(--red);
-  color:var(--red-dark); padding:10px 14px; font-size:0.8125rem;
-  margin-bottom:18px; display:none;
+  background:var(--rose-soft); border-left:3px solid var(--rose);
+  color:var(--rose); padding:10px 14px; font-size:0.8125rem;
+  margin-bottom:18px; display:none; border-radius:0 6px 6px 0;
 }
+
 .btn-login {
-  width:100%; padding:12px; background:var(--black); color:var(--white);
-  border:none; font-family:'IBM Plex Sans',sans-serif; font-size:0.875rem;
-  font-weight:600; cursor:pointer; transition:background 0.18s;
-  letter-spacing:0.03em; margin-top:8px; position:relative; overflow:hidden;
+  width:100%; padding:12px; background:var(--ink); color:#fff;
+  border:none; border-radius:6px;
+  font-family:var(--font-sans); font-size:0.9rem; font-weight:600;
+  cursor:pointer; transition:all 0.18s;
+  letter-spacing:-0.005em; margin-top:8px;
+  position:relative; overflow:hidden;
 }
 .btn-login::after {
   content:''; position:absolute; bottom:0; left:0;
-  width:0; height:2px; background:var(--red); transition:width 0.28s ease;
+  width:0; height:2px; background:var(--emerald-bright);
+  transition:width 0.3s ease;
 }
-.btn-login:hover { background:#000; }
+.btn-login:hover { background:var(--ink-soft); transform:translateY(-1px); box-shadow:0 4px 12px rgba(15,20,25,0.15); }
 .btn-login:hover::after { width:100%; }
-.btn-login:disabled { background:var(--muted); cursor:not-allowed; }
+.btn-login:disabled { background:var(--muted); cursor:not-allowed; transform:none; box-shadow:none; }
+
 .divider { height:1px; background:var(--border); margin:28px 0 20px; }
-.card-note { font-size:0.75rem; color:var(--muted); text-align:center; font-weight:300; line-height:1.6; }
+.card-note {
+  font-size:0.78rem; color:var(--muted); text-align:center;
+  font-weight:400; line-height:1.6;
+}
+
 @media(max-width:768px) {
   body { grid-template-columns:1fr; }
   .panel-left { display:none; }
-  .panel-right { background:var(--black); }
 }
 </style>
 </head>
 <body>
 
 <div class="panel-left">
-  <div class="left-logo">
-    <div class="logo-mark"></div>
-    <span class="logo-name">Portál</span>
+  <div>
+    <div class="left-logo">
+      <div class="logo-mark"></div>
+      <span class="logo-name">Portál</span>
+    </div>
+    <div class="left-live">LIVE · 2026</div>
   </div>
   <div class="left-content">
     <h1 class="left-headline">Interní<br><span>aplikační</span><br>portál</h1>
-    <p class="left-sub">Jednotné přihlášení do všech interních aplikací a nástrojů.</p>
+    <p class="left-sub">Jednotné přihlášení do všech interních aplikací a nástrojů finančních poradců.</p>
     <div class="left-features">
       <div class="feature">Správa uživatelů a rolí</div>
       <div class="feature">Centrální přidělování přístupů</div>
