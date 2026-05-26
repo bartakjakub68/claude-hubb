@@ -514,6 +514,46 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
             </optgroup>
           </select>
         </div>
+
+        <!-- Custom retention toggle -->
+        <div class="select-group" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
+            <input type="checkbox" id="retVlastniChk" onchange="onRetVlastniChange()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--gold)">
+            <span style="font-size:13px;font-weight:500">Zadávám vlastní % zachovaného příjmu</span>
+            <span class="tip-wrap"><span class="tip-ico">?</span><span class="tip-pop">Standardně používáme statistická data podle oboru profese (např. IT: I. st. 65 %, III. st. 5 %). Pokud chceš zadat vlastní hodnoty (např. dle individuální situace klienta), zaškrtni a vyplň I/II/III níže.</span></span>
+          </label>
+        </div>
+        <div id="retVlastniBlock" style="display:none;margin-top:10px;padding:14px;background:var(--cream);border:1px solid var(--border);border-radius:var(--rs)">
+          <div class="layout-3">
+            <div class="select-group">
+              <label>I. stupeň <span style="color:var(--ink3);font-weight:400">(35-49%)</span></label>
+              <div class="slider-wrap">
+                <input type="range" id="ret-I-sl" min="0" max="100" step="5" value="55" oninput="syncRetVlastni('I')" style="flex:1">
+                <input type="number" class="num-input sm" id="ret-I-ni" value="55" min="0" max="100" step="1" onchange="syncRetVlastniInput('I')" onkeydown="if(event.key==='Enter')this.blur()" style="width:60px">
+                <span id="ret-I-lbl" style="font-size:11px;color:var(--ink4);white-space:nowrap;min-width:24px">55 %</span>
+              </div>
+            </div>
+            <div class="select-group">
+              <label>II. stupeň <span style="color:var(--ink3);font-weight:400">(50-69%)</span></label>
+              <div class="slider-wrap">
+                <input type="range" id="ret-II-sl" min="0" max="100" step="5" value="25" oninput="syncRetVlastni('II')" style="flex:1">
+                <input type="number" class="num-input sm" id="ret-II-ni" value="25" min="0" max="100" step="1" onchange="syncRetVlastniInput('II')" onkeydown="if(event.key==='Enter')this.blur()" style="width:60px">
+                <span id="ret-II-lbl" style="font-size:11px;color:var(--ink4);white-space:nowrap;min-width:24px">25 %</span>
+              </div>
+            </div>
+            <div class="select-group">
+              <label>III. stupeň <span style="color:var(--ink3);font-weight:400">(70%+)</span></label>
+              <div class="slider-wrap">
+                <input type="range" id="ret-III-sl" min="0" max="100" step="5" value="5" oninput="syncRetVlastni('III')" style="flex:1">
+                <input type="number" class="num-input sm" id="ret-III-ni" value="5" min="0" max="100" step="1" onchange="syncRetVlastniInput('III')" onkeydown="if(event.key==='Enter')this.blur()" style="width:60px">
+                <span id="ret-III-lbl" style="font-size:11px;color:var(--ink4);white-space:nowrap;min-width:24px">5 %</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:11.5px;color:var(--ink3);line-height:1.5">
+            Procento příjmu, který klient zachová při daném stupni invalidity. Manuální profese mají defaultně stejné % jako kombinovaná práce, ale s capem na hrubý příjem ~3-30 tis. Kč/měs (po rekvalifikaci).
+          </div>
+        </div>
       </div>
 
       <!-- 2. Příjmy a výdaje -->
@@ -530,10 +570,24 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
           </div>
         </div>
         <div class="field">
+          <div class="field-label"><span>Z toho pasivní příjem <span class="tip-wrap"><span class="tip-ico">?</span><span class="tip-pop">Pravidelné příjmy, které pokračují i při invaliditě, smrti nebo PN — např. nájem z bytů, dividendy, autorská práva, renta. Zahrnujeme je do zachovaného příjmu klienta i pozůstalých.</span></span></span><strong id="prijem-pasivni-val">0 Kč</strong></div>
+          <div class="slider-wrap">
+            <input type="range" id="prijem-pasivni-sl" min="0" max="300000" step="2000" value="0" aria-label="Pasivní příjem klienta" oninput="sync('prijem-pasivni-sl','prijem-pasivni-ni','prijem-pasivni-val',1)">
+            <input type="text" class="num-input" id="prijem-pasivni-ni" value="0" onchange="syncI('prijem-pasivni-ni','prijem-pasivni-sl','prijem-pasivni-val',1)" onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+        </div>
+        <div class="field">
           <div class="field-label"><span>Výdaje domácnosti celkem / měsíc <span class="tip-wrap"><span class="tip-ico">?</span><span class="tip-pop">Všechny měsíční výdaje domácnosti vč. splátky hypotéky, pojistného, jídla, dopravy, školy dětí atd. Klíčový údaj — na něm závisí výše doporučených pojistných částek.</span></span></span><strong id="vydaje-val">0 Kč</strong></div>
           <div class="slider-wrap">
             <input type="range" id="vydaje-sl" min="0" max="200000" step="2000" value="0" aria-label="Výdaje domácnosti" oninput="sync('vydaje-sl','vydaje-ni','vydaje-val',1)">
             <input type="text" class="num-input" id="vydaje-ni" value="0" onchange="syncI('vydaje-ni','vydaje-sl','vydaje-val',1)" onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label"><span>Z toho mandatorní výdaje <span class="tip-wrap"><span class="tip-ico">?</span><span class="tip-pop">Výdaje, které jsou pevné a nezvyšují se při invaliditě — typicky nájem, SIPO, energie, pojištění. Variabilní část (potraviny, doprava, lifestyle) se při invaliditě navyšuje, mandatorní zůstává stejná.</span></span></span><strong id="vydaje-mand-val">0 Kč</strong></div>
+          <div class="slider-wrap">
+            <input type="range" id="vydaje-mand-sl" min="0" max="200000" step="1000" value="0" aria-label="Mandatorní výdaje" oninput="sync('vydaje-mand-sl','vydaje-mand-ni','vydaje-mand-val',1)">
+            <input type="text" class="num-input" id="vydaje-mand-ni" value="0" onchange="syncI('vydaje-mand-ni','vydaje-mand-sl','vydaje-mand-val',1)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="field">
@@ -1063,6 +1117,25 @@ function syncI(nid,sid,lid,isKc){
 }
 function syncY(sid,nid,lid){const v=+document.getElementById(sid).value;document.getElementById(nid).value=v;document.getElementById(lid).textContent=v+' '+rokFlexi(v);}
 function syncYI(nid,sid,lid){let v=parseInt(gs(nid))||1;const sl=document.getElementById(sid);v=Math.max(+sl.min,Math.min(+sl.max,v));sl.value=v;document.getElementById(nid).value=v;document.getElementById(lid).textContent=v+' '+rokFlexi(v);}
+
+// Toggle pro vlastní % zachovaného příjmu
+function onRetVlastniChange(){
+  const on = document.getElementById('retVlastniChk').checked;
+  document.getElementById('retVlastniBlock').style.display = on ? 'block' : 'none';
+}
+// Sync slider → input → label pro retention I/II/III
+function syncRetVlastni(st){
+  const v = +document.getElementById('ret-'+st+'-sl').value;
+  document.getElementById('ret-'+st+'-ni').value = v;
+  document.getElementById('ret-'+st+'-lbl').textContent = v + ' %';
+}
+function syncRetVlastniInput(st){
+  let v = parseInt(document.getElementById('ret-'+st+'-ni').value) || 0;
+  v = Math.max(0, Math.min(100, v));
+  document.getElementById('ret-'+st+'-ni').value = v;
+  document.getElementById('ret-'+st+'-sl').value = v;
+  document.getElementById('ret-'+st+'-lbl').textContent = v + ' %';
+}
 // Česká flexe: 1 rok, 2–4 roky, 5+ let
 function rokFlexi(n){return n===1?'rok':(n>=2&&n<=4)?'roky':'let';}
 
@@ -1466,13 +1539,18 @@ function pnDenniDavka(prijemCisty, vydaje, nemocenska, varianta){
   return Math.ceil(denDavka / 50) * 50; // zaokrouhlit na 50
 }
 
-// Zvýšené výdaje při invaliditě
-// I: +5%, II: +10%, III: +25%
-// Cap: pokud výdaje > 80 000, zvýšení = konstanta z 80 000
-function zvyseneVydaje(vydaje, stupen){
+// Zvýšené výdaje při invaliditě.
+// I: +5%, II: +10%, III: +25% — zvyšuje se pouze VARIABILNÍ část výdajů
+// (mandatorní výdaje jako nájem/SIPO/energie zůstávají stejné).
+// Cap 80 000 Kč se aplikuje na variabilní část.
+//   Příklad: výdaje 30k, mandatorní 20k, III. stupeň
+//     variabilní = 10k, zvýšení = min(10k, 80k) × 25% = 2,5k → celkové 32,5k
+//   (dříve bez mandatorních: 30k × 1,25 = 37,5k)
+function zvyseneVydaje(vydaje, stupen, mandatorni = 0){
   const pct = {I:0.05, II:0.10, III:0.25}[stupen];
   const cap = 80000;
-  const zvyseni = Math.min(vydaje, cap) * pct;
+  const variabilni = Math.max(vydaje - mandatorni, 0);
+  const zvyseni = Math.min(variabilni, cap) * pct;
   return vydaje + zvyseni;
 }
 
@@ -1543,6 +1621,11 @@ function portfolioVynos(vek){
 // INFLACE je definována výše v bloku CSSZ konstant
 
 function calculate(){
+  const _prijemTotal = gni('prijem-ni');
+  const _prijemPasivni = Math.min(gni('prijem-pasivni-ni'), _prijemTotal); // pasivní nemůže být víc než celkový
+  const _vydajeTotal = gni('vydaje-ni');
+  const _vydajeMand = Math.min(gni('vydaje-mand-ni'), _vydajeTotal); // mandatorní nemůže být víc než celkové
+  const _retVlastni = document.getElementById('retVlastniChk')?.checked || false;
   const D={
     vek:     +gs('vek'),
     rstav:   gs('rstav'),
@@ -1550,8 +1633,16 @@ function calculate(){
     dobrNem: gs('dobrNem')==='ano',
     obor:    gs('obor'),
     sport:   'A', // sport odstraněn z UI
-    prijem:  gni('prijem-ni'),
-    vydaje:  gni('vydaje-ni'),
+    prijem:  _prijemTotal,
+    prijemPasivni: _prijemPasivni,        // pasivní příjem zachován při invaliditě/smrti/PN
+    vydaje:  _vydajeTotal,
+    vydajeMandatorni: _vydajeMand,        // mandatorní výdaje se nezvyšují při invaliditě
+    retVlastni: _retVlastni,              // true = použít vlastní % místo profesního RETENTION
+    retCustom: {
+      I:   (+document.getElementById('ret-I-ni')?.value   || 55) / 100,
+      II:  (+document.getElementById('ret-II-ni')?.value  || 25) / 100,
+      III: (+document.getElementById('ret-III-ni')?.value || 5)  / 100,
+    },
     splatky: gni('spl-ni'),
     prijPart: hasPartner ? pN(document.getElementById('p2-prijem-ni').value) : gni('pp-ni'),
     hyp:     gni('hyp-ni'),
@@ -1693,7 +1784,10 @@ function runEngineForData(D, target){
   const isNezam  = D.tprace==='nezamestnany';
   const isMD     = D.tprace==='rodicovska';
   const maNem   = (!isOSVC && !isNezam && !isMD) || D.dobrNem;
-  const ret     = RETENTION[D.obor]||{I:.55,II:.25,III:.05};
+  // Retention — buď vlastní hodnoty z UI (toggle), nebo statistická data podle oboru
+  const ret = D.retVlastni
+    ? D.retCustom
+    : (RETENTION[D.obor] || {I:.55, II:.25, III:.05});
   const isManualni = ['remeslnik','stavba','ridic','hasic','vyska'].includes(D.obor);
   const rokiDD  = Math.max(65 - D.vek, 1);
   const pocetD  = D.children.length;
@@ -1779,11 +1873,16 @@ function runEngineForData(D, target){
     //        'z' = Základní (klient sníží výdaje o 25 %, pak podíl × koef zvýšení)
     const invDuc    = duc[stupen];
 
-    // Manuální profese: cap se aplikuje POUZE na zachovaný příjem
+    // Aktivní vs pasivní příjem:
+    //   D.prijem = celkový čistý měsíční příjem (zadán uživatelem)
+    //   D.prijemPasivni = pravidelné příjmy, které pokračují i při invaliditě
+    //                     (nájmy, dividendy, autorská práva, renta) → vždy zachovány
+    //   aktivniPrijem = z práce, klesá retention koeficientem dle stupně
+    const aktivniPrijem = Math.max(D.prijem - D.prijemPasivni, 0);
+    // Manuální profese: cap se aplikuje POUZE na zachovaný aktivní příjem
     // (předpoklad: po rekvalifikaci klient teoreticky nedosáhne na původní příjem)
-    // Cíl pojistky se ale počítá z PŮVODNÍHO příjmu — pojišťujeme reálnou potřebu klienta
-    const capPrijem = isManualni ? Math.min(D.prijem, MANUALNI_CAP[stupen]) : D.prijem;
-    const zachPrijem = capPrijem * ret[stupen];
+    const capAktivni = isManualni ? Math.min(aktivniPrijem, MANUALNI_CAP[stupen]) : aktivniPrijem;
+    const zachPrijem = capAktivni * ret[stupen] + D.prijemPasivni;
 
     // Podíl výdajů klienta dle poměru příjmů (1.0 pokud single)
     const podilK = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
@@ -1792,35 +1891,45 @@ function runEngineForData(D, target){
     //   I. stupeň: celé výdaje (včetně splátky hypotéky)
     //   II./III. stupeň: výdaje bez splátky (hypotéka jde do úvěrového balíčku)
     const vydBaseFull = stupen === 'I' ? D.vydaje : Math.max(D.vydaje - D.splatky, 0);
+    // Mandatorní část výdajů (nájem, SIPO, energie) — zachovat napříč stupni
+    // Pro stupeň I (kde báze obsahuje splátku) je mandatorní jak zadáno;
+    // pro II/III (kde báze = bez splátky) je mandatorní omezena na zbývající bázi.
+    const vydMandBase = Math.min(D.vydajeMandatorni, vydBaseFull);
 
     let cil;
     if(rezim === 'k'){
-      // KOMPLEXNÍ: cíl = PŮVODNÍ příjem + procento z výdajů (s capem 80k)
+      // KOMPLEXNÍ: cíl = PŮVODNÍ příjem + procento z VARIABILNÍ části výdajů (cap 80k)
       //   • příjem = vlastní původní příjem (BEZ capu manuální profese)
-      //   • příplatek = procento z výdajů (cap 80k):
-      //       I. stupeň: plné výdaje (klient ještě splácí hypotéku)
-      //       II./III. stupeň: výdaje BEZ splátky (hypo je krytá úvěrovým balíčkem)
+      //   • příplatek = procento z výdajů (cap 80k), mandatorní část se nezvyšuje
       const pctK = {I:0.05, II:0.10, III:0.25}[stupen];
-      const vydCap = Math.min(vydBaseFull, 80000);
+      const variabilni = Math.max(vydBaseFull - vydMandBase, 0);
+      const vydCap = Math.min(variabilni, 80000);
       const priplatekK = vydCap * pctK;
       cil = D.prijem + priplatekK;
     } else if(rezim === 's'){
-      // STANDARDNÍ: cíl = podíl × výdaje × koef zvýšení (aditivní s capem 80k)
-      //   I. st: podíl × (výdaje + min(výdaje, 80k) × 5%)
-      //   II. st: podíl × (výdaje_bez_splátky + min(výdaje_bez_splátky, 80k) × 10%)
-      //   III. st: podíl × (výdaje_bez_splátky + min(výdaje_bez_splátky, 80k) × 25%)
-      cil = podilK * zvyseneVydaje(vydBaseFull, stupen);
+      // STANDARDNÍ: cíl = podíl × výdaje × koef zvýšení (variabilní část, cap 80k)
+      cil = podilK * zvyseneVydaje(vydBaseFull, stupen, vydMandBase);
     } else { // 'z'
-      // ZÁKLADNÍ (v21.1): klient si sníží výdaje o 25 % → základ = 0,75 × výdaje
-      //   pak na to aplikujeme koeficient zvýšení (s capem 80k aplikovaným na sníženou bázi)
-      //   cíl = podíl × (0,75 × výdaje + min(0,75 × výdaje, 80k) × pct)
-      const vydBaseSnizene = vydBaseFull * 0.75;
-      cil = podilK * zvyseneVydaje(vydBaseSnizene, stupen);
+      // ZÁKLADNÍ (v21.1): klient si sníží VARIABILNÍ výdaje o 25 % → mandatorní zůstávají
+      //   sníženaBáze = mandatorní + (variabilní × 0,75)
+      //   pak zvýšení o pct, opět jen z variabilní složky
+      const variabilni = Math.max(vydBaseFull - vydMandBase, 0);
+      const vydBaseSnizene = vydMandBase + variabilni * 0.75;
+      const mandBaseSnizene = Math.min(vydMandBase, vydBaseSnizene);
+      cil = podilK * zvyseneVydaje(vydBaseSnizene, stupen, mandBaseSnizene);
     }
 
     // Partner do mezery NEVSTUPUJE — každý je pojištěn na svou potřebu
     const mezera = Math.max(cil - zachPrijem - invDuc, 0);
-    return {mezera, zachPrijem, invDuc, cil, prijemEfektivni: D.prijem, isManualni, priplatekK: rezim==='k' ? (Math.min(vydBaseFull, 80000) * {I:0.05,II:0.10,III:0.25}[stupen]) : 0};
+    const variabilniForReport = Math.max(vydBaseFull - vydMandBase, 0);
+    return {
+      mezera, zachPrijem, invDuc, cil,
+      prijemEfektivni: D.prijem,
+      prijemAktivni: aktivniPrijem,
+      prijemPasivni: D.prijemPasivni,
+      isManualni,
+      priplatekK: rezim==='k' ? (Math.min(variabilniForReport, 80000) * {I:0.05,II:0.10,III:0.25}[stupen]) : 0,
+    };
   }
 
   // Absolutní kapitál pro každý stupeň (K, S, Z varianta)
@@ -1955,27 +2064,32 @@ function runEngineForData(D, target){
   const podilK = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
 
   // ── Smrt mezery (per varianta) ───────────────────────────────────
-  // KOMPLEXNÍ (v21.1): pojistit vlastní příjem klienta
-  //   mezera = příjem − vdovský − sirotčí (NEodečítáme příjem partnera)
+  // Pasivní příjem (nájmy, dividendy, autorská práva) klienta typicky pokračuje
+  // i po jeho smrti — rodina zdědí majetek/příjmový tok. Odčítá se od mezery.
+  const pasivniPoSmrti = D.prijemPasivni;
+  // KOMPLEXNÍ: cíl = celý příjem klienta, příjmy po smrti = vdovský + sirotčí + pasivní
   //   • single bez dětí → mezera = 0 (pohřeb 100k řeší builder)
   //   • single s dětmi → samostatná logika "Zajištění dětí" (3,3M × 1,5)
-  //   • pár (manželé/partneři) → mezera = příjem − vdovský − sirotčí
+  //   • pár → mezera = příjem − vdovský − sirotčí − pasivní
   let mezeraK = 0;
   if(maPartnera){
-    mezeraK = Math.max(D.prijem - vdovDuc - sirotciCelk, 0);
+    mezeraK = Math.max(D.prijem - vdovDuc - sirotciCelk - pasivniPoSmrti, 0);
   }
 
-  // STANDARDNÍ (v21.1): pojistit podíl výdajů klienta
-  //   mezera = (podíl × výdaje_bez_splátky × 0,80) − vdovský − sirotčí
-  //   • single → podíl = 1.0 (klient kryje všechny výdaje)
-  //   • pár → podíl podle poměru příjmů
-  const vydPoSmrtiS = Math.round(Math.max(D.vydaje - D.splatky, 0) * 0.80 * podilK);
-  const mezeraS = Math.max(vydPoSmrtiS - vdovDuc - sirotciCelk, 0);
+  // STANDARDNÍ: cíl = podíl × výdaje bez splátky × 0,80 (snížení standardu o 20 %)
+  //   Mandatorní výdaje se NEsnižují (nájem/SIPO nezmizí ani po snížení standardu)
+  //   variabilní_po = (variabilní_bez_splátky) × 0,80
+  //   cíl = podíl × (mandatorní + variabilní_po)
+  const vydBezSplBase = Math.max(D.vydaje - D.splatky, 0);
+  const vydMandBezSpl = Math.min(D.vydajeMandatorni, vydBezSplBase);
+  const vydVarBezSpl = Math.max(vydBezSplBase - vydMandBezSpl, 0);
+  const vydPoSmrtiS = Math.round((vydMandBezSpl + vydVarBezSpl * 0.80) * podilK);
+  const mezeraS = Math.max(vydPoSmrtiS - vdovDuc - sirotciCelk - pasivniPoSmrti, 0);
 
-  // ZÁKLADNÍ (v21.1): klient si sníží výdaje o 25 %, pak podíl × výdaje
-  //   mezera = (podíl × výdaje_bez_splátky × 0,80 × 0,75) − vdovský − sirotčí
-  const vydPoSmrtiZ = Math.round(Math.max(D.vydaje - D.splatky, 0) * 0.80 * podilK * 0.75);
-  const mezeraZ = Math.max(vydPoSmrtiZ - vdovDuc - sirotciCelk, 0);
+  // ZÁKLADNÍ: ještě dalších 25 % snížení standardu (mandatorní stále stejné)
+  //   variabilní_po = variabilní_bez_splátky × 0,80 × 0,75 = × 0,60
+  const vydPoSmrtiZ = Math.round((vydMandBezSpl + vydVarBezSpl * 0.80 * 0.75) * podilK);
+  const mezeraZ = Math.max(vydPoSmrtiZ - vdovDuc - sirotciCelk - pasivniPoSmrti, 0);
 
   const smrtHorizont = Math.min(rokiDD, 20);
   const afSmrt = anuita(Math.max(realVynosInv, 0.01), smrtHorizont);
@@ -2078,16 +2192,18 @@ function runEngineForData(D, target){
     // K: dorovnat na 100 % vlastního příjmu
     // S: dorovnat na svůj podíl výdajů (dle poměru příjmů)
     // Z: 75 % standardního cíle
+    // Pasivní příjem (nájmy, dividendy, ...) pokračuje i při PN — přičítá se k nemocenské
     const podilKpn = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
     const cílKpn   = D.prijem;
     const cílSpn   = D.vydaje * podilKpn;
-    const davKRaw  = Math.ceil(Math.max(cílKpn - nemocenska, 0) / 30 / 50) * 50;
-    const davSRaw  = Math.ceil(Math.max(cílSpn - nemocenska, 0) / 30 / 50) * 50;
+    const zachPNmes = nemocenska + D.prijemPasivni;
+    const davKRaw  = Math.ceil(Math.max(cílKpn - zachPNmes, 0) / 30 / 50) * 50;
+    const davSRaw  = Math.ceil(Math.max(cílSpn - zachPNmes, 0) / 30 / 50) * 50;
     const davZRaw  = Math.ceil(davSRaw * 0.75 / 50) * 50;
     // Mezera za celý rok PN — počítáme pro KOMPLEXNÍ (worst case = nejvyšší cíl)
     // Pokud i pro Komplexní rezerva pokryje 3 roky mezery + 6 měs. výdajů → PN není třeba
     // (Standardní/Základní mají nižší cíl, takže pokud K je krytá rezervou, S i Z jsou taky)
-    const mezeraRocneK = Math.max(cílKpn - nemocenska, 0) * 12;
+    const mezeraRocneK = Math.max(cílKpn - zachPNmes, 0) * 12;
     if(D.rezerva >= mezeraRocneK * 3 + pnNouzRezerva6m){
       pnSkipDueToRezerva = true;
     } else {
@@ -4179,7 +4295,7 @@ function exportPDF(){
           : (podilKpn2 < 1.0
               ? `Podíl výdajů (${Math.round(podilKpn2*100)} % — dle poměru příjmů)`
               : 'Výdaje domácnosti (cíl)');
-    const pnMezera2 = Math.max(pnCil2 - (R_arg.nemocenska||0), 0);
+    const pnMezera2 = Math.max(pnCil2 - (R_arg.nemocenska||0) - (D2.prijemPasivni||0), 0);
 
     // Rizika z V_arg
     const smrtRisk = V_arg.risks.find(r=>r.name.includes('smrti'));
