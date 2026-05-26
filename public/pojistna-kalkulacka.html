@@ -1023,6 +1023,8 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
   </div>
 </div>
 
+<!-- Sdílená výpočetní knihovna ČSSZ — pojistná dědí důchodové konstanty + funkce -->
+<script src="/js/cssz-utils.js"></script>
 <script>
 // ═══════════════════════════════════════════════
 // HELPERS
@@ -1393,33 +1395,19 @@ function renderChildren(){
 // ═══════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════
-// KONSTANTY ČSSZ — aktualizovat ročně dle vyhlášky MPSV
-// Platné pro rok 2026 (aktualizováno dle Sdělení MPSV č. 397/2025 Sb.
-//   a nařízení vlády č. 365/2025 Sb.)
+// KONSTANTY ČSSZ — sjednoceno se sdílenou knihovnou /js/cssz-utils.js.
+// Tato kalkulačka dědí všechny důchodové konstanty (rh1, rh2, zakladVymera,
+// vdovskaPctVymery, sirotciPctVymery, sirotciMinProc, ...) ze sdíleného modulu
+// a přidává jen vlastní PN/nemocenské sazby (dnpSazba1/2/3) a inflační odhad.
+// Tím se garantuje konzistence s důchodovou kalkulačkou.
 // ═══════════════════════════════════════════════
-const CSSZ = {
+const CSSZ = Object.assign({}, window.CSSZ_UTILS.CSSZ, {
   rok: 2026,
-  // Redukční hranice pro výpočet výpočtového základu (inv./star. důchod)
-  // Od 2026: do 1. RH se započítá 99 % (důchodová reforma — každý rok −1 %)
-  rh1: 21546,  // 1. RH — do ní se započítá 99 % (od 2026; dříve 100 %)
-  rh2: 195868, // 2. RH — od rh1 do rh2 se započítá 26 %, nad rh2 se nezapočítá
-  rh1zapocet: 0.99,  // Od 2026: 99 % (bude klesat o 1 % ročně do 90 % v 2035)
-  zakladVymera: 4900, // základní výměra důchodu 2026 (zvýšení o 240 Kč)
-  // Redukční hranice pro nemocenské dávky (DNP) — denní vyměřovací základ
-  dnp_rh1: 1633,   // 1. RH: 90 %
-  dnp_rh2: 2449,   // 2. RH: 60 %
-  dnp_rh3: 4897,   // 3. RH: 30 %, nad ní se nepřihlíží
-  // Sazby DNP (po 14. dni — od 15. dne platí ČSSZ, prvních 14 dní platí zaměstnavatel)
+  // Sazby nemocenského pojištění (po 14. dni — od 15. dne ČSSZ; první 14 dní zaměstnavatel)
   dnpSazba1: 0.60,  // 15.–30. den
   dnpSazba2: 0.66,  // 31.–60. den
   dnpSazba3: 0.72,  // od 61. dne
-  // Vdovský/sirotčí důchod (orientační parametry)
-  vdovskaPctVymery: 0.50,  // 50 % procentní výměry zemřelého
-  sirotciPctVymery: 0.40,  // 40 % procentní výměry zemřelého (§50 zák. o důch. poj.)
-  sirotciMinProc: 4900,    // minimální procentní výměra sirotčího důchodu 2026
-                           // = výše základní výměry důchodu (od 1. 1. 2026 dle ČSSZ)
-                           // → minimální sirotčí důchod 2026 = 4900 + 4900 = 9 800 Kč
-};
+});
 const INFLACE = 0.025;
 
 // Výpočet průměrné nemocenské — progresivní sazby dle délky PN
@@ -1498,29 +1486,10 @@ function pnCekaciLhuta(rezerva, vydaje, isOSVC, dobrNem){
 }
 
 
-// Odhad hrubé mzdy z čistého příjmu (iterativní — přesnější)
-// Progresivní zdanění od 2024: 15 % do 4× průměrné mzdy, 23 % nad
-function cistyNaHruby(cisty){
-  // Iterativní metoda: najdeme hrubou, která po odvodech dá ~čistou
-  let hruba = cisty * 1.35; // počáteční odhad
-  // Hranice pro 23% sazbu = 4× průměrná mzda 2026 ≈ 48 967 × 4 = 195 868 Kč/měs
-  const hranice23 = 195868;
-  for(let i=0;i<10;i++){
-    const odvody = hruba * 0.11; // zaměstnanec: SP 6.5% + ZP 4.5% = 11 %
-    // Progresivní daň: 15 % do hranice, 23 % nad hranicí
-    let zalDanMes;
-    if(hruba <= hranice23){
-      zalDanMes = Math.max(hruba * 0.15 - 2570, 0);
-    } else {
-      zalDanMes = Math.max(hranice23 * 0.15 + (hruba - hranice23) * 0.23 - 2570, 0);
-    }
-    const odhCisty = hruba - odvody - zalDanMes;
-    const diff = cisty - odhCisty;
-    if(Math.abs(diff) < 50) break;
-    hruba += diff * 0.8;
-  }
-  return Math.round(hruba);
-}
+// cistyNaHruby je v cssz-utils.js (správná hranice23 = 146 901 = 3× průměrná mzda;
+// dříve měla pojistná lokální chybu 195 868 = 4× průměrná mzda). Sdílená verze
+// je vystavena jako window.cistyNaHruby pro zpětnou kompatibilitu existujícího
+// kódu, který volá cistyNaHruby(...) přímo.
 
 // Zachovaný výdělkový potenciál při invaliditě (% z původního příjmu)
 const RETENTION={
@@ -1537,58 +1506,26 @@ const RETENTION={
 const MANUALNI_CAP = {I: 30000, II: 12000, III: 3000};
 
 // Odhad invalidního důchodu z čistého příjmu a věku
-// Metodika: empiricky kalibrováno na reálná data ČSSZ 2024
-// Pro přesné hodnoty doporučujeme zadat ILDP
-function odhadInvDuc(prijemCisty, vek, stupen, isOSVC){
-  // OVZ se liší pro zaměstnance a OSVČ:
-  // Zaměstnanec: OVZ = hrubá mzda
-  // OSVČ: OVZ = 50 % daňového základu (vyměřovací základ pro SP)
-  // Zdroj: zákon č. 155/1995 Sb. §16, zákon č. 589/1992 Sb. §5b
-  let ovzMes;
-  if(isOSVC){
-    // Iterativní odhad daňového základu OSVČ z čistého příjmu
-    // VZ = 50 % ze základu daně, SP = 29,2 % z VZ, ZP = 13,5 % z VZ
-    let zaklad = prijemCisty * 1.7;
-    for(let i=0; i<20; i++){
-      const vz = zaklad * 0.50;
-      const sp = vz * 0.292;
-      const zp = vz * 0.135;
-      const dan = Math.max((zaklad - sp - zp) * 0.15 - 30840, 0);
-      const diff = prijemCisty - (zaklad - sp - zp - dan);
-      if(Math.abs(diff) < 100) break;
-      zaklad += diff * 0.8;
-    }
-    ovzMes = zaklad * 0.50; // VZ = 50 % základu daně
-  } else {
-    const hrubaMes = cistyNaHruby(prijemCisty);
-    ovzMes = hrubaMes;
-  }
-  // Kariérní průměr (lidé mají nižší příjmy v minulosti)
-  const karK = vek<28?0.68:vek<35?0.78:vek<45?0.87:vek<55?0.94:0.97;
-  ovzMes = ovzMes * karK;
-  // Redukční hranice ČSSZ 2026 (2 hranice, reforma: 99 % do 1. RH)
-  const {rh1,rh2,zakladVymera,rh1zapocet} = CSSZ;
-  const zapocet1 = rh1zapocet || 1.0; // fallback na 100 %
-  let redOVZ;
-  if(ovzMes<=rh1)      redOVZ=ovzMes * zapocet1;
-  else if(ovzMes<=rh2) redOVZ=rh1 * zapocet1 + (ovzMes-rh1)*0.26;
-  else                 redOVZ=rh1 * zapocet1 + (rh2-rh1)*0.26;
-  // Doba pojištění: odpracovaná + dopočtená (do důchodového věku)
-  // Dopočtená doba = od vzniku invalidity do důchodového věku (dle §36 zák. o důch. poj.)
-  const odprac = Math.max(vek - 18, 1);
-  const duchodVek = 65; // zjednodušení — reálně závisí na ročníku
-  const dopoctena = Math.max(duchodVek - vek, 0);
-  const celkDobaPoj = odprac + dopoctena;
-  // Procentní výměra: 1,495 %/rok pro III. stupeň (reforma 2026)
-  // III. st. = 1,495 % × celková doba pojištění × výpočtový základ
-  // II. st.  = 1/2 procentní výměry III. stupně
-  // I. st.   = 1/3 procentní výměry III. stupně
-  const plnaVymIII = redOVZ * celkDobaPoj * 0.01495;
-  const mult = {I:1/3, II:1/2, III:1.0}[stupen];
-  // Minimální procentní výměra dle stupně (ČSSZ 2026)
-  const minProcVym = {I: 1634, II: 2450, III: 4900}[stupen];
-  const procVym = Math.max(plnaVymIII * mult, minProcVym);
-  return Math.round(zakladVymera + procVym);
+// Odhad invalidního důchodu — wrapper okolo sdílené knihovny.
+// Pojistná kalkulačka neptá uživatele na rok narození, pohlaví ani rok začátku
+// pojištění — používáme rozumné defaulty:
+//   rokNarození    ≈ 2026 − věk     (přesnost ±1 rok stačí pro projekce)
+//   pohlaví        = 'M'             (nemáme pole; F s dětmi má jen menší
+//                                     dopad u ročníků ≤ 1971, dnes méně relevantní)
+//   pocetVychDětí  = D.children.length (z hlavního formuláře, fallback 0)
+//   rokZacatku     ≈ rokNarození + 18 (typický nástup do prac. poměru)
+// Pro vyšší přesnost (např. ženy s dětmi v starších ročnících) doporučujeme
+// použít důchodovou kalkulačku, která má explicitní pole.
+// Sdílená logika: window.CSSZ_UTILS.odhadInvDuc(...) — viz /js/cssz-utils.js.
+function odhadInvDuc(prijemCisty, vek, stupen, isOSVC) {
+  const rokNarozeni = 2026 - vek;
+  const pohlavi = 'M';
+  const pocetVychDeti = (typeof children !== 'undefined' && children.length) || 0;
+  const rokZacatku = rokNarozeni + 18;
+  const result = window.CSSZ_UTILS.odhadInvDuc(
+    prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, isOSVC, rokZacatku
+  );
+  return result.duchod;
 }
 
 // Anuita: kapitál potřebný dnes, aby portfolio generovalo 1 Kč/rok po dobu n let
