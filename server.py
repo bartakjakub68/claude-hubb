@@ -2359,11 +2359,41 @@ NEWS_SOURCES = [
     {'url': 'https://cc.cz/feed/', 'source': 'CzechCrunch', 'category': 'finance'},
 ]
 
-MORTGAGE_KEYWORDS = ['hypotéka', 'hypotéky', 'hypoték', 'hypoteční', 'hypotece',
-                     'refinancování', 'ltv', 'dti', 'dsti', 'rpsn',
-                     'úvěr na bydlení', 'stavební spoření', 'fixace sazby',
-                     'zástavní', 'předhypoteční', 'meziúvěr',
-                     'úrokové sazby hypoték', 'sazby hypoték']
+# ── Relevance filtr pro finančního poradce ─────────────────────────────────
+# Zobrazujeme JEN články relevantní pro praxi poradce (hypotéky + produkty KB).
+# Obecný ekonomický/korporátní šum (fúze firem, burzovní indexy, makro HDP,
+# komodity) se zahazuje. Článek musí matchnout aspoň jedno klíčové slovo.
+
+# Hypotéky, nemovitosti, úrokové sazby, financování bydlení
+HYP_KEYWORDS = [
+    'hypotéka', 'hypotéky', 'hypoték', 'hypotéce', 'hypotéku', 'hypoteční',
+    'refinancován', ' ltv', ' dsti', ' dti ', 'rpsn', ' fixace', ' fixaci',
+    'úvěr na bydlení', 'úvěru na bydlení', 'stavební spoření', 'stavebního spoření',
+    'ceny nemovitost', 'ceny byt', 'ceny dom', 'realitní trh', 'nemovitostní trh',
+    'realitního trhu', 'sazby hypoték', 'úrokové sazby', 'úroková sazba',
+    'repo sazb', 'dvoutýdenní repo', 'základní úrok', 'bankovní rada čnb',
+    'rada čnb', 'zelená úsporám', 'dotace na bydl', 'vlastní bydlení', 'nájemní bydlení',
+]
+# Ostatní produkty KB: penze, pojištění, investice (fondy), spoření, daně OSVČ
+PRODUKT_KEYWORDS = [
+    'penzij', 'důchodov', 'dps ', 'doplňkové penzijní', 'iii. pilíř', '3. pilíř',
+    'penzijko', 'spoření na důchod', 'životní pojištění', 'úrazové pojištění',
+    'pojišťovn', 'pojistné plnění', 'pojistka',
+    'podílový fond', 'podílové fond', 'investiční fond', 'etf ', 'státní dluhopis',
+    'spořicí účet', 'konsolidace úvěr', 'spotřebitelský úvěr',
+    'míra inflace', 'česká inflace', 'inflace v česku',
+    'daň z nemovit', 'daňové přiznání', 'zálohy osvč', 'minimální zálohy',
+    'státní příspěvek', 'finanční gramotnost',
+]
+
+def _klasifikuj_clanek(title, desc):
+    """Vrátí 'hypoteky', 'finance' nebo None (nerelevantní → zahodit)."""
+    t = (title + ' ' + desc).lower()
+    if any(k in t for k in HYP_KEYWORDS):
+        return 'hypoteky'
+    if any(k in t for k in PRODUKT_KEYWORDS):
+        return 'finance'
+    return None
 
 def _parse_rss(source_cfg):
     """Stáhne a parsuje RSS feed, vrátí list článků."""
@@ -2388,7 +2418,7 @@ def _parse_rss(source_cfg):
         # Atom
         if not items:
             items = root.findall('.//atom:entry', ns) or root.findall('.//entry')
-        for item in items[:20]:
+        for item in items[:40]:  # skenujeme víc — relevance filtr většinu zahodí
             def txt(tag, alt=''):
                 el = item.find(tag)
                 if el is None:
@@ -2406,11 +2436,11 @@ def _parse_rss(source_cfg):
             desc = re.sub(r'<[^>]+>', '', desc)[:300]
             pub = txt('pubDate') or txt('published') or txt('updated')
             if title and url:
-                # Prioritize mortgage-related articles
-                combined = (title + ' ' + desc).lower()
-                cat = source_cfg['category']
-                if any(kw in combined for kw in MORTGAGE_KEYWORDS):
-                    cat = 'hypoteky'
+                # Relevance filtr: jen články o hypotékách/produktech KB.
+                # Nerelevantní (korporátní/makro/komodity) zahodíme.
+                cat = _klasifikuj_clanek(title, desc)
+                if cat is None:
+                    continue
                 articles.append({
                     'source': source_cfg['source'],
                     'title': title,
