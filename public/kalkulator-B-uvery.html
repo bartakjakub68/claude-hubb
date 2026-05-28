@@ -293,6 +293,11 @@ try {
       <div class="mtab-name">Invest vs. splátka</div>
       <div class="mtab-desc">Co se víc vyplatí</div>
     </button>
+    <button class="mtab" onclick="switchModule('sporuver',this)">
+      <div class="mtab-icon">🐖</div>
+      <div class="mtab-name">Spořit vs. úvěr</div>
+      <div class="mtab-desc">Našetřit, nebo si půjčit</div>
+    </button>
   </div>
 
   <!-- ═══════════════════════════════════
@@ -637,6 +642,90 @@ try {
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════
+       MODULE 4 — SPOŘIT vs. ÚVĚR
+  ═══════════════════════════════════ -->
+  <div class="module-content" id="mod-sporuver">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🐖</div>
+        <div><div class="card-title">Spořit, nebo si vzít úvěr?</div><div class="card-subtitle">Klient chce pořídit věc (rekonstrukce, auto…) — je lepší našetřit, nebo financovat úvěrem?</div></div>
+      </div>
+      <div class="layout-2" style="margin-bottom:16px">
+        <div class="select-group">
+          <label>Jméno klienta</label>
+          <input type="text" id="sp-jmeno" value="Petr Dvořák" style="width:100%">
+        </div>
+        <div class="select-group">
+          <label>Účel</label>
+          <select id="sp-ucel">
+            <option value="rekonstrukce">Rekonstrukce</option>
+            <option value="auto">Auto</option>
+            <option value="vybaveni">Vybavení domácnosti</option>
+            <option value="jine">Jiné</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label"><span>Cílová částka (kolik to stojí)</span><strong id="sp-cil-lbl">500 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="20000" max="3000000" step="10000" value="500000" id="sp-cil-sl" oninput="syncK('sp-cil-sl','sp-cil-ni','sp-cil-lbl')">
+          <input type="text" class="num-input" id="sp-cil-ni" value="500 000" onchange="syncKi('sp-cil-ni','sp-cil-sl','sp-cil-lbl',20000,3000000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>Kolik může klient měsíčně dávat</span><strong id="sp-mes-lbl">12 000 Kč</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="1000" max="100000" step="500" value="12000" id="sp-mes-sl" oninput="syncK('sp-mes-sl','sp-mes-ni','sp-mes-lbl')">
+          <input type="text" class="num-input" id="sp-mes-ni" value="12 000" onchange="syncKi('sp-mes-ni','sp-mes-sl','sp-mes-lbl',1000,100000)" onkeydown="if(event.key==='Enter')this.blur()">
+        </div>
+      </div>
+
+      <div class="sec-label">Parametry úvěru</div>
+      <div class="field">
+        <div class="field-label"><span>Sazba úvěru (RPSN orientačně)</span><strong id="sp-saz-lbl">9,0 %</strong></div>
+        <div class="slider-wrap">
+          <input type="range" min="3" max="20" step="0.1" value="9.0" id="sp-saz-sl" oninput="syncPct('sp-saz-sl','sp-saz-lbl')">
+        </div>
+      </div>
+
+      <div class="sec-label">Parametry spoření / investice</div>
+      <div class="layout-2">
+        <div class="field">
+          <div class="field-label"><span>Výnos spoření p.a.</span><strong id="sp-vyn-lbl">4,0 %</strong></div>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="12" step="0.5" value="4.0" id="sp-vyn-sl" oninput="syncPct('sp-vyn-sl','sp-vyn-lbl')">
+          </div>
+        </div>
+        <div class="select-group">
+          <label>Zdanit výnos srážkovou daní 15 %?</label>
+          <select id="sp-dan">
+            <option value="ano" selected>Ano (spořicí účet, fond mimo časový test)</option>
+            <option value="ne">Ne (časový test 3 roky splněn)</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="calc-btn" onclick="calcSporUver()">Porovnat: spořit vs. úvěr →</button>
+    </div>
+
+    <div class="results-section" id="sp-results">
+      <div class="results-topbar">
+        <h2>Výsledky — <span id="sp-res-jmeno"></span></h2>
+      </div>
+      <div class="profile-card">
+        <div class="profile-name" id="sp-pc-name"></div>
+        <div class="profile-sub" id="sp-pc-sub"></div>
+        <div class="profile-kpis" id="sp-pc-kpis"></div>
+      </div>
+      <div class="metrics-grid" id="sp-metrics"></div>
+      <div class="card" style="padding:20px;margin-top:16px" id="sp-doporuceni-card">
+        <div id="sp-doporuceni"></div>
+      </div>
+    </div>
+  </div>
+
 
 </div><!-- /main -->
 
@@ -699,6 +788,148 @@ function switchModule(id, el){
   document.querySelectorAll('.module-content').forEach(m => m.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('mod-' + id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// MODUL 4 — SPOŘIT vs. ÚVĚR
+// ═══════════════════════════════════════════════════════
+// Porovná dva scénáře pořízení věci za cílovou částku T při měsíčním
+// rozpočtu M klienta:
+//   ÚVĚR:    půjčí si T teď (věc má hned), splácí M/měs sazbou r_loan,
+//            doba n_loan; úrok navíc = M·n_loan − T.
+//   SPOŘENÍ: spoří M/měs výnosem r_save (po dani), věc koupí za hotové,
+//            jakmile naspoří T → trvá n_save měsíců; úroky pomohly našetřit.
+function calcSporUver(){
+  const jmeno = document.getElementById('sp-jmeno').value || 'Klient';
+  const ucel  = document.getElementById('sp-ucel').value;
+  const T   = parseK(document.getElementById('sp-cil-ni').value);
+  const M   = parseK(document.getElementById('sp-mes-ni').value);
+  const rLoan = parseFloat(document.getElementById('sp-saz-sl').value) / 100;
+  let rSave   = parseFloat(document.getElementById('sp-vyn-sl').value) / 100;
+  const danit = document.getElementById('sp-dan').value === 'ano';
+  if(danit) rSave = rSave * 0.85; // srážková daň 15 % z výnosu
+
+  if(T <= 0 || M <= 0){ alert('Zadejte cílovou částku a měsíční částku.'); return; }
+
+  const rmL = rLoan / 12, rmS = rSave / 12;
+
+  // ── ÚVĚR: doba splácení při splátce M ──
+  // T = M·(1−(1+rmL)^−n)/rmL  →  n = −ln(1 − T·rmL/M)/ln(1+rmL)
+  let nLoan, splatkaNestaci = false;
+  if(rmL === 0){
+    nLoan = T / M;
+  } else if(M <= T * rmL){
+    // Splátka nepokryje ani první měsíční úrok → úvěr by se nikdy nesplatil
+    splatkaNestaci = true;
+    nLoan = Infinity;
+  } else {
+    nLoan = -Math.log(1 - (T * rmL) / M) / Math.log(1 + rmL);
+  }
+  const nLoanMes = splatkaNestaci ? Infinity : Math.ceil(nLoan);
+  const uverCelkem = splatkaNestaci ? Infinity : M * nLoanMes;
+  const uverUrok = splatkaNestaci ? Infinity : Math.max(uverCelkem - T, 0);
+
+  // ── SPOŘENÍ: doba do naspoření T při vkladu M ──
+  // FV = M·((1+rmS)^n − 1)/rmS = T  →  n = ln(1 + T·rmS/M)/ln(1+rmS)
+  let nSave;
+  if(rmS === 0){
+    nSave = T / M;
+  } else {
+    nSave = Math.log(1 + (T * rmS) / M) / Math.log(1 + rmS);
+  }
+  const nSaveMes = Math.ceil(nSave);
+  const sporVklady = M * nSaveMes;
+  const sporUrok = Math.max(T - sporVklady, 0); // úroky, které pomohly našetřit (přibližně)
+
+  // ── Srovnání ──
+  // Celkové peníze z kapsy: úvěr M·nLoan vs spoření M·nSave (pak věc vlastní).
+  // Rozdíl v penězích = kolik víc zaplatí při úvěru (úrok + delší splácení).
+  const rozdilPenez = splatkaNestaci ? Infinity : (uverCelkem - sporVklady);
+  const mesicChyba = splatkaNestaci ? Infinity : (nLoanMes - nSaveMes); // o kolik měsíců déle platí u úvěru
+
+  // Doporučení:
+  //   r_save (po dani) ≥ r_loan → spoření jednoznačně levnější (a ještě vydělá)
+  //   jinak → úvěr stojí víc, ale věc máš hned (urgentnost rozhoduje)
+  const sporeniLevnejsi = rSave >= rLoan;
+  const naumorMes = Math.round(nSaveMes); // doba čekání u spoření
+
+  function mesNaText(m){
+    if(!isFinite(m)) return '∞';
+    const roky = Math.floor(m/12), mes = m%12;
+    if(roky === 0) return `${mes} měs.`;
+    if(mes === 0) return `${roky} ${roky===1?'rok':roky<5?'roky':'let'}`;
+    return `${roky} ${roky===1?'rok':roky<5?'roky':'let'} ${mes} měs.`;
+  }
+
+  // KPIs
+  document.getElementById('sp-res-jmeno').textContent = jmeno;
+  document.getElementById('sp-pc-name').textContent = jmeno + ' — ' + ({rekonstrukce:'rekonstrukce',auto:'auto',vybaveni:'vybavení domácnosti',jine:'pořízení'}[ucel]);
+  document.getElementById('sp-pc-sub').textContent = `Cíl ${fK(T)} · rozpočet ${fK(M)}/měs · úvěr ${fPct(rLoan*100)} · spoření ${fPct(rSave*100)}${danit?' (po dani)':''}`;
+  document.getElementById('sp-pc-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${fPct(rLoan*100)}</div><div class="kpi-lbl">Sazba úvěru</div></div>
+    <div class="kpi"><div class="kpi-val">${fPct(rSave*100)}</div><div class="kpi-lbl">Výnos spoření${danit?' (po dani)':''}</div></div>
+    <div class="kpi"><div class="kpi-val">${rSave>=rLoan?'+':''}${fPct((rSave-rLoan)*100)}</div><div class="kpi-lbl">Rozdíl sazeb</div></div>
+  `;
+
+  // Metriky
+  document.getElementById('sp-metrics').innerHTML = `
+    <div class="metric ${sporeniLevnejsi?'':'green'}">
+      <div class="metric-lbl">🏦 Úvěr — věc hned</div>
+      <div class="metric-val">${splatkaNestaci?'nelze':fK(uverCelkem)}</div>
+      <div class="metric-sub">${splatkaNestaci?'splátka nepokryje úrok':`celkem zaplaceno za ${mesNaText(nLoanMes)}`}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-lbl">Z toho úrok</div>
+      <div class="metric-val">${splatkaNestaci?'—':fK(uverUrok)}</div>
+      <div class="metric-sub">cena za okamžité pořízení</div>
+    </div>
+    <div class="metric ${sporeniLevnejsi?'green':''}">
+      <div class="metric-lbl">🐖 Spoření — věc později</div>
+      <div class="metric-val">${fK(sporVklady)}</div>
+      <div class="metric-sub">naspořeno za ${mesNaText(nSaveMes)}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-lbl">Úroky pomohly našetřit</div>
+      <div class="metric-val">${fK(sporUrok)}</div>
+      <div class="metric-sub">o tolik kratší spoření</div>
+    </div>
+    <div class="metric ${sporeniLevnejsi?'green':'amber'}">
+      <div class="metric-lbl">Rozdíl v penězích</div>
+      <div class="metric-val">${splatkaNestaci?'∞':fK(rozdilPenez)}</div>
+      <div class="metric-sub">${splatkaNestaci?'úvěr nesplatitelný':'úvěr stojí o tolik víc'}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-lbl">Čekání u spoření</div>
+      <div class="metric-val" style="font-size:16px">${mesNaText(nSaveMes)}</div>
+      <div class="metric-sub">o tuto dobu máš věc později</div>
+    </div>
+  `;
+
+  // Doporučení
+  let titulek, barva, telo;
+  if(splatkaNestaci){
+    titulek = 'Úvěr za těchto podmínek nesplatíte';
+    barva = '#A32D2D';
+    telo = `Měsíční částka ${fK(M)} nepokryje ani úrok z úvěru ${fK(T)} při sazbě ${fPct(rLoan*100)}. Buď zvyšte měsíční rozpočet, snižte cílovou částku, nebo zvolte spoření — to vede k cíli za ${mesNaText(nSaveMes)}.`;
+  } else if(sporeniLevnejsi){
+    titulek = 'Doporučujeme spořit';
+    barva = '#0F5132';
+    telo = `Výnos spoření (${fPct(rSave*100)}${danit?' po dani':''}) je vyšší nebo roven sazbě úvěru (${fPct(rLoan*100)}). Spoření je tedy <strong>jednoznačně levnější</strong> — klient našetří cílovou částku za ${mesNaText(nSaveMes)} a ušetří ${fK(rozdilPenez)} oproti úvěru. Úvěr dává smysl jen pokud je pořízení neodkladné (např. rozbité auto nutné do práce).`;
+  } else {
+    const urokKratce = uverUrok;
+    titulek = 'Záleží na urgenci pořízení';
+    barva = '#92550A';
+    telo = `Úvěr stojí navíc <strong>${fK(urokKratce)} na úrocích</strong> a celkem o ${fK(rozdilPenez)} víc než spoření. Spoření je levnější, ale klient si na věc počká <strong>${mesNaText(nSaveMes)}</strong>.<br><br>`
+      + `• <strong>Spořit</strong>, pokud pořízení snese odklad (plánovaná rekonstrukce, výměna auta bez nutnosti).<br>`
+      + `• <strong>Úvěr</strong>, pokud je věc potřeba hned (havárie, nutná oprava) a ${mesNaText(nSaveMes)} čekání je nereálných — cenu za to (${fK(urokKratce)}) klient platí za okamžitou dostupnost.`;
+  }
+  document.getElementById('sp-doporuceni').innerHTML =
+    `<div style="border-left:4px solid ${barva};padding:14px 18px;background:${barva}10">`
+    + `<div style="font-family:'DM Serif Display',serif;font-size:18px;color:${barva};margin-bottom:8px">${titulek}</div>`
+    + `<div style="font-size:13.5px;color:var(--ink2);line-height:1.6">${telo}</div></div>`;
+
+  document.getElementById('sp-results').classList.add('show');
+  setTimeout(() => document.getElementById('sp-results').scrollIntoView({behavior:'smooth', block:'start'}), 100);
 }
 
 // ═══════════════════════════════════════════════════════
