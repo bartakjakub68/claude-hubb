@@ -35,11 +35,49 @@
     minStarobni: 9800,
     // Výchovné za vychované dítě (od 2026)
     vychovnePerDite: 500,
+    // OSVČ 2026: minimální měsíční vyměřovací základ pro hlavní činnost
+    // = 40 % průměrné mzdy 48 967 (reforma 2024 zvyšuje z 25 % na 40 % do 2026)
+    osvcMinVZ: 19587,
+    // Paušální daň 2026 — měsíční vyměřovací základ pro důchodové pojištění dle pásma.
+    // U paušální daně je VZ FIXNÍ bez ohledu na skutečný příjem.
+    pausalniDanVZ: { 1: 22526, 2: 28050, 3: 42900 },
   };
 
   // Modelový reálný růst mzdy klienta nad inflací (% p.a.).
   // mzda_v_roce_X (v dnešní hodnotě) = dnešní_mzda / (1 + růst)^(2026 − rok)
   const MZDOVY_RUST_REAL = 0.015;
+
+  // ═══════════════════════════════════════════════════════════
+  // OSVČ — vyměřovací základ dle daňového režimu
+  // ═══════════════════════════════════════════════════════════
+  // VZ pro důchodové pojištění OSVČ závisí na způsobu zdanění, NE na čistém
+  // příjmu, který si klient nese domů. Zákon č. 589/1992 Sb. § 5b:
+  //   VZ = 50 % daňového základu (min. osvcMinVZ).
+  // Daňový základ:
+  //   skutečné výdaje  → zisk (příjmy − výdaje) = roční daňový základ
+  //   paušál 40/60/80% → obrat × (1 − paušál %)
+  //   paušální daň     → VZ fixní dle pásma (pausalniDanVZ), příjem irelevantní
+  //
+  // rezim: 'skutecne' | 'pausal40' | 'pausal60' | 'pausal80' | 'pausalniDan'
+  // hodnotaRok: roční obrat (paušál) NEBO roční daňový základ/zisk (skutečné).
+  //             Pro 'pausalniDan' se ignoruje.
+  // pasmo: 1/2/3 (jen pro 'pausalniDan').
+  // Vrací měsíční vyměřovací základ (VZ).
+  function osvcVymerovaciZaklad(rezim, hodnotaRok, pasmo) {
+    if (rezim === 'pausalniDan') {
+      return CSSZ.pausalniDanVZ[pasmo] || CSSZ.pausalniDanVZ[1];
+    }
+    const pausalPct = { pausal40: 0.40, pausal60: 0.60, pausal80: 0.80 }[rezim];
+    let danovyZakladRok;
+    if (pausalPct != null) {
+      danovyZakladRok = hodnotaRok * (1 - pausalPct);
+    } else {
+      // skutečné výdaje — hodnotaRok je už daňový základ (zisk)
+      danovyZakladRok = hodnotaRok;
+    }
+    const vzMes = (danovyZakladRok / 12) * 0.50; // VZ = 50 % daňového základu
+    return Math.max(Math.round(vzMes), CSSZ.osvcMinVZ);
+  }
 
   // ═══════════════════════════════════════════════════════════
   // DŮCHODOVÝ VĚK — příloha zák. 155/1995 Sb. (po reformě 2024)
@@ -188,10 +226,18 @@
   // ═══════════════════════════════════════════════════════════
   // INVALIDNÍ DŮCHOD (I/II/III stupeň) — hypotetický "kdyby vznikl teď"
   // ═══════════════════════════════════════════════════════════
-  function odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, isOSVC, rokZacatku) {
-    const hrubaMes = isOSVC
-      ? osvcZakladMes(prijemCisty) * 0.50 // VZ = 50 % daňového základu
-      : cistyNaHruby(prijemCisty);
+  // osvcVZ (volitelný): pokud je předán pro OSVČ, použije se jako měsíční
+  // vyměřovací základ přímo (z osvcVymerovaciZaklad dle daňového režimu).
+  // Pokud chybí, fallback na hrubý odhad z čistého příjmu (zpětně dopočítaný).
+  function odhadInvDuc(prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, isOSVC, rokZacatku, osvcVZ) {
+    let hrubaMes;
+    if (isOSVC) {
+      hrubaMes = (osvcVZ != null && osvcVZ > 0)
+        ? osvcVZ // přesný VZ dle daňového režimu
+        : osvcZakladMes(prijemCisty) * 0.50; // fallback: zpětný odhad z čistého
+    } else {
+      hrubaMes = cistyNaHruby(prijemCisty);
+    }
 
     const vek = 2026 - rokNarozeni;
     const rokPojisteni = rokZacatku || (2026 - Math.max(vek - 18, 1));
@@ -362,6 +408,7 @@
     zapocetRh1,
     cistyNaHruby,
     osvcZakladMes,
+    osvcVymerovaciZaklad,
     spocitejOVZ,
     redukujOVZ,
     odhadInvDuc,

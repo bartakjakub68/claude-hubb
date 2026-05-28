@@ -488,6 +488,43 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
             </select>
           </div>
         </div>
+
+        <!-- OSVČ: daňový režim → vyměřovací základ pro státní invalidní/starobní důchod -->
+        <div id="osvcDanBlock" style="display:none;margin-bottom:14px;padding:14px;background:var(--cream);border:1px solid var(--border);border-radius:var(--rs)">
+          <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px">
+            Daňový režim OSVČ
+            <span class="tip-wrap"><span class="tip-ico">?</span><span class="tip-pop">Čistý příjem, který si klient nese domů, neurčuje výši státního důchodu. Ten závisí na vyměřovacím základu pro sociální pojištění, který se liší podle způsobu zdanění. Vyber režim a zadej obrat/zisk — spočítáme přesný vyměřovací základ dle zákona č. 589/1992 Sb.</span></span>
+          </div>
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;line-height:1.45">
+            Určuje vyměřovací základ pro výpočet státního invalidního a starobního důchodu (ne výši pojistné mezery — ta jde z čistého příjmu výše).
+          </div>
+          <div class="layout-2" style="gap:10px">
+            <div class="select-group">
+              <label>Způsob zdanění</label>
+              <select id="osvcRezim" onchange="onOsvcRezimChange()">
+                <option value="skutecne">Skutečné výdaje (daňová evidence)</option>
+                <option value="pausal40">Paušál 40 % (svobodná povolání)</option>
+                <option value="pausal60">Paušál 60 % (živnost volná/vázaná)</option>
+                <option value="pausal80">Paušál 80 % (řemeslo, zemědělství)</option>
+                <option value="pausalniDan">Paušální daň</option>
+              </select>
+            </div>
+            <div class="select-group" id="osvcObratField">
+              <label id="osvcObratLabel">Roční obrat (příjmy)</label>
+              <input type="text" class="num-input" id="osvc-obrat-ni" value="0" style="width:100%" onchange="onOsvcObratChange()" onkeydown="if(event.key==='Enter')this.blur()">
+            </div>
+            <div class="select-group" id="osvcPasmoField" style="display:none">
+              <label>Pásmo paušální daně</label>
+              <select id="osvcPasmo" onchange="updateOsvcVZinfo()">
+                <option value="1">1. pásmo (do 1 mil. obratu)</option>
+                <option value="2">2. pásmo (do 1,5 mil.)</option>
+                <option value="3">3. pásmo (do 2 mil.)</option>
+              </select>
+            </div>
+          </div>
+          <div id="osvcVZinfo" style="font-size:11px;color:var(--gold);font-weight:600;margin-top:8px"></div>
+        </div>
+
         <div class="select-group">
           <label>Obor / charakter práce</label>
           <select id="obor">
@@ -1213,7 +1250,44 @@ function onTpChange2(){
 function onTpChange(){
   const v=gs('tprace');
   document.getElementById('nemField').style.display=(v==='osvc')?'block':'none';
+  document.getElementById('osvcDanBlock').style.display=(v==='osvc')?'block':'none';
+  if(v==='osvc') onOsvcRezimChange();
   updatePartnerSection();
+}
+
+// Přepínání obrat/pásmo pole dle daňového režimu OSVČ + živý výpočet VZ
+function onOsvcRezimChange(){
+  const rezim = gs('osvcRezim');
+  const isPausalniDan = rezim === 'pausalniDan';
+  document.getElementById('osvcObratField').style.display = isPausalniDan ? 'none' : 'block';
+  document.getElementById('osvcPasmoField').style.display = isPausalniDan ? 'block' : 'none';
+  // Label pole obrat/zisk dle režimu
+  const lbl = document.getElementById('osvcObratLabel');
+  if(lbl) lbl.textContent = rezim === 'skutecne' ? 'Roční daňový základ (zisk)' : 'Roční obrat (příjmy)';
+  updateOsvcVZinfo();
+}
+
+// Obrat input — naformátuje hodnotu a přepočítá VZ náhled
+function onOsvcObratChange(){
+  const el = document.getElementById('osvc-obrat-ni');
+  const v = pN(el.value);
+  el.value = v > 0 ? v.toLocaleString('cs-CZ') : '0';
+  updateOsvcVZinfo();
+}
+
+// Spočítá a zobrazí měsíční vyměřovací základ dle režimu (živý náhled)
+function updateOsvcVZinfo(){
+  const info = document.getElementById('osvcVZinfo');
+  if(!info || !window.CSSZ_UTILS) return;
+  const rezim = gs('osvcRezim');
+  const obratRok = gni('osvc-obrat-ni');
+  const pasmo = parseInt(gs('osvcPasmo')) || 1;
+  if(rezim !== 'pausalniDan' && obratRok <= 0){ info.textContent = ''; return; }
+  const vz = window.CSSZ_UTILS.osvcVymerovaciZaklad(rezim, obratRok, pasmo);
+  const minVZ = window.CSSZ_UTILS.CSSZ.osvcMinVZ;
+  const naMinimu = vz <= minVZ;
+  info.textContent = `→ Vyměřovací základ: ${vz.toLocaleString('cs-CZ')} Kč/měs`
+    + (naMinimu ? ` (zákonné minimum ${minVZ.toLocaleString('cs-CZ')} Kč)` : '');
 }
 
 function updatePartnerSection(){
@@ -1595,13 +1669,13 @@ const MANUALNI_CAP = {I: 30000, II: 12000, III: 3000};
 // Pro vyšší přesnost (např. ženy s dětmi v starších ročnících) doporučujeme
 // použít důchodovou kalkulačku, která má explicitní pole.
 // Sdílená logika: window.CSSZ_UTILS.odhadInvDuc(...) — viz /js/cssz-utils.js.
-function odhadInvDuc(prijemCisty, vek, stupen, isOSVC) {
+function odhadInvDuc(prijemCisty, vek, stupen, isOSVC, osvcVZ) {
   const rokNarozeni = 2026 - vek;
   const pohlavi = 'M';
   const pocetVychDeti = (typeof children !== 'undefined' && children.length) || 0;
   const rokZacatku = rokNarozeni + 18;
   const result = window.CSSZ_UTILS.odhadInvDuc(
-    prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, isOSVC, rokZacatku
+    prijemCisty, rokNarozeni, pohlavi, pocetVychDeti, stupen, isOSVC, rokZacatku, osvcVZ
   );
   return result.duchod;
 }
@@ -1626,6 +1700,18 @@ function calculate(){
   const _vydajeTotal = gni('vydaje-ni');
   const _vydajeMand = Math.min(gni('vydaje-mand-ni'), _vydajeTotal); // mandatorní nemůže být víc než celkové
   const _retVlastni = document.getElementById('retVlastniChk')?.checked || false;
+  // OSVČ daňový režim → vyměřovací základ pro státní důchod (přesnější než
+  // zpětný odhad z čistého příjmu). Pro zaměstnance/ostatní zůstává null.
+  let _osvcVZ = null;
+  if(gs('tprace') === 'osvc' && window.CSSZ_UTILS){
+    const _rezim = gs('osvcRezim');
+    const _obratRok = gni('osvc-obrat-ni');
+    const _pasmo = parseInt(gs('osvcPasmo')) || 1;
+    // Spočítat jen pokud má smysl (paušální daň vždy; jinak obrat > 0).
+    if(_rezim === 'pausalniDan' || _obratRok > 0){
+      _osvcVZ = window.CSSZ_UTILS.osvcVymerovaciZaklad(_rezim, _obratRok, _pasmo);
+    }
+  }
   const D={
     vek:     +gs('vek'),
     rstav:   gs('rstav'),
@@ -1643,6 +1729,7 @@ function calculate(){
       II:  (+document.getElementById('ret-II-ni')?.value  || 25) / 100,
       III: (+document.getElementById('ret-III-ni')?.value || 5)  / 100,
     },
+    osvcVZ: _osvcVZ,                       // měsíční vyměřovací základ OSVČ dle daňového režimu
     splatky: gni('spl-ni'),
     prijPart: hasPartner ? pN(document.getElementById('p2-prijem-ni').value) : gni('pp-ni'),
     hyp:     gni('hyp-ni'),
@@ -1844,7 +1931,7 @@ function runEngineForData(D, target){
   // Invalidní důchody
   function getInvDuc(stupen){
     if(D.ildpExact){ const zad={I:D.ild1,II:D.ild2,III:D.ild3}[stupen]; if(zad>0) return zad; }
-    return odhadInvDuc(D.prijem, D.vek, stupen, isOSVC);
+    return odhadInvDuc(D.prijem, D.vek, stupen, isOSVC, D.osvcVZ);
   }
   const duc = {I:getInvDuc('I'), II:getInvDuc('II'), III:getInvDuc('III')};
 
@@ -4926,7 +5013,7 @@ function updateSens(){
       const zad = {I:D.ild1, II:D.ild2, III:D.ild3}[stupen];
       if(zad > 0) return zad;
     }
-    return odhadInvDuc(D.prijem, D.vek, stupen, D.tprace==='osvc'||D.tprace==='sro');
+    return odhadInvDuc(D.prijem, D.vek, stupen, D.tprace==='osvc'||D.tprace==='sro', D.osvcVZ);
   }
   function calcInvKapital(st){
     const zachPrijem = D.prijem * ret[st];
