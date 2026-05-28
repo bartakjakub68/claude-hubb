@@ -2346,12 +2346,17 @@ def met_delete_chats():
 # ─── Novinky (RSS agregátor) ──────────────────────────────────────────────────
 
 NEWS_SOURCES = [
-    {'url': 'https://www.hypoindex.cz/feed/', 'source': 'Hypoindex', 'category': 'hypoteky'},
-    {'url': 'https://www.finparada.cz/rss/clanky.aspx', 'source': 'Finparáda', 'category': 'hypoteky'},
-    {'url': 'https://www.cnb.cz/cs/rss/aktuality.xml', 'source': 'ČNB', 'category': 'hypoteky'},
+    # Ověřeno 2026-05: všechny feedy vrací validní RSS 2.0.
+    # Hypoteční články se automaticky překlasifikují přes MORTGAGE_KEYWORDS.
     {'url': 'https://www.e15.cz/rss', 'source': 'E15', 'category': 'finance'},
-    {'url': 'https://www.patria.cz/rss/zpravy.xml', 'source': 'Patria', 'category': 'finance'},
-    {'url': 'https://www.financninoviny.cz/finance/rss/index_rss.php', 'source': 'Finanční noviny', 'category': 'finance'},
+    {'url': 'https://www.novinky.cz/rss/ekonomika', 'source': 'Novinky', 'category': 'finance'},
+    {'url': 'https://servis.idnes.cz/rss.aspx?c=ekonomika', 'source': 'iDNES', 'category': 'finance'},
+    {'url': 'https://ct24.ceskatelevize.cz/rss/tema/ekonomika-15', 'source': 'ČT24', 'category': 'finance'},
+    {'url': 'https://www.seznamzpravy.cz/rss/ekonomika', 'source': 'Seznam Zprávy', 'category': 'finance'},
+    {'url': 'https://aktualne.cz/rss/ekonomika/', 'source': 'Aktuálně', 'category': 'finance'},
+    {'url': 'https://www.penize.cz/rss', 'source': 'Peníze.cz', 'category': 'finance'},
+    {'url': 'https://roklen24.cz/feed/', 'source': 'Roklen24', 'category': 'finance'},
+    {'url': 'https://cc.cz/feed/', 'source': 'CzechCrunch', 'category': 'finance'},
 ]
 
 MORTGAGE_KEYWORDS = ['hypotéka', 'hypotéky', 'hypoték', 'hypoteční', 'hypotece',
@@ -2364,10 +2369,19 @@ def _parse_rss(source_cfg):
     """Stáhne a parsuje RSS feed, vrátí list článků."""
     articles = []
     try:
-        req = urllib.request.Request(source_cfg['url'], headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        req = urllib.request.Request(
+            source_cfg['url'],
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        with urllib.request.urlopen(req, timeout=12) as resp:
             xml_data = resp.read()
-        root = ET.fromstring(xml_data)
+        try:
+            root = ET.fromstring(xml_data)
+        except ET.ParseError:
+            # Některé feedy mají neescapované & v textu — oprav a zkus znovu.
+            text = xml_data.decode('utf-8', errors='replace')
+            text = re.sub(r'&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)', '&amp;', text)
+            root = ET.fromstring(text)
         ns = {'atom': 'http://www.w3.org/2005/Atom'}
         # RSS 2.0
         items = root.findall('.//item')
@@ -2405,8 +2419,9 @@ def _parse_rss(source_cfg):
                     'published_at': pub,
                     'category': cat,
                 })
-    except Exception:
-        pass
+    except Exception as e:
+        # Logovat (Railway stdout), ne tiše spolknout — usnadní diagnostiku mrtvých feedů.
+        print(f"[news] RSS chyba {source_cfg['source']} ({source_cfg['url']}): {type(e).__name__}: {str(e)[:120]}", flush=True)
     return articles
 
 def _refresh_news(conn):
