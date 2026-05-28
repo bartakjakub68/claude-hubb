@@ -442,6 +442,37 @@ def init_db():
         print("[INIT] PŘIHLAS SE A IHNED ZMĚŇ HESLO PŘES /api/me/password!", flush=True)
         print("=" * 70, flush=True)
 
+    # ── Jednorázový reset admin hesla přes env proměnnou ─────────────────
+    # Když je nastavena ADMIN_RESET_PASSWORD, resetuje heslo admin účtu.
+    # ADMIN_RESET_EMAIL volitelně určí který admin (jinak jediný admin v DB).
+    # Použití: nastav env v Railway → redeploy → přihlas se → ENV ZASE SMAŽ
+    # (jinak se heslo resetuje při každém restartu).
+    reset_pwd = os.environ.get('ADMIN_RESET_PASSWORD')
+    if reset_pwd:
+        reset_email = os.environ.get('ADMIN_RESET_EMAIL', '').strip().lower()
+        if reset_email:
+            target = c.execute(
+                "SELECT id, email FROM users WHERE role='admin' AND email=?", (reset_email,)
+            ).fetchone()
+        else:
+            admins = c.execute("SELECT id, email FROM users WHERE role='admin'").fetchall()
+            target = admins[0] if len(admins) == 1 else None
+            if len(admins) > 1:
+                print("=" * 70, flush=True)
+                print("[RESET] Více admin účtů — nastav ADMIN_RESET_EMAIL pro výběr:", flush=True)
+                for a in admins:
+                    print(f"[RESET]   {a['email']}", flush=True)
+                print("=" * 70, flush=True)
+        if target:
+            c.execute("UPDATE users SET heslo_hash=?, aktivni=1 WHERE id=?",
+                      (hash_password(reset_pwd), target['id']))
+            print("=" * 70, flush=True)
+            print(f"[RESET] Heslo admina '{target['email']}' bylo resetováno.", flush=True)
+            print("[RESET] SMAŽ ENV ADMIN_RESET_PASSWORD, jinak se resetuje při každém restartu!", flush=True)
+            print("=" * 70, flush=True)
+        elif reset_email:
+            print(f"[RESET] Admin s emailem '{reset_email}' nenalezen.", flush=True)
+
     conn.commit()
     conn.close()
 
