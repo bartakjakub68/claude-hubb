@@ -342,15 +342,17 @@ try {
       </div>
       <div class="layout-2">
         <div class="field">
-          <div class="field-label"><span>Realistický výnos p.a.</span><strong id="i-vyn-lbl">6,0 %</strong></div>
+          <div class="field-label"><span>Realistický výnos p.a.</span><strong id="i-vyn-lbl">6,00 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="1" max="15" step="0.5" value="6" id="i-vyn-sl" oninput="syncPct('i-vyn-sl','i-vyn-lbl')">
+            <input type="range" min="1" max="15" step="0.01" value="6" id="i-vyn-sl" oninput="syncPct('i-vyn-sl','i-vyn-lbl','i-vyn-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="i-vyn-ni" value="6,00" style="width:64px" onchange="syncPctI('i-vyn-ni','i-vyn-sl','i-vyn-lbl',1,15)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Průměrná inflace p.a.</span><strong id="i-inf-lbl">3,0 %</strong></div>
+          <div class="field-label"><span>Průměrná inflace p.a.</span><strong id="i-inf-lbl">3,00 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="1" max="8" step="0.5" value="3" id="i-inf-sl" oninput="syncPct('i-inf-sl','i-inf-lbl')">
+            <input type="range" min="1" max="8" step="0.01" value="3" id="i-inf-sl" oninput="syncPct('i-inf-sl','i-inf-lbl','i-inf-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="i-inf-ni" value="3,00" style="width:64px" onchange="syncPctI('i-inf-ni','i-inf-sl','i-inf-lbl',1,8)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
       </div>
@@ -477,15 +479,17 @@ try {
       </div>
       <div class="layout-2">
         <div class="field">
-          <div class="field-label"><span>Předpokládaný výnos p.a.</span><strong id="d-vyn-lbl">5,0 %</strong></div>
+          <div class="field-label"><span>Předpokládaný výnos p.a.</span><strong id="d-vyn-lbl">5,00 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="1" max="10" step="0.5" value="5" id="d-vyn-sl" oninput="syncPct('d-vyn-sl','d-vyn-lbl')">
+            <input type="range" min="1" max="10" step="0.01" value="5" id="d-vyn-sl" oninput="syncPct('d-vyn-sl','d-vyn-lbl','d-vyn-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="d-vyn-ni" value="5,00" style="width:64px" onchange="syncPctI('d-vyn-ni','d-vyn-sl','d-vyn-lbl',1,10)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Průměrná inflace p.a.</span><strong id="d-inf-lbl">3,0 %</strong></div>
+          <div class="field-label"><span>Průměrná inflace p.a.</span><strong id="d-inf-lbl">3,00 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="1" max="8" step="0.5" value="3" id="d-inf-sl" oninput="syncPct('d-inf-sl','d-inf-lbl')">
+            <input type="range" min="1" max="8" step="0.01" value="3" id="d-inf-sl" oninput="syncPct('d-inf-sl','d-inf-lbl','d-inf-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="d-inf-ni" value="3,00" style="width:64px" onchange="syncPctI('d-inf-ni','d-inf-sl','d-inf-lbl',1,8)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
       </div>
@@ -591,9 +595,10 @@ try {
         </div>
       </div>
       <div class="field">
-        <div class="field-label"><span>Úrok na spořicím účtu p.a.</span><strong id="r-uro-lbl">4,0 %</strong></div>
+        <div class="field-label"><span>Úrok na spořicím účtu p.a.</span><strong id="r-uro-lbl">4,00 %</strong></div>
         <div class="slider-wrap">
-          <input type="range" min="0" max="8" step="0.1" value="4.0" id="r-uro-sl" oninput="syncPct('r-uro-sl','r-uro-lbl')">
+          <input type="range" min="0" max="8" step="0.01" value="4.0" id="r-uro-sl" oninput="syncPct('r-uro-sl','r-uro-lbl','r-uro-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="r-uro-ni" value="4,00" style="width:64px" onchange="syncPctI('r-uro-ni','r-uro-sl','r-uro-lbl',0,8)" onkeydown="if(event.key==='Enter')this.blur()">
         </div>
       </div>
       <button class="calc-btn" onclick="calcRezerva()">Spočítat plán rezervy →</button>
@@ -652,7 +657,7 @@ function fM(n){
   if(Math.abs(m) < 10) return m.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' M Kč';
   return (Math.round(m*10)/10).toLocaleString('cs-CZ',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' M Kč';
 }
-function fPct(n){ return parseFloat(n).toFixed(1).replace('.',',') + ' %'; }
+function fPct(n){ return parseFloat(n).toFixed(2).replace('.',',') + ' %'; }
 function parseK(s){ return parseFloat(String(s).replace(/\s/g,'').replace(',','.')) || 0; }
 
 function handlePrint() {
@@ -690,8 +695,18 @@ function syncKi(niId, slId, lblId, mn, mx){
   document.getElementById(niId).value = Math.round(v).toLocaleString('cs-CZ');
   document.getElementById(lblId).textContent = fK(v);
 }
-function syncPct(slId, lblId){
-  document.getElementById(lblId).textContent = fPct(document.getElementById(slId).value);
+function syncPct(slId, lblId, niId){
+  const v = parseFloat(document.getElementById(slId).value);
+  document.getElementById(lblId).textContent = fPct(v);
+  if(niId){ const ni=document.getElementById(niId); if(ni) ni.value = v.toFixed(2).replace('.',','); }
+}
+function syncPctI(niId, slId, lblId, mn, mx){
+  let v = parseFloat(String(document.getElementById(niId).value).replace(',','.'));
+  if(isNaN(v)) v = mn;
+  v = Math.max(mn, Math.min(mx, v));
+  const sl = document.getElementById(slId); sl.value = v;
+  document.getElementById(niId).value = v.toFixed(2).replace('.',',');
+  document.getElementById(lblId).textContent = fPct(v);
 }
 
 function switchModule(id, el){

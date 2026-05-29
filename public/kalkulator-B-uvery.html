@@ -348,9 +348,10 @@ try {
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Aktuální úroková sazba</span><strong id="u-saz-lbl">4,9 %</strong></div>
+          <div class="field-label"><span>Aktuální úroková sazba</span><strong id="u-saz-lbl">4,90 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0.5" max="12" step="0.1" value="4.9" id="u-saz-sl" oninput="syncPct('u-saz-sl','u-saz-lbl')">
+            <input type="range" min="0.5" max="12" step="0.01" value="4.9" id="u-saz-sl" oninput="syncPct('u-saz-sl','u-saz-lbl','u-saz-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="u-saz-ni" value="4,90" style="width:64px" onchange="syncPctI('u-saz-ni','u-saz-sl','u-saz-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
       </div>
@@ -358,21 +359,24 @@ try {
       <div class="sec-label">Scénáře sazby po refixaci</div>
       <div class="layout-3">
         <div class="field">
-          <div class="field-label"><span>Optimistická sazba</span><strong id="u-opt-lbl">3,5 %</strong></div>
+          <div class="field-label"><span>Optimistická sazba</span><strong id="u-opt-lbl">3,50 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0.5" max="12" step="0.1" value="3.5" id="u-opt-sl" oninput="syncPct('u-opt-sl','u-opt-lbl')">
+            <input type="range" min="0.5" max="12" step="0.01" value="3.5" id="u-opt-sl" oninput="syncPct('u-opt-sl','u-opt-lbl','u-opt-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="u-opt-ni" value="3,50" style="width:64px" onchange="syncPctI('u-opt-ni','u-opt-sl','u-opt-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Realistická sazba</span><strong id="u-real-lbl">5,0 %</strong></div>
+          <div class="field-label"><span>Realistická sazba</span><strong id="u-real-lbl">5,00 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0.5" max="12" step="0.1" value="5.0" id="u-real-sl" oninput="syncPct('u-real-sl','u-real-lbl')">
+            <input type="range" min="0.5" max="12" step="0.01" value="5.0" id="u-real-sl" oninput="syncPct('u-real-sl','u-real-lbl','u-real-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="u-real-ni" value="5,00" style="width:64px" onchange="syncPctI('u-real-ni','u-real-sl','u-real-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Pesimistická sazba</span><strong id="u-pes-lbl">6,5 %</strong></div>
+          <div class="field-label"><span>Pesimistická sazba</span><strong id="u-pes-lbl">6,50 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0.5" max="12" step="0.1" value="6.5" id="u-pes-sl" oninput="syncPct('u-pes-sl','u-pes-lbl')">
+            <input type="range" min="0.5" max="12" step="0.01" value="6.5" id="u-pes-sl" oninput="syncPct('u-pes-sl','u-pes-lbl','u-pes-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="u-pes-ni" value="6,50" style="width:64px" onchange="syncPctI('u-pes-ni','u-pes-sl','u-pes-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
       </div>
@@ -466,9 +470,10 @@ try {
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Nabízená sazba — stávající banka</span><strong id="rf-saz1-lbl">5,2 %</strong></div>
+          <div class="field-label"><span>Nabízená sazba — stávající banka</span><strong id="rf-saz1-lbl">5,20 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0.5" max="12" step="0.1" value="5.2" id="rf-saz1-sl" oninput="syncPct('rf-saz1-sl','rf-saz1-lbl')">
+            <input type="range" min="0.5" max="12" step="0.01" value="5.2" id="rf-saz1-sl" oninput="syncPct('rf-saz1-sl','rf-saz1-lbl','rf-saz1-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="rf-saz1-ni" value="5,20" style="width:64px" onchange="syncPctI('rf-saz1-ni','rf-saz1-sl','rf-saz1-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
       </div>
@@ -476,9 +481,10 @@ try {
       <div class="sec-label">Nabídka konkurence</div>
       <div class="layout-2">
         <div class="field">
-          <div class="field-label"><span>Sazba u konkurence</span><strong id="rf-saz2-lbl">4,6 %</strong></div>
+          <div class="field-label"><span>Sazba u konkurence</span><strong id="rf-saz2-lbl">4,60 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0.5" max="12" step="0.1" value="4.6" id="rf-saz2-sl" oninput="syncPct('rf-saz2-sl','rf-saz2-lbl')">
+            <input type="range" min="0.5" max="12" step="0.01" value="4.6" id="rf-saz2-sl" oninput="syncPct('rf-saz2-sl','rf-saz2-lbl','rf-saz2-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="rf-saz2-ni" value="4,60" style="width:64px" onchange="syncPctI('rf-saz2-ni','rf-saz2-sl','rf-saz2-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="field">
@@ -572,9 +578,10 @@ try {
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Sazba úvěru</span><strong id="iv-saz-lbl">5,0 %</strong></div>
+          <div class="field-label"><span>Sazba úvěru</span><strong id="iv-saz-lbl">5,00 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0.5" max="12" step="0.1" value="5.0" id="iv-saz-sl" oninput="syncPct('iv-saz-sl','iv-saz-lbl')">
+            <input type="range" min="0.5" max="12" step="0.01" value="5.0" id="iv-saz-sl" oninput="syncPct('iv-saz-sl','iv-saz-lbl','iv-saz-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="iv-saz-ni" value="5,00" style="width:64px" onchange="syncPctI('iv-saz-ni','iv-saz-sl','iv-saz-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
       </div>
@@ -595,9 +602,10 @@ try {
         </div>
       </div>
       <div class="field">
-        <div class="field-label"><span>Očekávaný výnos investice p.a.</span><strong id="iv-vyn-lbl">7,0 %</strong></div>
+        <div class="field-label"><span>Očekávaný výnos investice p.a.</span><strong id="iv-vyn-lbl">7,00 %</strong></div>
         <div class="slider-wrap">
-          <input type="range" min="1" max="15" step="0.5" value="7" id="iv-vyn-sl" oninput="syncPct('iv-vyn-sl','iv-vyn-lbl')">
+          <input type="range" min="1" max="15" step="0.01" value="7" id="iv-vyn-sl" oninput="syncPct('iv-vyn-sl','iv-vyn-lbl','iv-vyn-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="iv-vyn-ni" value="7,00" style="width:64px" onchange="syncPctI('iv-vyn-ni','iv-vyn-sl','iv-vyn-lbl',1,15)" onkeydown="if(event.key==='Enter')this.blur()">
         </div>
       </div>
       <button class="calc-btn" onclick="calcInvSplat()">Porovnat obě varianty →</button>
@@ -684,18 +692,20 @@ try {
 
       <div class="sec-label">Parametry úvěru</div>
       <div class="field">
-        <div class="field-label"><span>Sazba úvěru (RPSN orientačně)</span><strong id="sp-saz-lbl">9,0 %</strong></div>
+        <div class="field-label"><span>Sazba úvěru (RPSN orientačně)</span><strong id="sp-saz-lbl">9,00 %</strong></div>
         <div class="slider-wrap">
-          <input type="range" min="3" max="20" step="0.1" value="9.0" id="sp-saz-sl" oninput="syncPct('sp-saz-sl','sp-saz-lbl')">
+          <input type="range" min="3" max="20" step="0.01" value="9.0" id="sp-saz-sl" oninput="syncPct('sp-saz-sl','sp-saz-lbl','sp-saz-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="sp-saz-ni" value="9,00" style="width:64px" onchange="syncPctI('sp-saz-ni','sp-saz-sl','sp-saz-lbl',3,20)" onkeydown="if(event.key==='Enter')this.blur()">
         </div>
       </div>
 
       <div class="sec-label">Parametry spoření / investice</div>
       <div class="layout-2">
         <div class="field">
-          <div class="field-label"><span>Výnos spoření p.a.</span><strong id="sp-vyn-lbl">4,0 %</strong></div>
+          <div class="field-label"><span>Výnos spoření p.a.</span><strong id="sp-vyn-lbl">4,00 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0" max="12" step="0.5" value="4.0" id="sp-vyn-sl" oninput="syncPct('sp-vyn-sl','sp-vyn-lbl')">
+            <input type="range" min="0" max="12" step="0.01" value="4.0" id="sp-vyn-sl" oninput="syncPct('sp-vyn-sl','sp-vyn-lbl','sp-vyn-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="sp-vyn-ni" value="4,00" style="width:64px" onchange="syncPctI('sp-vyn-ni','sp-vyn-sl','sp-vyn-lbl',0,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="select-group">
@@ -741,7 +751,7 @@ function fM(n){
   if(Math.abs(m) < 10) return m.toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' M Kč';
   return (Math.round(m*10)/10).toLocaleString('cs-CZ',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' M Kč';
 }
-function fPct(n){ return parseFloat(n).toFixed(1).replace('.',',') + ' %'; }
+function fPct(n){ return parseFloat(n).toFixed(2).replace('.',',') + ' %'; }
 function parseK(s){ return parseFloat(String(s).replace(/\s/g,'').replace(',','.')) || 0; }
 
 function handlePrint() {
@@ -779,8 +789,18 @@ function syncKi(niId, slId, lblId, mn, mx){
   document.getElementById(niId).value = Math.round(v).toLocaleString('cs-CZ');
   document.getElementById(lblId).textContent = fK(v);
 }
-function syncPct(slId, lblId){
-  document.getElementById(lblId).textContent = fPct(document.getElementById(slId).value);
+function syncPct(slId, lblId, niId){
+  const v = parseFloat(document.getElementById(slId).value);
+  document.getElementById(lblId).textContent = fPct(v);
+  if(niId){ const ni=document.getElementById(niId); if(ni) ni.value = v.toFixed(2).replace('.',','); }
+}
+function syncPctI(niId, slId, lblId, mn, mx){
+  let v = parseFloat(String(document.getElementById(niId).value).replace(',','.'));
+  if(isNaN(v)) v = mn;
+  v = Math.max(mn, Math.min(mx, v));
+  const sl = document.getElementById(slId); sl.value = v;
+  document.getElementById(niId).value = v.toFixed(2).replace('.',',');
+  document.getElementById(lblId).textContent = fPct(v);
 }
 
 function switchModule(id, el){
