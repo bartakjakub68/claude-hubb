@@ -621,10 +621,10 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Z toho mandatorní výdaje <span class="tip-wrap"><span class="tip-ico">?</span><span class="tip-pop">Výdaje, které jsou pevné a nezvyšují se při invaliditě — typicky nájem, SIPO, energie, pojištění. Variabilní část (potraviny, doprava, lifestyle) se při invaliditě navyšuje, mandatorní zůstává stejná.</span></span></span><strong id="vydaje-mand-val">0 Kč</strong></div>
+          <div class="field-label"><span>Z toho fixní výdaje <span class="tip-wrap"><span class="tip-ico">?</span><span class="tip-pop">Výdaje, které jsou pevné a nezvyšují se při invaliditě — typicky nájem, SIPO, energie, pojištění. Variabilní část (potraviny, doprava, lifestyle) se při invaliditě navyšuje, fixní zůstává stejná.</span></span></span><strong id="vydaje-fix-val">0 Kč</strong></div>
           <div class="slider-wrap">
-            <input type="range" id="vydaje-mand-sl" min="0" max="200000" step="1000" value="0" aria-label="Mandatorní výdaje" oninput="sync('vydaje-mand-sl','vydaje-mand-ni','vydaje-mand-val',1)">
-            <input type="text" class="num-input" id="vydaje-mand-ni" value="0" onchange="syncI('vydaje-mand-ni','vydaje-mand-sl','vydaje-mand-val',1)" onkeydown="if(event.key==='Enter')this.blur()">
+            <input type="range" id="vydaje-fix-sl" min="0" max="200000" step="1000" value="0" aria-label="Fixní výdaje" oninput="sync('vydaje-fix-sl','vydaje-fix-ni','vydaje-fix-val',1)">
+            <input type="text" class="num-input" id="vydaje-fix-ni" value="0" onchange="syncI('vydaje-fix-ni','vydaje-fix-sl','vydaje-fix-val',1)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
         <div class="field">
@@ -1615,15 +1615,15 @@ function pnDenniDavka(prijemCisty, vydaje, nemocenska, varianta){
 
 // Zvýšené výdaje při invaliditě.
 // I: +5%, II: +10%, III: +25% — zvyšuje se pouze VARIABILNÍ část výdajů
-// (mandatorní výdaje jako nájem/SIPO/energie zůstávají stejné).
+// (fixní výdaje jako nájem/SIPO/energie zůstávají stejné).
 // Cap 80 000 Kč se aplikuje na variabilní část.
-//   Příklad: výdaje 30k, mandatorní 20k, III. stupeň
+//   Příklad: výdaje 30k, fixní 20k, III. stupeň
 //     variabilní = 10k, zvýšení = min(10k, 80k) × 25% = 2,5k → celkové 32,5k
-//   (dříve bez mandatorních: 30k × 1,25 = 37,5k)
-function zvyseneVydaje(vydaje, stupen, mandatorni = 0){
+//   (dříve bez fixních: 30k × 1,25 = 37,5k)
+function zvyseneVydaje(vydaje, stupen, fixni = 0){
   const pct = {I:0.05, II:0.10, III:0.25}[stupen];
   const cap = 80000;
-  const variabilni = Math.max(vydaje - mandatorni, 0);
+  const variabilni = Math.max(vydaje - fixni, 0);
   const zvyseni = Math.min(variabilni, cap) * pct;
   return vydaje + zvyseni;
 }
@@ -1698,7 +1698,7 @@ function calculate(){
   const _prijemTotal = gni('prijem-ni');
   const _prijemPasivni = Math.min(gni('prijem-pasivni-ni'), _prijemTotal); // pasivní nemůže být víc než celkový
   const _vydajeTotal = gni('vydaje-ni');
-  const _vydajeMand = Math.min(gni('vydaje-mand-ni'), _vydajeTotal); // mandatorní nemůže být víc než celkové
+  const _vydajeFix = Math.min(gni('vydaje-fix-ni'), _vydajeTotal); // fixní nemůže být víc než celkové
   const _retVlastni = document.getElementById('retVlastniChk')?.checked || false;
   // OSVČ daňový režim → vyměřovací základ pro státní důchod (přesnější než
   // zpětný odhad z čistého příjmu). Pro zaměstnance/ostatní zůstává null.
@@ -1722,7 +1722,7 @@ function calculate(){
     prijem:  _prijemTotal,
     prijemPasivni: _prijemPasivni,        // pasivní příjem zachován při invaliditě/smrti/PN
     vydaje:  _vydajeTotal,
-    vydajeMandatorni: _vydajeMand,        // mandatorní výdaje se nezvyšují při invaliditě
+    vydajeFixni: _vydajeFix,        // fixní výdaje se nezvyšují při invaliditě
     retVlastni: _retVlastni,              // true = použít vlastní % místo profesního RETENTION
     retCustom: {
       I:   (+document.getElementById('ret-I-ni')?.value   || 55) / 100,
@@ -1828,14 +1828,14 @@ function calculatePartner(P, D_main){
   const prijemTotal = prijemK1 + prijemK2;
   // Podíl výdajů dle příjmů (pro Standardní variantu)
   const podilK2 = prijemTotal > 0 ? prijemK2 / prijemTotal : 0.5;
-  // Pasivní/mandatorní zadané pro klienta 1 jsou společné výdaje/příjmy domácnosti
+  // Pasivní/fixní zadané pro klienta 1 jsou společné výdaje/příjmy domácnosti
   // → partnerův podíl je úměrný jeho podílu na celkovém příjmu (vydajePodil).
   const prijemPasivniK2 = Math.min(
     Math.round((D_main.prijemPasivni || 0) * podilK2),
     prijemK2
   );
-  const vydajeMandK2 = Math.min(
-    Math.round((D_main.vydajeMandatorni || 0) * podilK2),
+  const vydajeFixK2 = Math.min(
+    Math.round((D_main.vydajeFixni || 0) * podilK2),
     D_main.vydaje
   );
   // Pokud je partner OSVČ, vyměřovací základ z UI nemáme → necháme engine
@@ -1851,7 +1851,7 @@ function calculatePartner(P, D_main){
     prijem: P.prijem,
     prijemPasivni: prijemPasivniK2,        // partnerův podíl pasivního příjmu domácnosti
     vydaje: D_main.vydaje,
-    vydajeMandatorni: vydajeMandK2,        // partnerův podíl mandatorních výdajů
+    vydajeFixni: vydajeFixK2,        // partnerův podíl fixních výdajů
     vydajePodil: podilK2,                  // podíl výdajů K2 dle poměru příjmů
     retVlastni: D_main.retVlastni || false,
     retCustom: D_main.retCustom || {I:0.55, II:0.25, III:0.05},
@@ -2001,37 +2001,37 @@ function runEngineForData(D, target){
     //   I. stupeň: celé výdaje (včetně splátky hypotéky)
     //   II./III. stupeň: výdaje bez splátky (hypotéka jde do úvěrového balíčku)
     const vydBaseFull = stupen === 'I' ? D.vydaje : Math.max(D.vydaje - D.splatky, 0);
-    // Mandatorní část výdajů (nájem, SIPO, energie) — zachovat napříč stupni
-    // Pro stupeň I (kde báze obsahuje splátku) je mandatorní jak zadáno;
-    // pro II/III (kde báze = bez splátky) je mandatorní omezena na zbývající bázi.
-    const vydMandBase = Math.min(D.vydajeMandatorni, vydBaseFull);
+    // Fixní část výdajů (nájem, SIPO, energie) — zachovat napříč stupni
+    // Pro stupeň I (kde báze obsahuje splátku) je fixní jak zadáno;
+    // pro II/III (kde báze = bez splátky) je fixní omezena na zbývající bázi.
+    const vydFixBase = Math.min(D.vydajeFixni, vydBaseFull);
 
     let cil;
     if(rezim === 'k'){
       // KOMPLEXNÍ: cíl = PŮVODNÍ příjem + procento z VARIABILNÍ části výdajů (cap 80k)
       //   • příjem = vlastní původní příjem (BEZ capu manuální profese)
-      //   • příplatek = procento z výdajů (cap 80k), mandatorní část se nezvyšuje
+      //   • příplatek = procento z výdajů (cap 80k), fixní část se nezvyšuje
       const pctK = {I:0.05, II:0.10, III:0.25}[stupen];
-      const variabilni = Math.max(vydBaseFull - vydMandBase, 0);
+      const variabilni = Math.max(vydBaseFull - vydFixBase, 0);
       const vydCap = Math.min(variabilni, 80000);
       const priplatekK = vydCap * pctK;
       cil = D.prijem + priplatekK;
     } else if(rezim === 's'){
       // STANDARDNÍ: cíl = podíl × výdaje × koef zvýšení (variabilní část, cap 80k)
-      cil = podilK * zvyseneVydaje(vydBaseFull, stupen, vydMandBase);
+      cil = podilK * zvyseneVydaje(vydBaseFull, stupen, vydFixBase);
     } else { // 'z'
-      // ZÁKLADNÍ (v21.1): klient si sníží VARIABILNÍ výdaje o 25 % → mandatorní zůstávají
-      //   sníženaBáze = mandatorní + (variabilní × 0,75)
+      // ZÁKLADNÍ (v21.1): klient si sníží VARIABILNÍ výdaje o 25 % → fixní zůstávají
+      //   sníženaBáze = fixní + (variabilní × 0,75)
       //   pak zvýšení o pct, opět jen z variabilní složky
-      const variabilni = Math.max(vydBaseFull - vydMandBase, 0);
-      const vydBaseSnizene = vydMandBase + variabilni * 0.75;
-      const mandBaseSnizene = Math.min(vydMandBase, vydBaseSnizene);
-      cil = podilK * zvyseneVydaje(vydBaseSnizene, stupen, mandBaseSnizene);
+      const variabilni = Math.max(vydBaseFull - vydFixBase, 0);
+      const vydBaseSnizene = vydFixBase + variabilni * 0.75;
+      const fixBaseSnizene = Math.min(vydFixBase, vydBaseSnizene);
+      cil = podilK * zvyseneVydaje(vydBaseSnizene, stupen, fixBaseSnizene);
     }
 
     // Partner do mezery NEVSTUPUJE — každý je pojištěn na svou potřebu
     const mezera = Math.max(cil - zachPrijem - invDuc, 0);
-    const variabilniForReport = Math.max(vydBaseFull - vydMandBase, 0);
+    const variabilniForReport = Math.max(vydBaseFull - vydFixBase, 0);
     return {
       mezera, zachPrijem, invDuc, cil,
       prijemEfektivni: D.prijem,
@@ -2187,18 +2187,18 @@ function runEngineForData(D, target){
   }
 
   // STANDARDNÍ: cíl = podíl × výdaje bez splátky × 0,80 (snížení standardu o 20 %)
-  //   Mandatorní výdaje se NEsnižují (nájem/SIPO nezmizí ani po snížení standardu)
+  //   Fixní výdaje se NEsnižují (nájem/SIPO nezmizí ani po snížení standardu)
   //   variabilní_po = (variabilní_bez_splátky) × 0,80
-  //   cíl = podíl × (mandatorní + variabilní_po)
+  //   cíl = podíl × (fixní + variabilní_po)
   const vydBezSplBase = Math.max(D.vydaje - D.splatky, 0);
-  const vydMandBezSpl = Math.min(D.vydajeMandatorni, vydBezSplBase);
-  const vydVarBezSpl = Math.max(vydBezSplBase - vydMandBezSpl, 0);
-  const vydPoSmrtiS = Math.round((vydMandBezSpl + vydVarBezSpl * 0.80) * podilK);
+  const vydFixBezSpl = Math.min(D.vydajeFixni, vydBezSplBase);
+  const vydVarBezSpl = Math.max(vydBezSplBase - vydFixBezSpl, 0);
+  const vydPoSmrtiS = Math.round((vydFixBezSpl + vydVarBezSpl * 0.80) * podilK);
   const mezeraS = Math.max(vydPoSmrtiS - vdovDuc - sirotciCelk - pasivniPoSmrti, 0);
 
-  // ZÁKLADNÍ: ještě dalších 25 % snížení standardu (mandatorní stále stejné)
+  // ZÁKLADNÍ: ještě dalších 25 % snížení standardu (fixní stále stejné)
   //   variabilní_po = variabilní_bez_splátky × 0,80 × 0,75 = × 0,60
-  const vydPoSmrtiZ = Math.round((vydMandBezSpl + vydVarBezSpl * 0.80 * 0.75) * podilK);
+  const vydPoSmrtiZ = Math.round((vydFixBezSpl + vydVarBezSpl * 0.80 * 0.75) * podilK);
   const mezeraZ = Math.max(vydPoSmrtiZ - vdovDuc - sirotciCelk - pasivniPoSmrti, 0);
 
   const smrtHorizont = Math.min(rokiDD, 20);
