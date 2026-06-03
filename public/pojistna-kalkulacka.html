@@ -4251,26 +4251,26 @@ function exportPDF(){
           const typBg = it.t==='K'?'#F0F0F0':it.t==='L'?'#1A1A1A':'#E3000F';
           const typFg = it.t==='L'||it.t==='D'?'#fff':'#4A4A4A';
           return `<tr style="background:#FAFAFA">
-            <td style="padding:3px 8px 3px 20px;border-bottom:1px solid #F5F5F5;font-size:9.5px;color:#4A4A4A">${it.n}</td>
-            <td style="padding:3px 8px;border-bottom:1px solid #F5F5F5;font-size:8.5px;color:#6B6560">${it.d||''}</td>
-            <td style="padding:3px 8px;border-bottom:1px solid #F5F5F5;text-align:right;white-space:nowrap">
-              <span style="font-size:10px;font-weight:700;color:#1A1A1A">${aStr}</span>
+            <td style="padding:1.5px 8px 1.5px 18px;border-bottom:1px solid #F5F5F5;font-size:8.5px;color:#4A4A4A">${it.n}</td>
+            <td style="padding:1.5px 8px;border-bottom:1px solid #F5F5F5;font-size:7.5px;color:#6B6560">${it.d||''}</td>
+            <td style="padding:1.5px 8px;border-bottom:1px solid #F5F5F5;text-align:right;white-space:nowrap">
+              <span style="font-size:9px;font-weight:700;color:#1A1A1A">${aStr}</span>
             </td>
-            <td style="padding:3px 8px;border-bottom:1px solid #F5F5F5;text-align:center">
-              <span style="background:${typBg};color:${typFg};padding:1px 5px;border-radius:2px;font-size:7.5px;font-weight:700">${typ}</span>
+            <td style="padding:1.5px 8px;border-bottom:1px solid #F5F5F5;text-align:center">
+              <span style="background:${typBg};color:${typFg};padding:1px 4px;border-radius:2px;font-size:6.5px;font-weight:700">${typ}</span>
             </td>
           </tr>`;
         }).join('');
       }
 
       return `<tr>
-        <td style="padding:5px 8px;border-bottom:1px solid #EFEFEF;font-size:12px">${r.ico}</td>
-        <td style="padding:5px 8px;border-bottom:1px solid #EFEFEF">
-          <div style="font-size:10.5px;font-weight:700;color:#1A1A1A">${r.name}${warnMark}</div>
-          <div style="font-size:8.5px;color:#6B6560;margin-top:1px">${r.desc||''}</div>
+        <td style="padding:3px 8px;border-bottom:1px solid #EFEFEF;font-size:11px">${r.ico}</td>
+        <td style="padding:3px 8px;border-bottom:1px solid #EFEFEF">
+          <div style="font-size:9.5px;font-weight:700;color:#1A1A1A">${r.name}${warnMark}</div>
+          <div style="font-size:7.5px;color:#6B6560;margin-top:1px">${r.desc||''}</div>
         </td>
-        <td style="padding:5px 8px;border-bottom:1px solid #EFEFEF;text-align:right">${prioHtml}</td>
-        <td style="padding:5px 8px;border-bottom:1px solid #EFEFEF;text-align:right;font-size:12px;font-weight:700;white-space:nowrap;color:#1A1A1A">${amtStr}</td>
+        <td style="padding:3px 8px;border-bottom:1px solid #EFEFEF;text-align:right">${prioHtml}</td>
+        <td style="padding:3px 8px;border-bottom:1px solid #EFEFEF;text-align:right;font-size:11px;font-weight:700;white-space:nowrap;color:#1A1A1A">${amtStr}</td>
       </tr>${subRows}`;
     }).join('');
   }
@@ -4294,28 +4294,28 @@ function exportPDF(){
   const uverRows = buildRiskRows(V.risks, uverNames);
 
   // Legenda typů PČ
-  const legendaHtml = `<div style="background:#F9F9F9;border:1px solid #EBEBEB;border-radius:4px;padding:7px 12px;margin-top:10px;font-size:8px;color:#6B6560;display:flex;gap:14px;flex-wrap:wrap">
+  const legendaHtml = `<div style="background:#F9F9F9;border:1px solid #EBEBEB;border-radius:4px;padding:4px 10px;margin-top:5px;font-size:7px;color:#6B6560;display:flex;gap:12px;flex-wrap:wrap">
     <strong style="color:#1A1A1A;margin-right:2px">Typy pojistné částky:</strong>
-    <span><span style="background:#F0F0F0;color:#4A4A4A;padding:1px 5px;border-radius:2px;font-size:7px;font-weight:700;margin-right:3px">KONST.</span>Vyplatí se celá najednou</span>
-    <span><span style="background:#1A1A1A;color:#fff;padding:1px 5px;border-radius:2px;font-size:7px;font-weight:700;margin-right:3px">KLES.</span>Snižuje se s klesajícím dluhem</span>
-    <span><span style="background:#E3000F;color:#fff;padding:1px 5px;border-radius:2px;font-size:7px;font-weight:700;margin-right:3px">DENNĚ</span>Dávka za každý den nemoci</span>
+    <span><span style="background:#F0F0F0;color:#4A4A4A;padding:1px 4px;border-radius:2px;font-size:6.5px;font-weight:700;margin-right:3px">KONST.</span>Vyplatí se celá najednou</span>
+    <span><span style="background:#1A1A1A;color:#fff;padding:1px 4px;border-radius:2px;font-size:6.5px;font-weight:700;margin-right:3px">KLES.</span>Snižuje se s klesajícím dluhem</span>
+    <span><span style="background:#E3000F;color:#fff;padding:1px 4px;border-radius:2px;font-size:6.5px;font-weight:700;margin-right:3px">DENNĚ</span>Dávka za každý den nemoci</span>
   </div>`;
 
   // Vynechané
   const skippedHtml = V.skipped.length>0
-    ? `<div style="background:#F5F5F5;border:1px solid #D8D8D8;border-radius:4px;padding:8px 12px;margin-top:8px;font-size:9px;color:#6B6560">
+    ? `<div style="background:#F5F5F5;border:1px solid #D8D8D8;border-radius:4px;padding:4px 10px;margin-top:4px;font-size:8px;color:#6B6560">
         <strong style="color:#1A1A1A">Vynecháno v této variantě:</strong> ${[...new Set(V.skipped)].join(' · ')}
       </div>` : '';
 
   // Varování pro základní variantu
   const warnHtml = isMinimum ? `
-    <div style="background:#FDEAEA;border:2px solid #E3000F;border-radius:6px;padding:11px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
-      <span style="font-size:20px;flex-shrink:0">❗</span>
+    <div style="background:#FDEAEA;border:2px solid #E3000F;border-radius:6px;padding:7px 12px;margin-bottom:8px;display:flex;gap:9px;align-items:flex-start">
+      <span style="font-size:16px;flex-shrink:0">❗</span>
       <div>
-        <div style="font-size:13px;font-weight:700;color:#E3000F;margin-bottom:3px">Nedostatečná pojistná ochrana</div>
-        <div style="font-size:10.5px;color:#B71C1C;line-height:1.6">
-          Tato varianta pokrývá pouze <strong>75 % standardního doporučení</strong>. 
-          Pro dostatečnou ochranu je nutné <strong>snížit výdaje domácnosti o 25 %</strong> 
+        <div style="font-size:11px;font-weight:700;color:#E3000F;margin-bottom:2px">Nedostatečná pojistná ochrana</div>
+        <div style="font-size:9px;color:#B71C1C;line-height:1.5">
+          Tato varianta pokrývá pouze <strong>75 % standardního doporučení</strong>.
+          Pro dostatečnou ochranu je nutné <strong>snížit výdaje domácnosti o 25 %</strong>
           nebo zvážit Standardní variantu.
         </div>
       </div>
@@ -4323,11 +4323,11 @@ function exportPDF(){
 
   // Tabulka hlavičky
   const tableStyle = `width:100%;border-collapse:collapse`;
-  const thStyle = `padding:4px 8px;font-size:7.5px;text-transform:uppercase;letter-spacing:.07em;color:#6B6560;font-weight:700;border-bottom:1.5px solid #1A1A1A`;
+  const thStyle = `padding:3px 8px;font-size:7px;text-transform:uppercase;letter-spacing:.07em;color:#6B6560;font-weight:700;border-bottom:1.5px solid #1A1A1A`;
   const secDiv = (label, color='#1A1A1A') =>
-    `<div style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;page-break-before:auto">
+    `<div style="display:flex;align-items:center;gap:7px;margin:5px 0 2px;page-break-before:auto">
       <div style="flex:1;height:1px;background:#D8D8D8"></div>
-      <span style="font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:2px 8px;border-radius:20px;background:${color};color:#fff;white-space:nowrap">${label}</span>
+      <span style="font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:1.5px 7px;border-radius:20px;background:${color};color:#fff;white-space:nowrap">${label}</span>
       <div style="flex:1;height:1px;background:#D8D8D8"></div>
     </div>`;
 
@@ -4757,9 +4757,9 @@ function exportPDF(){
   <title>Pojistná ochrana — ${varNames[activeKey]}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:11.5px;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:10.5px;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     /* Pevná A4 výška — každá .page je vždy přesně 1 stránka */
-    .page,.page2{width:210mm;height:297mm;padding:11mm 13mm 15mm;position:relative;page-break-after:always;overflow:hidden}
+    .page,.page2{width:210mm;height:297mm;padding:8mm 12mm 11mm;position:relative;page-break-after:always;overflow:hidden}
     .page:last-child,.page2:last-child{page-break-after:auto}
     @media print{
       body{margin:0}
@@ -4775,14 +4775,14 @@ function exportPDF(){
 
   <div class="page">
     <!-- Header -->
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:8px;border-bottom:3px solid #E3000F;margin-bottom:14px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:5px;border-bottom:2.5px solid #E3000F;margin-bottom:9px">
       <div>
-        <div style="font-size:18px;font-weight:700;letter-spacing:-.4px">Doporučení pojistné ochrany</div>
-        <div style="font-size:9.5px;color:#6B6560;text-transform:uppercase;letter-spacing:.08em;margin-top:2px">Orientační výpočet · není nabídkou pojistného produktu</div>
+        <div style="font-size:16px;font-weight:700;letter-spacing:-.4px">Doporučení pojistné ochrany</div>
+        <div style="font-size:8.5px;color:#6B6560;text-transform:uppercase;letter-spacing:.08em;margin-top:1px">Orientační výpočet · není nabídkou pojistného produktu</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:10px;color:#6B6560">${date}</div>
-        <span style="display:inline-block;margin-top:4px;padding:3px 10px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase;${varBadgeStyle}">${varNames[activeKey]}</span>
+        <div style="font-size:9px;color:#6B6560">${date}</div>
+        <span style="display:inline-block;margin-top:3px;padding:2px 9px;border-radius:3px;font-size:8.5px;font-weight:700;text-transform:uppercase;${varBadgeStyle}">${varNames[activeKey]}</span>
       </div>
     </div>
 
@@ -4792,7 +4792,7 @@ function exportPDF(){
       // Warning pro nesezdané páry — nemají nárok na vdovský důchod
       const rstav = R.D?.rstav;
       if(rstav==='partner'){
-        return `<div style="background:#FFF8E1;border:1.5px solid #F59E0B;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start">
+        return `<div style="background:#FFF8E1;border:1.5px solid #F59E0B;border-radius:6px;padding:6px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start">
           <span style="font-size:16px;flex-shrink:0">⚠️</span>
           <div>
             <div style="font-size:10.5px;font-weight:700;color:#92400E;margin-bottom:2px">Nesezdaný pár — vyšší riziko</div>
@@ -4808,7 +4808,7 @@ function exportPDF(){
       // Samoživitel = nemá partnera, ale má dítě
       const isSamozivy = !R.maPartnera && (R.pocetD||0) > 0;
       if(isSamozivy){
-        return `<div style="background:#FFF3E0;border:1.5px solid #F97316;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start">
+        return `<div style="background:#FFF3E0;border:1.5px solid #F97316;border-radius:6px;padding:6px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start">
           <span style="font-size:16px;flex-shrink:0">👨‍👧</span>
           <div>
             <div style="font-size:10.5px;font-weight:700;color:#9A3412;margin-bottom:2px">Samoživitel — zvýšené riziko</div>
@@ -4820,7 +4820,7 @@ function exportPDF(){
         const invRisk = V.risks.find(r=>r.name.includes('invalidity'));
         const invCelkemIII = invRisk ? invRisk.items.filter(it=>it.a>0&&it.t!=='D').reduce((s,it)=>s+it.a,0) : 0;
         const fKpV = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
-        return `<div style="background:#FDEAEA;border:1.5px solid #F5ACAF;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start">
+        return `<div style="background:#FDEAEA;border:1.5px solid #F5ACAF;border-radius:6px;padding:6px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start">
           <span style="font-size:16px;flex-shrink:0">⚠️</span>
           <div>
             <div style="font-size:10.5px;font-weight:700;color:#C0392B;margin-bottom:2px">Nutné minimum — pozor na mezery v ochraně</div>
@@ -4837,10 +4837,10 @@ function exportPDF(){
     })()}
 
     <!-- Profil -->
-    <div style="background:#1A1A1A;border-radius:5px;padding:8px 13px;margin-bottom:10px">
-      <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:1px">${pname}</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.5);margin-bottom:4px">${psub}</div>
-      <div>${ptags.map(t=>`<span style="display:inline-block;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);padding:1px 7px;border-radius:3px;font-size:8px;font-weight:700;margin:2px 2px 0 0">${t}</span>`).join('')}</div>
+    <div style="background:#1A1A1A;border-radius:5px;padding:5px 11px;margin-bottom:6px">
+      <div style="font-size:11.5px;font-weight:700;color:#fff;margin-bottom:1px">${pname}</div>
+      <div style="font-size:8.5px;color:rgba(255,255,255,.5);margin-bottom:3px">${psub}</div>
+      <div>${ptags.map(t=>`<span style="display:inline-block;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);padding:1px 6px;border-radius:3px;font-size:7.5px;font-weight:700;margin:1px 2px 0 0">${t}</span>`).join('')}</div>
     </div>
 
     <!-- Variantní věta -->
@@ -4851,7 +4851,7 @@ function exportPDF(){
       const pnDavka = pnRisk ? pnRisk.items.find(it=>it.t==='D')?.a||0 : 0;
       const fKpV = v => v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
       if(activeKey==='k'){
-        return `<div style="background:#E8F4EE;border:1.5px solid #A8D4BC;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start">
+        return `<div style="background:#E8F4EE;border:1.5px solid #A8D4BC;border-radius:6px;padding:6px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start">
           <span style="font-size:16px;flex-shrink:0">🛡️</span>
           <div>
             <div style="font-size:10.5px;font-weight:700;color:#1A6644;margin-bottom:2px">Komplexní varianta — maximální ochrana</div>
@@ -4868,7 +4868,7 @@ function exportPDF(){
           : R.isBezPracePomeru
             ? ` Pracovní neschopnost se pro Vás nepojišťuje — ${R.isMD ? 'na rodičovské dovolené' : 'jako nezaměstnaný/á'} nemáte výdělek z práce, který by bylo třeba kompenzovat.`
             : ' Pracovní neschopnost je pokryta státní nemocenskou.';
-        return `<div style="background:#F5EDD8;border:1.5px solid #E8D5A8;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start">
+        return `<div style="background:#F5EDD8;border:1.5px solid #E8D5A8;border-radius:6px;padding:6px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start">
           <span style="font-size:16px;flex-shrink:0">⚖️</span>
           <div>
             <div style="font-size:10.5px;font-weight:700;color:#92400E;margin-bottom:2px">Standardní varianta — pokrytí výdajů</div>
@@ -4907,11 +4907,11 @@ function exportPDF(){
     ${legendaHtml}
     ${skippedHtml}
 
-    <div style="position:absolute;bottom:9mm;left:13mm;right:13mm;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #D8D8D8;padding-top:5px">
-      <div style="font-size:7px;color:#9E9E9E;flex:1;padding-right:16px;line-height:1.4">
+    <div style="position:absolute;bottom:6mm;left:12mm;right:12mm;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #D8D8D8;padding-top:4px">
+      <div style="font-size:6.5px;color:#9E9E9E;flex:1;padding-right:14px;line-height:1.35">
         Orientační výpočet · Není nabídkou pojistného produktu · Nezohledňuje individuální zdravotní stav · Parametry ČSSZ 2026
       </div>
-      <div style="font-size:9px;font-weight:700;color:#1A1A1A">1 / ${totalPages}</div>
+      <div style="font-size:8.5px;font-weight:700;color:#1A1A1A">1 / ${totalPages}</div>
     </div>
   </div>
 
@@ -4968,9 +4968,9 @@ function exportPDF(){
         const pnR2=V2.risks.find(r=>r.name.includes('neschopnost'));
         const pnD2=pnR2?pnR2.items.find(it=>it.t==='D')?.a||0:0;
         const fKpP=v=>v>=1000000?(v/1000000).toFixed(v%1000000===0?0:1)+' mil. Kč':v>=1000?Math.round(v/1000)+' tis. Kč':v+' Kč';
-        if(activeKey==='k') return `<div style="background:#E8F4EE;border:1.5px solid #A8D4BC;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start"><span style="font-size:16px;flex-shrink:0">🛡️</span><div><div style="font-size:10.5px;font-weight:700;color:#1A6644;margin-bottom:2px">Komplexní varianta — maximální ochrana</div><div style="font-size:9px;color:#166534;line-height:1.7">Tato varianta zajistí <strong>zachování aktuálního příjmu</strong> i v případě invalidity nebo dlouhodobé nemoci.${invC2>0?' Při těžké invaliditě celkem <strong>'+fKpP(invC2)+'</strong>.':''}${pnD2>0?' Při nemoci <strong>'+pnD2+' Kč/den</strong>.</div></div></div>':'.'}</div></div>`;
-        if(activeKey==='s') return `<div style="background:#F5EDD8;border:1.5px solid #E8D5A8;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start"><span style="font-size:16px;flex-shrink:0">⚖️</span><div><div style="font-size:10.5px;font-weight:700;color:#92400E;margin-bottom:2px">Standardní varianta — pokrytí výdajů</div><div style="font-size:9px;color:#78350F;line-height:1.7">Zajistí pokrytí Vašeho podílu výdajů domácnosti.${invC2>0?' Při těžké invaliditě celkem <strong>'+fKpP(invC2)+'</strong>.':''}${pnD2>0?' Při nemoci <strong>'+pnD2+' Kč/den</strong>.':' Nemocenská výdaje pokrývá.'}</div></div></div>`;
-        if(activeKey==='z') return `<div style="background:#FDEAEA;border:1.5px solid #F5ACAF;border-radius:6px;padding:9px 13px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start"><span style="font-size:16px;flex-shrink:0">⚠️</span><div><div style="font-size:10.5px;font-weight:700;color:#C0392B;margin-bottom:2px">Nutné minimum — pozor na mezery v ochraně</div><div style="font-size:9px;color:#922B21;line-height:1.7">Tato varianta zajistí základní finanční přežití, ale nepokrývá plné výdaje domácnosti. Počítejte se snížením výdajů o 25 % při pojistné události.${invC2>0?' Při těžké invaliditě celkem <strong>'+fKpP(invC2)+'</strong>.':''}</div></div></div>`;
+        if(activeKey==='k') return `<div style="background:#E8F4EE;border:1.5px solid #A8D4BC;border-radius:6px;padding:6px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start"><span style="font-size:16px;flex-shrink:0">🛡️</span><div><div style="font-size:10.5px;font-weight:700;color:#1A6644;margin-bottom:2px">Komplexní varianta — maximální ochrana</div><div style="font-size:9px;color:#166534;line-height:1.7">Tato varianta zajistí <strong>zachování aktuálního příjmu</strong> i v případě invalidity nebo dlouhodobé nemoci.${invC2>0?' Při těžké invaliditě celkem <strong>'+fKpP(invC2)+'</strong>.':''}${pnD2>0?' Při nemoci <strong>'+pnD2+' Kč/den</strong>.</div></div></div>':'.'}</div></div>`;
+        if(activeKey==='s') return `<div style="background:#F5EDD8;border:1.5px solid #E8D5A8;border-radius:6px;padding:6px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start"><span style="font-size:16px;flex-shrink:0">⚖️</span><div><div style="font-size:10.5px;font-weight:700;color:#92400E;margin-bottom:2px">Standardní varianta — pokrytí výdajů</div><div style="font-size:9px;color:#78350F;line-height:1.7">Zajistí pokrytí Vašeho podílu výdajů domácnosti.${invC2>0?' Při těžké invaliditě celkem <strong>'+fKpP(invC2)+'</strong>.':''}${pnD2>0?' Při nemoci <strong>'+pnD2+' Kč/den</strong>.':' Nemocenská výdaje pokrývá.'}</div></div></div>`;
+        if(activeKey==='z') return `<div style="background:#FDEAEA;border:1.5px solid #F5ACAF;border-radius:6px;padding:6px 11px;margin-bottom:7px;display:flex;gap:8px;align-items:flex-start"><span style="font-size:16px;flex-shrink:0">⚠️</span><div><div style="font-size:10.5px;font-weight:700;color:#C0392B;margin-bottom:2px">Nutné minimum — pozor na mezery v ochraně</div><div style="font-size:9px;color:#922B21;line-height:1.7">Tato varianta zajistí základní finanční přežití, ale nepokrývá plné výdaje domácnosti. Počítejte se snížením výdajů o 25 % při pojistné události.${invC2>0?' Při těžké invaliditě celkem <strong>'+fKpP(invC2)+'</strong>.':''}</div></div></div>`;
         return '';
       })()}
       ${fatalRows2?`<div style="page-break-inside:avoid">${secDiv('Fatální rizika')}<table style="${tableStyle}"><thead><tr>
