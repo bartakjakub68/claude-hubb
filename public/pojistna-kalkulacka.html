@@ -588,7 +588,7 @@ select:focus, .num-input:focus { border-color:var(--gold) !important; box-shadow
             </div>
           </div>
           <div style="margin-top:10px;font-size:11.5px;color:var(--ink3);line-height:1.5">
-            Procento příjmu, který klient zachová při daném stupni invalidity. Manuální profese mají defaultně stejné % jako kombinovaná práce, ale s capem na hrubý příjem ~3-30 tis. Kč/měs (po rekvalifikaci).
+            Procento příjmu, které klient zachová při daném stupni invalidity. <strong>Při zadání vlastních %</strong> se cap na manuální profese (3–30 tis. Kč/měs po rekvalifikaci) <strong>vypíná</strong> — počítáme přesně se zadanou hodnotou.
           </div>
         </div>
       </div>
@@ -1985,8 +1985,13 @@ function runEngineForData(D, target){
     //   aktivniPrijem = z práce, klesá retention koeficientem dle stupně
     const aktivniPrijem = Math.max(D.prijem - D.prijemPasivni, 0);
     // Manuální profese: cap se aplikuje POUZE na zachovaný aktivní příjem
-    // (předpoklad: po rekvalifikaci klient teoreticky nedosáhne na původní příjem)
-    const capAktivni = isManualni ? Math.min(aktivniPrijem, MANUALNI_CAP[stupen]) : aktivniPrijem;
+    // (předpoklad: po rekvalifikaci klient teoreticky nedosáhne na původní příjem).
+    // Pokud uživatel zadal vlastní % zachovaného příjmu (D.retVlastni=true),
+    // cap se vypíná — poradce explicitně určuje, kolik klient zvládne, takže
+    // automatický cap by jeho vstup přepsal.
+    const capAktivni = (isManualni && !D.retVlastni)
+      ? Math.min(aktivniPrijem, MANUALNI_CAP[stupen])
+      : aktivniPrijem;
     const zachPrijem = capAktivni * ret[stupen] + D.prijemPasivni;
 
     // Podíl výdajů klienta dle poměru příjmů (1.0 pokud single)
@@ -4355,7 +4360,10 @@ function exportPDF(){
     const vydIII = zvyseneVydaje(vydBezHypo, 'III');
     const src = (st) => {
       const ret = R_arg.ret || {I:.65,II:.30,III:.05};
-      const cap = R_arg.isManualni ? (st==='I'?30000:st==='II'?12000:3000) : D2.prijem;
+      // Cap manuální profese se aplikuje jen pokud uživatel NEzadává vlastní %.
+      // Když poradce přepsal retention sám, jeho vstup respektujeme bez capu.
+      const useCap = R_arg.isManualni && !D2.retVlastni;
+      const cap = useCap ? (st==='I'?30000:st==='II'?12000:3000) : D2.prijem;
       const zach = cap * ret[st];
       const duc  = duc2 ? duc2[st] : 0;
       const part = R_arg.maPartnera ? (D2.prijPart||0) : 0;
