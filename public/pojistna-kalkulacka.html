@@ -1828,6 +1828,18 @@ function calculatePartner(P, D_main){
   const prijemTotal = prijemK1 + prijemK2;
   // Podíl výdajů dle příjmů (pro Standardní variantu)
   const podilK2 = prijemTotal > 0 ? prijemK2 / prijemTotal : 0.5;
+  // Pasivní/mandatorní zadané pro klienta 1 jsou společné výdaje/příjmy domácnosti
+  // → partnerův podíl je úměrný jeho podílu na celkovém příjmu (vydajePodil).
+  const prijemPasivniK2 = Math.min(
+    Math.round((D_main.prijemPasivni || 0) * podilK2),
+    prijemK2
+  );
+  const vydajeMandK2 = Math.min(
+    Math.round((D_main.vydajeMandatorni || 0) * podilK2),
+    D_main.vydaje
+  );
+  // Pokud je partner OSVČ, vyměřovací základ z UI nemáme → necháme engine
+  // udělat zpětný odhad z čistého příjmu (osvcVZ = null).
   // Pro Základní: příjem partnera K2 = příjem K1 (protože K2 vidí K1 jako partnera)
   const D = {
     vek: P.vek,
@@ -1837,21 +1849,26 @@ function calculatePartner(P, D_main){
     obor: P.obor,
     sport: 'A', // sport odstraněn z UI
     prijem: P.prijem,
+    prijemPasivni: prijemPasivniK2,        // partnerův podíl pasivního příjmu domácnosti
     vydaje: D_main.vydaje,
-    vydajePodil: podilK2, // Podíl výdajů K2 dle poměru příjmů (pro Standardní)
+    vydajeMandatorni: vydajeMandK2,        // partnerův podíl mandatorních výdajů
+    vydajePodil: podilK2,                  // podíl výdajů K2 dle poměru příjmů
+    retVlastni: D_main.retVlastni || false,
+    retCustom: D_main.retCustom || {I:0.55, II:0.25, III:0.05},
+    osvcVZ: null,                          // partner-specific VZ neznáme → odhad
     splatky: D_main.splatky,
-    prijPart: prijemK1, // K2 vidí příjem K1 jako příjem partnera
+    prijPart: prijemK1,                    // K2 vidí příjem K1 jako příjem partnera
     hyp: D_main.hyp,
     dspl: D_main.dspl,
-    uvery: D_main.uvery,       // zůstatek (už filtrován dle zajištění)
+    uvery: D_main.uvery,                   // zůstatek (už filtrován dle zajištění)
     uveryZustatok: D_main.uveryZustatok,
-    uverySpl: D_main.uverySpl, // měsíční splátka nezajištěných úvěrů
-    rezerva: D_main.rezervaPart || 0, // vlastní rezerva partnera
-    rezervaPart: D_main.rezerva, // rezerva klienta 1 (pro info)
+    uverySpl: D_main.uverySpl,             // měsíční splátka nezajištěných úvěrů
+    rezerva: D_main.rezervaPart || 0,      // vlastní rezerva partnera
+    rezervaPart: D_main.rezerva,           // rezerva klienta 1 (pro info)
     zavPart: D_main.zavPart==='plna'?'castecna':D_main.zavPart==='castecna'?'plna':'zadna',
     rokNast: D_main.rokNast,
     prijPartBud: D_main.prijem,
-    anamneza: 'zadna', // anamnéza odstraněna z UI
+    anamneza: 'zadna',                     // anamnéza odstraněna z UI
     children: [...D_main.children],
     ildpExact,
     ild1: ildpExact ? (P.ild1||0) : 0,
@@ -1861,6 +1878,7 @@ function calculatePartner(P, D_main){
     maZP: P.maZP || false,
     zpSmrt: P.zpSmrt||0, zpInv1: P.zpInv1||0, zpInv2: P.zpInv2||0, zpInv3: P.zpInv3||0,
     zpZO: P.zpZO||0, zpPN: P.zpPN||0,
+    zpTN: P.zpTN||0, zpUver: P.zpUver||0,
   };
   runEngineForData(D, 'p2');
 }
@@ -2370,12 +2388,13 @@ function buildAndRender(R, target){
     pnCek,davK,davS,davZ,pc_zo,pc_zo_net,
     pc_uraz,davH,pc_sob} = R;
 
-  // Komplexní varianta: skryjeme pokud klient nemá ani na svůj podíl výdajů
-  // Pro single: porovnáme s celými výdaji (podíl = 1.0)
-  // Pro páry: porovnáme s podílem výdajů (např. 50/50, 60/40)
+  // Komplexní variantu zobrazujeme vždy (i když příjem < výdaje — poradce
+  // se rozhodne, zda doporučit dorovnání na vlastní příjem, nebo na výdaje).
+  // Dříve se Komplexní skrývala při prijem < vydaje × podíl, ale to mátlo
+  // uživatele („chybí mi sloupec") a porovnání variant nedávalo smysl.
   const podilKomplex = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
-  const skipKomplex = D.prijem < D.vydaje * podilKomplex;
-  const VK = skipKomplex ? null : buildKomplex(R);
+  const skipKomplex = false;
+  const VK = buildKomplex(R);
   const VS = buildStandard(R);
   const VZ = buildZakladni(R);
 
@@ -3104,8 +3123,8 @@ function storeRecommendation(R, pfx){
   const activeTab = document.querySelector('#sharedVariantNav .vnav-tab.active');
   const activeKey = activeTab ? (activeTab.classList.contains('tn-k') ? 'k' : 's') : 's';
   const podilKomplex = R.D.vydajePodil !== undefined ? R.D.vydajePodil : 1.0;
-  const skipKomplex = R.D.prijem < R.D.vydaje * podilKomplex;
-  const VK = (!skipKomplex) ? buildKomplex(R) : null;
+  const skipKomplex = false; // Komplexní vždy dostupná
+  const VK = buildKomplex(R);
   const VS = buildStandard(R);
   const Vactive = (activeKey === 'k' && VK) ? VK : VS;
 
@@ -4141,8 +4160,8 @@ function exportPDF(){
 
   // Sestavit aktivní variantu z builderu
   const podilKomplex = D.vydajePodil !== undefined ? D.vydajePodil : 1.0;
-  const skipKomplex = D.prijem < D.vydaje * podilKomplex;
-  const VK = (activeKey==='k' && !skipKomplex) ? buildKomplex(R) : null;
+  const skipKomplex = false; // Komplexní vždy dostupná
+  const VK = activeKey==='k' ? buildKomplex(R) : null;
   const VS = buildStandard(R);
   const VZ = buildZakladni(R);
   const V = activeKey==='k' ? (VK||VS) : activeKey==='s' ? VS : VZ;
@@ -4897,8 +4916,8 @@ function exportPDF(){
     const rec2 = lastRecommendations[1];
     const R2 = rec2.R;
     const D2 = R2.D;
-    const skipK2 = D2.prijem < D2.vydaje;
-    const VK2 = (activeKey==='k' && !skipK2) ? buildKomplex(R2) : null;
+    const skipK2 = false; // Komplexní pro partnera vždy dostupná
+    const VK2 = activeKey==='k' ? buildKomplex(R2) : null;
     const VS2 = buildStandard(R2);
     const VZ2 = buildZakladni(R2);
     const V2 = activeKey==='k' ? (VK2||VS2) : activeKey==='s' ? VS2 : VZ2;
