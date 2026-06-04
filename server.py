@@ -423,6 +423,14 @@ def init_db():
             ('Kalkulačka důchodů', '/duchod-kalkulator-v3.html', '🧓', 'Kalkulačka důchodového spoření', 8)
         )
 
+    # IOLDP — výpočet důchodu z Informativního osobního listu
+    ioldp_exists = c.execute("SELECT id FROM apps WHERE nazev='Výpočet z IOLDP'").fetchone()
+    if not ioldp_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Výpočet z IOLDP', '/ioldp-kalkulacka.html', '📄', 'Důchod přesně z IOLDP (foto + AI extrakce)', 9)
+        )
+
     # Výchozí admin účet (pouze pokud žádný admin neexistuje)
     existing = c.execute("SELECT id FROM users WHERE role='admin'").fetchone()
     if not existing:
@@ -2595,6 +2603,166 @@ def kontakthub_static(path):
     if os.path.isfile(full):
         return send_from_directory('public/kontakthub', path)
     return send_from_directory('public/kontakthub', 'index.html')
+
+# ─── IOLDP — AI extrakce z fotky ─────────────────────────────────────────────
+#
+# POST /api/ioldp-extract
+# Přijme upload fotky/scanu IOLDP, pošle Claudovi vision, vrátí strukturovaný
+# JSON s ročním rozpadem výdělků. Frontend si data zobrazí v editovatelné
+# tabulce — uživatel je vždy zkontroluje a případně upraví.
+
+import base64
+import json as _json
+
+@app.route('/api/ioldp-extract', methods=['POST'])
+@limiter.limit("10 per minute; 60 per hour", key_func=_user_or_ip_key)
+@require_auth()
+def ioldp_extract():
+    """Vytáhne roky a výdělky z fotky IOLDP pomocí Claude Vision."""
+    f = request.files.get('file')
+    if not f:
+        return jsonify({'error': 'Chybí soubor (multipart pod klíčem "file").'}), 400
+
+    raw = f.read()
+    if len(raw) > 10 * 1024 * 1024:
+        return jsonify({'error': 'Soubor je větší než 10 MB.'}), 413
+
+    mime = (f.mimetype or '').lower()
+    if not (mime.startswith('image/') or mime == 'application/pdf'):
+        return jsonify({'error': 'Podporovány jen JPG/PNG/PDF.'}), 400
+
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+    if not api_key:
+        return jsonify({'error': 'ANTHROPIC_API_KEY není nastavena na serveru.'}), 503
+
+    # Claude Vision aktuálně neumí PDF nativně přes Messages API — pro PDF bychom
+    # museli renderovat na obrázek. Zatím PDF odmítneme s návodem.
+    if mime == 'application/pdf':
+        return jsonify({
+            'error': 'PDF zatím není podporován. Otevři PDF, vyfoť stránky telefonem nebo udělej screenshot a nahraj jako JPG/PNG.'
+        }), 400
+
+    b64 = base64.standard_b64encode(raw).decode()
+
+    prompt = (
+        "Jsi expert na český důchodový systém. Z přiloženého obrázku IOLDP "
+        "(Informativní osobní list důchodového pojištění od ČSSZ) vytěž "
+        "rok-po-roce data o výdělcích a dobách pojištění.\n\n"
+        "Vrať POUZE validní JSON ve formátu (žádný komentář ani markdown):\n"
+        "{\n"
+        '  "years": [\n'
+        '    {"rok": 1990, "druh": "pracovni", "vydelek": 25000, "vylDni": 0, "ndDni": 0},\n'
+        '    {"rok": 1991, "druh": "pracovni", "vydelek": 28500, "vylDni": 14, "ndDni": 0}\n'
+        "  ]\n"
+        "}\n\n"
+        "Pravidla:\n"
+        "• Druh: 'pracovni' (zaměstnání), 'osvc' (samostatná činnost), "
+        "'nahradni' (ND — úřad práce, péče o dítě), 'nepojisten' (mezera).\n"
+        "• Pokud rok obsahuje víc řádků (např. zaměstnání + OSVČ), výdělky SEČTI "
+        "a vrať jeden záznam za rok.\n"
+        "• Vyloučené dny vezmi ze sloupce 'Vyl. doby' (často nazýván 'VD').\n"
+        "• ndDni = počet dní náhradní doby v daném roce (0 pokud žádná).\n"
+        "• Pokud výdělek pro daný rok není v IOLDP uveden, dej 0.\n"
+        "• Zahrň VŠECHNY roky, které vidíš v listu (od prvního pojištěného roku "
+        "po poslední).\n"
+        "• Pokud si nejsi jistý hodnotou, raději ji dej 0 — uživatel to opraví.\n\n"
+        "Vrať jen JSON, nic jiného."
+    )
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        resp = client.messages.create(
+            model='claude-sonnet-4-6',
+            max_tokens=4000,
+            messages=[{
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'image',
+                        'source': {
+                            'type': 'base64',
+                            'media_type': mime,
+                            'data': b64,
+                        }
+                    },
+                    {'type': 'text', 'text': prompt}
+                ]
+            }]
+        )
+        text = resp.content[0].text.strip()
+
+        # Track token usage (best-effort)
+        try:
+            conn = get_db()
+            conn.execute(
+                "INSERT INTO kh_token_usage (user_id, akce, vstupni_tokeny, vystupni_tokeny) VALUES (?,?,?,?)",
+                (request.user['id'], 'ioldp_extract', resp.usage.input_tokens, resp.usage.output_tokens)
+            )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+        # Najdi JSON v odpovědi (pro případ, že Claude obalí do markdownu)
+        if '```' in text:
+            # Vyber obsah prvního code bloku
+            parts = text.split('```')
+            for p in parts[1:]:
+                if p.strip().startswith('json'):
+                    p = p[4:]
+                p = p.strip()
+                if p.startswith('{'):
+                    text = p
+                    break
+
+        # Vyřízni první {...} pokud je předtím nějaký text
+        start = text.find('{')
+        end = text.rfind('}')
+        if start >= 0 and end > start:
+            text = text[start:end+1]
+
+        data = _json.loads(text)
+        if 'years' not in data or not isinstance(data['years'], list):
+            raise ValueError('Odpověď AI nemá očekávaný formát.')
+
+        # Sanitizace
+        clean_years = []
+        for y in data['years']:
+            if not isinstance(y, dict): continue
+            try:
+                rok = int(y.get('rok', 0))
+            except (TypeError, ValueError):
+                continue
+            if rok < 1900 or rok > 2100: continue
+            druh = str(y.get('druh', 'pracovni'))
+            if druh not in ('pracovni', 'osvc', 'nahradni', 'nepojisten'):
+                druh = 'pracovni'
+            try:
+                vydelek = int(y.get('vydelek') or 0)
+            except (TypeError, ValueError):
+                vydelek = 0
+            try:
+                vylDni = max(0, min(366, int(y.get('vylDni') or 0)))
+            except (TypeError, ValueError):
+                vylDni = 0
+            try:
+                ndDni = max(0, min(366, int(y.get('ndDni') or 0)))
+            except (TypeError, ValueError):
+                ndDni = 0
+            clean_years.append({
+                'rok': rok, 'druh': druh, 'vydelek': vydelek,
+                'vylDni': vylDni, 'ndDni': ndDni
+            })
+
+        return jsonify({'years': clean_years, 'count': len(clean_years)})
+
+    except _json.JSONDecodeError as e:
+        return jsonify({
+            'error': f'Nepodařilo se naparsovat odpověď AI: {e}. Zkus jinou (ostřejší) fotku.'
+        }), 502
+    except Exception as e:
+        return jsonify({'error': f'Chyba AI volání: {type(e).__name__}: {e}'}), 502
 
 @app.route('/<path:path>')
 def static_files(path):
