@@ -241,58 +241,27 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
       <div class="sec-num">3</div>
       <div>
         <div class="sec-title">Doplňující údaje</div>
-        <div class="sec-sub">Údaje, které v IOLDP nejsou — bez nich nelze počítat</div>
+        <div class="sec-sub">Jediné, co v IOLDP není — bez toho nelze spočítat důchodový věk</div>
       </div>
     </div>
     <div class="grid grid-3">
       <div class="field">
         <label>Datum narození</label>
         <input type="date" id="dob" value="">
-        <div class="field-hint">Formát DD.MM.RRRR</div>
+        <div class="field-hint">DD.MM.RRRR — kliknutím vyber</div>
       </div>
       <div class="field">
         <label>Pohlaví</label>
-        <select id="pohlavi">
+        <select id="pohlavi" onchange="togglePohlaviFields()">
           <option value="M">Muž</option>
           <option value="F">Žena</option>
         </select>
-        <div class="field-hint">Pro důchodový věk (u žen +děti)</div>
+        <div class="field-hint">Pro důchodový věk</div>
       </div>
-      <div class="field">
-        <label>K datu (vznik invalidity / přiznání)</label>
-        <input type="date" id="calcDate">
-        <div class="field-hint">Default: dnes</div>
-      </div>
-      <div class="field">
-        <label>Vychovaných dětí (pro výchovné)</label>
+      <div class="field" id="vychDetiField" style="display:none">
+        <label>Vychovaných dětí</label>
         <input type="number" id="vychDeti" value="0" min="0" max="10">
-        <div class="field-hint">500 Kč/dítě/měsíc</div>
-      </div>
-      <div class="field" style="grid-column:span 2">
-        <label>Které důchody spočítat</label>
-        <div class="checks">
-          <label class="check-item">
-            <input type="checkbox" class="pension-type" value="starobni" checked>
-            <div>
-              <div class="lbl">Starobní důchod</div>
-              <div class="desc">Sazba 1,495 % / rok · nárok od 35 let pojištění</div>
-            </div>
-          </label>
-          <label class="check-item">
-            <input type="checkbox" class="pension-type" value="invalidni" checked>
-            <div>
-              <div class="lbl">Invalidní (všechny 3 stupně)</div>
-              <div class="desc">I (0,498 %), II (0,7475 %), III (1,495 %) + dopočtená doba</div>
-            </div>
-          </label>
-          <label class="check-item">
-            <input type="checkbox" class="pension-type" value="predcasny">
-            <div>
-              <div class="lbl">Předčasný starobní důchod</div>
-              <div class="desc">Starobní mínus 1,5 % VZ za každých 90 dní předčasnosti</div>
-            </div>
-          </label>
-        </div>
+        <div class="field-hint">500 Kč/dítě + snížení důch. věku</div>
       </div>
     </div>
   </div>
@@ -303,11 +272,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
       <div class="sec-num">4</div>
       <div>
         <div class="sec-title">Výpočet</div>
-        <div class="sec-sub">Postup dle § 16 a § 41 zák. 155/1995 Sb.</div>
+        <div class="sec-sub">Všechny důchody (starobní, invalidní I/II/III, předčasný) k datu posledního zápisu v IOLDP</div>
       </div>
     </div>
     <button class="btn btn-primary" style="font-size:14px;padding:11px 22px" onclick="calculate()">
-      🧮 Spočítat důchody
+      🧮 Spočítat všechny důchody
     </button>
     <div id="resultArea"></div>
   </div>
@@ -457,18 +426,32 @@ function clearAllYears(){
 // ═══════════════════════════════════════════════════════════
 function calculate(){
   const dob = parseDate(document.getElementById('dob').value);
-  const calcDate = parseDate(document.getElementById('calcDate').value) || new Date();
   const pohlavi = document.getElementById('pohlavi').value;
-  const vychDeti = Math.max(0, parseInt(document.getElementById('vychDeti').value) || 0);
-  const types = [...document.querySelectorAll('.pension-type:checked')].map(el => el.value);
+  const vychDeti = pohlavi === 'F'
+    ? Math.max(0, parseInt(document.getElementById('vychDeti').value) || 0)
+    : 0;
+  // Vždy počítáme všechny typy důchodu — žádný výběr od uživatele.
+  const types = ['starobni', 'invalidni', 'predcasny'];
 
   // Validace
   if(!dob){ alert('Zadejte datum narození.'); return; }
-  if(types.length === 0){ alert('Vyberte aspoň jeden typ důchodu.'); return; }
   if(years.length === 0){ alert('Zadejte aspoň jeden rok do tabulky.'); return; }
 
+  // Datum přiznání = 1. 1. roku po posledním zápisu v IOLDP.
+  // Tím se poslední rok IOLDP plně zařadí do rozhodného období.
+  // „Poslední zápis" = nejvyšší rok s libovolnou pojištěnou dobou (vydělek > 0
+  // nebo druh != nepojisten). Pokud má klient jen 'nepojisten' řádky, vezmeme
+  // nejvyšší rok bez ohledu.
+  const aktivniRoky = years.filter(y =>
+    y.druh !== 'nepojisten' || (y.vydelek || 0) > 0 || (y.ndDni || 0) > 0
+  );
+  const baseRoky = aktivniRoky.length > 0 ? aktivniRoky : years;
+  const lastIolDPYear = Math.max(...baseRoky.map(y => y.rok));
+  const rokPriznani = lastIolDPYear + 1;
+  // calcDate = 1. 1. (lastIolDPYear + 1) — okamžik po posledním zápisu.
+  const calcDate = new Date(rokPriznani, 0, 1);
+
   const rokNar = dob.getFullYear();
-  const rokPriznani = calcDate.getFullYear();
 
   // ── Rozhodné období ───────────────────────────────────────
   // Od roku následujícího po dovršení 18 let (nejdříve 1986) do roku
@@ -543,10 +526,13 @@ function calculate(){
   }
   const letPojisteni = dniPojisteni / 365.25;
 
-  // ── Dopočtená doba (pro invalidní) ───────────────────────
-  // Od vzniku invalidity do důchodového věku bezdětné ženy stejného nar.
-  const ducVekMesicu = window.CSSZ_UTILS.duchodovyVekMesicu(rokNar, 'F', 0);
-  const ducVekRoky = ducVekMesicu / 12;
+  // ── Důchodové věky ───────────────────────────────────────
+  // Pro dopočtenou dobu (invalidní): bezdětná žena stejného nar. (§ 41).
+  // Pro starobní/předčasný: skutečné pohlaví + počet dětí.
+  const ducVekMesicuInv = window.CSSZ_UTILS.duchodovyVekMesicu(rokNar, 'F', 0);
+  const ducVekMesicuOsobni = window.CSSZ_UTILS.duchodovyVekMesicu(rokNar, pohlavi, vychDeti);
+  const ducVekRoky = ducVekMesicuInv / 12;           // pro dopočtenou dobu
+  const ducVekRokyOsobni = ducVekMesicuOsobni / 12;  // pro předčasnost
   const vekPriVzniku = (calcDate - dob) / (365.25 * 86400000);
   const dopoctenaRokuRaw = Math.max(ducVekRoky - vekPriVzniku, 0);
 
@@ -584,17 +570,18 @@ function calculate(){
     return Math.max(calc, minProc);
   }
   function procVymeraPredcasny(){
-    // Předčasný = starobní mínus krácení
-    // Předčasnost: dny od (calcDate) do (důchodový věk)
+    // Předčasný = starobní mínus krácení.
+    // Předčasnost: dny od (calcDate) do osobního důchodového věku (skutečné
+    // pohlaví + děti — žena s dětmi má důch. věk nižší).
     const ducVekDate = new Date(dob);
-    ducVekDate.setMonth(ducVekDate.getMonth() + ducVekMesicu);
+    ducVekDate.setMonth(ducVekDate.getMonth() + ducVekMesicuOsobni);
     const dniPredcasne = Math.max(daysBetween(calcDate, ducVekDate), 0);
     const period90 = Math.ceil(dniPredcasne / 90);
-    // 1,5 % VZ za každých 90 dní (nebo 0,75 % při ≥45 letech)
+    // 1,5 % VZ za každých 90 dní (nebo 0,75 % při ≥45 letech kvalifik. doby)
     const procKraceni = letPojisteni >= 45 ? 0.0075 : 0.015;
     const proc = procVymeraStarobni();
     const kracStr = procKraceni * period90 * vypZaklad;
-    return Math.max(Math.ceil(proc - kracStr), 0);
+    return {proc: Math.max(Math.ceil(proc - kracStr), 0), dniPredcasne};
   }
 
   // ── Sestavit výsledky ────────────────────────────────────
@@ -615,9 +602,19 @@ function calculate(){
     }
   }
   if(types.includes('predcasny')){
-    const proc = procVymeraPredcasny();
+    const predRes = procVymeraPredcasny();
+    const proc = predRes.proc;
+    const dniPredcasne = predRes.dniPredcasne;
     const celk = proc + ZAKLAD_VYMERA + vychovneCelkem;
-    results.push({nazev: 'Předčasný starobní', proc, zaklad: ZAKLAD_VYMERA, vychovne: vychovneCelkem, celk, narok: letPojisteni >= 35});
+    // Předčasný jen pokud klient JE před důchodovým věkem (jinak nelze)
+    if(dniPredcasne > 0){
+      const letPredcasne = (dniPredcasne / 365.25).toFixed(1);
+      results.push({
+        nazev: `Předčasný starobní (-${letPredcasne} let)`,
+        proc, zaklad: ZAKLAD_VYMERA, vychovne: vychovneCelkem, celk,
+        narok: letPojisteni >= 35
+      });
+    }
   }
 
   // ── Vykreslit výstup ─────────────────────────────────────
@@ -631,8 +628,12 @@ function calculate(){
     </tr>
   `).join('');
 
+  const ducVekRoks = Math.floor(ducVekRokyOsobni);
+  const ducVekMs = ducVekMesicuOsobni - ducVekRoks * 12;
   const sumaryHtml = `
     <div class="summary">
+      <div class="row"><span>Datum přiznání (= 1.1. po posledním zápisu IOLDP):</span><span>${calcDate.toLocaleDateString('cs-CZ')}</span></div>
+      <div class="row"><span>Věk při přiznání:</span><span>${vekPriVzniku.toFixed(1)} let</span></div>
       <div class="row"><span>Rozhodné období:</span><span>${rokOd}–${rokDo} (${rokDo - rokOd + 1} let)</span></div>
       <div class="row"><span>Součet ročních VZ × koef.:</span><span>${fKc(Math.round(sumRVZ))}</span></div>
       <div class="row"><span>Kalendářní dny období:</span><span>${kalDniRO}</span></div>
@@ -642,9 +643,9 @@ function calculate(){
       <div class="row"><span>OVZ (osobní vyměřovací základ):</span><span>${fKc(Math.round(ovzMes))}/měs</span></div>
       <div class="row"><span>Výpočtový základ (po redukci):</span><span><strong>${fKc(vypZaklad)}/měs</strong></span></div>
       <div class="row"><span>Skutečná doba pojištění:</span><span>${dniPojisteni} dní ≈ ${letPojisteni.toFixed(2)} let</span></div>
-      <div class="row"><span>Dopočtená doba (invalidní):</span><span>${dopoctenaRokuRaw.toFixed(2)} let${kracena ? ' → krácena na ' + dopoctenaRoku.toFixed(2) : ''}</span></div>
+      <div class="row"><span>Dopočtená doba (pro invalidní):</span><span>${dopoctenaRokuRaw.toFixed(2)} let${kracena ? ' → krácena na ' + dopoctenaRoku.toFixed(2) : ''}</span></div>
       <div class="row"><span>Celk. doba pro invalidní (skut. + dopočt.):</span><span>${(letPojisteni + dopoctenaRoku).toFixed(2)} let ≈ ${Math.floor(letPojisteni + dopoctenaRoku)} ukončených</span></div>
-      <div class="row"><span>Důchodový věk:</span><span>${Math.floor(ducVekRoky)}r ${ducVekMesicu - Math.floor(ducVekRoky) * 12}m</span></div>
+      <div class="row"><span>Osobní důchodový věk:</span><span>${ducVekRoks}r ${ducVekMs}m</span></div>
     </div>`;
 
   const warnings = [];
@@ -763,22 +764,24 @@ async function aiExtract(){
 }
 
 // ═══════════════════════════════════════════════════════════
+// POHLAVÍ — show/hide children field
+// ═══════════════════════════════════════════════════════════
+function togglePohlaviFields(){
+  const pohlavi = document.getElementById('pohlavi').value;
+  const vd = document.getElementById('vychDetiField');
+  if(pohlavi === 'F'){
+    vd.style.display = '';
+  } else {
+    vd.style.display = 'none';
+    document.getElementById('vychDeti').value = 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  // Default calc date = dnes
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('calcDate').value = today;
-
-  // Checkbox styling
-  document.querySelectorAll('.check-item input').forEach(el => {
-    const item = el.closest('.check-item');
-    if(el.checked) item.classList.add('active');
-    el.addEventListener('change', () => {
-      if(el.checked) item.classList.add('active');
-      else item.classList.remove('active');
-    });
-  });
+  togglePohlaviFields();
 
   // Drag & drop
   const ua = document.getElementById('uploadArea');
