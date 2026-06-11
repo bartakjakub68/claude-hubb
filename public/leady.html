@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leady — makléři bez financování</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="/auth-check.js"></script>
+<style>
+:root{
+  --cream:#FAFAF8;--white:#fff;--ink:#0F1419;--ink2:#2A2F36;--ink3:#6B7178;--ink4:#9A9692;
+  --gold:#047857;--gold-pale:#ECFDF5;--gold-border:rgba(4,120,87,0.2);
+  --border:#DCDEDF;--border2:#B8BCC1;
+  --red:#BE185D;--red-pale:#FCE7F3;
+  --blue:#1E5A8A;--blue-pale:#EFF6FF;
+  --warn:#92400E;--warn-pale:#FEF3C7;--warn-border:#FCD34D;
+  --sh-sm:0 1px 2px rgba(15,20,25,.04);--sh:0 2px 8px rgba(15,20,25,.06);
+  --r:8px;--rs:6px;--rx:5px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5}
+.header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(229,223,214,.7);padding:0 24px}
+.header-inner{max-width:1200px;margin:0 auto;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo-group{display:flex;align-items:center;gap:14px}
+.logo-mark{width:38px;height:38px;background:var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0}
+.logo-mark::after{content:'';position:absolute;top:-2px;right:-2px;width:15px;height:15px;background:var(--gold);border-radius:0 10px 0 10px}
+.logo-mark span{font-family:'Inter Tight','Inter',sans-serif;font-size:18px;color:white;position:relative;z-index:1}
+.logo-text strong{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.3px;display:block}
+.logo-text small{font-size:11px;color:var(--ink4)}
+.back-link{font-size:13px;color:var(--ink3);text-decoration:none;font-weight:500;padding:6px 10px;border-radius:var(--rx)}
+.back-link:hover{background:var(--cream);color:var(--ink)}
+
+.main{max-width:1200px;margin:0 auto;padding:24px 20px 80px}
+.page-hdr{margin-bottom:24px}
+.page-hdr h1{font-family:'Inter Tight','Inter',sans-serif;font-size:26px;letter-spacing:-.5px;margin-bottom:4px}
+.page-hdr p{font-size:13px;color:var(--ink3);font-weight:500}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:740px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;box-shadow:var(--sh-sm)}
+.stat-val{font-family:'Inter Tight','Inter',sans-serif;font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-.5px}
+.stat-lbl{font-size:11px;color:var(--ink4);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-top:2px}
+.stat.accent .stat-val{color:var(--gold)}
+
+.filters{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.filters input,.filters select{background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);padding:7px 11px;font-family:inherit;font-size:13px;color:var(--ink);outline:none}
+.filters input:focus,.filters select:focus{border-color:var(--gold);background:var(--white)}
+.filters label{font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.filters .grow{flex:1;min-width:200px}
+
+.tbl-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh-sm)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:var(--ink);color:var(--white);padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:left;cursor:pointer;user-select:none}
+.tbl th.right{text-align:right}
+.tbl th:hover{background:var(--ink2)}
+.tbl th.sort::after{content:'↕';margin-left:4px;opacity:.5}
+.tbl th.sort-asc::after{content:'↑';margin-left:4px;opacity:1}
+.tbl th.sort-desc::after{content:'↓';margin-left:4px;opacity:1}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.tbl tr:hover td{background:var(--cream)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td.right{text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600}
+.tbl .makler{font-weight:600;color:var(--ink)}
+.tbl .rk{font-size:12px;color:var(--ink3)}
+.tbl .tel{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2)}
+.tbl .tel a{color:var(--gold);text-decoration:none;font-weight:600}
+.tbl .tel a:hover{text-decoration:underline}
+.tbl .badge{display:inline-block;padding:2px 8px;background:var(--gold-pale);color:var(--gold);border-radius:12px;font-size:11px;font-weight:700}
+.tbl .empty-name{color:var(--ink4);font-style:italic}
+
+.detail-toggle{font-size:11px;color:var(--gold);cursor:pointer;font-weight:600;margin-top:4px;display:inline-block}
+.detail-toggle:hover{text-decoration:underline}
+.detail-row{display:none;background:var(--cream)}
+.detail-row.open{display:table-row}
+.detail-row td{padding:14px 18px}
+.detail-list{display:grid;gap:6px;font-size:12px}
+.detail-list a{color:var(--ink2);text-decoration:none;display:flex;justify-content:space-between;padding:6px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--rx)}
+.detail-list a:hover{border-color:var(--gold);color:var(--gold)}
+.detail-list .cena{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold)}
+
+.empty-state{padding:40px;text-align:center;color:var(--ink4)}
+.refresh-info{margin-top:14px;padding:11px 14px;background:var(--blue-pale);border:1px solid #BFDBFE;border-radius:var(--rs);font-size:12px;color:#1E3A8A;line-height:1.6}
+.refresh-info code{background:var(--white);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-group">
+      <div class="logo-mark"><span>P</span></div>
+      <div class="logo-text"><strong>PORTÁL</strong><small>Leady — makléři bez financování</small></div>
+    </div>
+    <a href="/dashboard.html" class="back-link">← Dashboard</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-hdr">
+    <h1>Makléři bez financování</h1>
+    <p>Realitní makléři, kteří v žádném inzerátu nezmiňují hypotéku / úvěr / financování — potenciální partneři pro hypoteční servis.</p>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="filters">
+    <input type="search" class="grow" id="searchInp" placeholder="🔍 Hledat (jméno, RK, telefon)…">
+    <label>Min. inzerátů:
+      <select id="minInzSel">
+        <option value="1">1+</option>
+        <option value="2">2+</option>
+        <option value="3" selected>3+</option>
+        <option value="5">5+</option>
+      </select>
+    </label>
+    <label>Skrýt bez jména:
+      <input type="checkbox" id="hideNoName" checked>
+    </label>
+    <button onclick="exportCsv()" style="background:var(--ink);color:#fff;border:none;padding:8px 16px;border-radius:var(--rx);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">📥 Export CSV</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th class="sort" data-sort="pocet" data-dir="desc">Inz.</th>
+          <th class="sort" data-sort="makler">Makléř</th>
+          <th class="sort" data-sort="rk">Realitní kancelář</th>
+          <th>Telefon</th>
+          <th>E-mail</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="refresh-info">
+    <strong>Jak obnovit data:</strong> spusť lokálně <code>scripts/sreality_makleri.py --mesto brno</code> →
+    výsledný <code>leady.json</code> nakopíruj do <code>public/data/leady.json</code> → commit + push.
+    Aktuální data: <span id="generovano">…</span>
+  </div>
+</div>
+
+<script>
+let LEADS = null;
+let sortKey = 'pocet';
+let sortDir = 'desc';
+
+async function load(){
+  try{
+    const r = await fetch('/data/leady.json', {cache:'no-cache'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    LEADS = await r.json();
+    renderStats();
+    render();
+  } catch(e){
+    document.getElementById('tbody').innerHTML =
+      `<tr><td colspan="5" class="empty-state">Chyba načítání: ${e.message}</td></tr>`;
+  }
+}
+
+function renderStats(){
+  const cisti = LEADS.cisti || [];
+  const top3 = cisti.filter(c => c.pocet_inzeratu >= 3).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${LEADS.celkem_inzeratu}</div><div class="stat-lbl">Inz. zpracováno</div></div>
+    <div class="stat"><div class="stat-val">${LEADS.celkem_makleru}</div><div class="stat-lbl">Unikátních makléřů</div></div>
+    <div class="stat"><div class="stat-val">${LEADS.zminili}</div><div class="stat-lbl">Zmínili financování</div></div>
+    <div class="stat accent"><div class="stat-val">${cisti.length}</div><div class="stat-lbl">Čistí makléři (leady)</div></div>
+  `;
+  document.getElementById('generovano').textContent =
+    new Date(LEADS.generovano).toLocaleString('cs-CZ') + ' · město ' + LEADS.mesto;
+}
+
+function fK(n){ return n ? Math.round(n/1000).toLocaleString('cs-CZ') + ' tis. Kč' : '—'; }
+
+function render(){
+  const q = document.getElementById('searchInp').value.trim().toLowerCase();
+  const minInz = parseInt(document.getElementById('minInzSel').value);
+  const hideNoName = document.getElementById('hideNoName').checked;
+  let rows = (LEADS.cisti || []).filter(r => {
+    if(r.pocet_inzeratu < minInz) return false;
+    if(hideNoName && !(r.makler && r.makler.trim())) return false;
+    if(!q) return true;
+    return [r.makler, r.rk, r.telefon, r.email].some(s => (s||'').toLowerCase().includes(q));
+  });
+  rows.sort((a,b) => {
+    const va = a[sortKey] || ''; const vb = b[sortKey] || '';
+    if(sortKey === 'pocet'){
+      return sortDir==='asc' ? a.pocet_inzeratu - b.pocet_inzeratu : b.pocet_inzeratu - a.pocet_inzeratu;
+    }
+    return sortDir==='asc'
+      ? String(va).localeCompare(String(vb), 'cs')
+      : String(vb).localeCompare(String(va), 'cs');
+  });
+
+  const tbody = document.getElementById('tbody');
+  if(rows.length === 0){
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Žádné výsledky</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map((r, i) => {
+    const tel = (r.telefon || '').split(';')[0].trim();
+    const telLink = tel ? `<a href="tel:${tel.replace(/\s/g,'')}">${tel}</a>` : '<span style="color:var(--ink4)">—</span>';
+    const inz = (r.inzeraty || []).map(x =>
+      `<a href="${x.url}" target="_blank">
+        <span>${x.titulek || x.id}<br><small style="color:var(--ink4)">${x.lokalita || ''}</small></span>
+        <span class="cena">${fK(x.cena_czk)}</span>
+      </a>`
+    ).join('');
+    return `
+      <tr>
+        <td class="right"><span class="badge">${r.pocet_inzeratu}×</span></td>
+        <td>
+          <div class="makler${!r.makler ? ' empty-name' : ''}">${r.makler || '(bez jména)'}</div>
+          <span class="detail-toggle" onclick="toggleDetail(${i})">▾ Ukázat inzeráty</span>
+        </td>
+        <td><div class="rk">${r.rk || '—'}</div></td>
+        <td class="tel">${telLink}</td>
+        <td class="tel">${r.email ? `<a href="mailto:${r.email}">${r.email}</a>` : '<span style="color:var(--ink4)">—</span>'}</td>
+      </tr>
+      <tr class="detail-row" id="detail-${i}">
+        <td></td>
+        <td colspan="4"><div class="detail-list">${inz || '<em style="color:var(--ink4)">Žádné inzeráty</em>'}</div></td>
+      </tr>
+    `;
+  }).join('');
+
+  document.querySelectorAll('.tbl th.sort').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    if(th.dataset.sort === sortKey) th.classList.add('sort-' + sortDir);
+  });
+}
+
+function toggleDetail(i){
+  document.getElementById('detail-' + i).classList.toggle('open');
+}
+
+function exportCsv(){
+  const q = document.getElementById('searchInp').value.trim().toLowerCase();
+  const minInz = parseInt(document.getElementById('minInzSel').value);
+  const hideNoName = document.getElementById('hideNoName').checked;
+  let rows = (LEADS.cisti || []).filter(r => {
+    if(r.pocet_inzeratu < minInz) return false;
+    if(hideNoName && !(r.makler && r.makler.trim())) return false;
+    if(!q) return true;
+    return [r.makler, r.rk, r.telefon, r.email].some(s => (s||'').toLowerCase().includes(q));
+  });
+  const escape = v => `"${String(v||'').replace(/"/g,'""')}"`;
+  const lines = ['makler,rk,telefon,email,pocet_inzeratu'];
+  rows.forEach(r => lines.push([r.makler, r.rk, r.telefon, r.email, r.pocet_inzeratu].map(escape).join(',')));
+  const blob = new Blob(['﻿' + lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `leady-makleri-${LEADS.mesto}-${LEADS.generovano.split('T')[0]}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('searchInp').addEventListener('input', render);
+  document.getElementById('minInzSel').addEventListener('change', render);
+  document.getElementById('hideNoName').addEventListener('change', render);
+  document.querySelectorAll('.tbl th.sort').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.sort;
+      if(sortKey === k){
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortKey = k; sortDir = k === 'pocet' ? 'desc' : 'asc';
+      }
+      render();
+    });
+  });
+  load();
+});
+</script>
+
+</body>
+</html>

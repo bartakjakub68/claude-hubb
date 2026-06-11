@@ -431,6 +431,14 @@ def init_db():
             ('Výpočet z IOLDP', '/ioldp-kalkulacka.html', '📄', 'Důchod přesně z IOLDP (foto + AI extrakce)', 9)
         )
 
+    # Leady — makléři bez financování
+    leady_exists = c.execute("SELECT id FROM apps WHERE nazev='Leady — makléři'").fetchone()
+    if not leady_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Leady — makléři', '/leady.html', '🎯', 'Realitní makléři bez hypotečního servisu (Brno)', 10)
+        )
+
     # Výchozí admin účet (pouze pokud žádný admin neexistuje)
     existing = c.execute("SELECT id FROM users WHERE role='admin'").fetchone()
     if not existing:

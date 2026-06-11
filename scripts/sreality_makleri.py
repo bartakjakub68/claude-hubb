@@ -1,42 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Sreality makléři bez financování — v2.
+Sreality makléři bez financování — v3 (Next.js scraping).
 
-Projde inzeráty na Sreality přes veřejné JSON API a vrátí JEN ty makléře,
-v jejichž inzerátech NENÍ ŽÁDNÁ zmínka o financování / hypotéce / úvěru.
+Veřejné REST API /api/cs/v2/estates už Sreality vypnulo — nový web
+běží na Next.js a data jsou v __NEXT_DATA__ JSONu uvnitř HTML.
+v3 přepisuje scrape na tuto novou architekturu.
 
-Vylepšení proti v1:
-  • SQLite cache — při dalším běhu se nestahují detaily, které už máš.
-  • Word-boundary regex — neoznačí "uvedeno" jako zmínku úvěru.
-  • Telefon se normalizuje (jen číslice) → spolehlivější fallback klíč.
-  • Náhodný jitter mezi requesty → vyšší šance proti rate-limitu.
-  • CLI argumenty — region, max stránek, min počet inzerátů, force-refresh.
-  • Resume — Ctrl+C / pád neuškodí, pokračuješ tam, kde jsi přestal.
-  • Progress + ETA.
+Postup:
+  1) Listing stránka /hledani/prodej/{kategorie}/{město}?strana=N
+     → __NEXT_DATA__ → queries[estatesSearch] → results[] (summary)
+  2) Detail /detail/.../{id} → __NEXT_DATA__ → queries[estate]
+     → description + seller{phones,email} + premise (RK)
+  3) Pokud popis zmiňuje financování / hypotéku / úvěr → makléř ven.
 
 Použití:
     pip install requests
-    python sreality_makleri.py                          # cely CR, byty + domy prodej
-    python sreality_makleri.py --region 21              # jen Středočeský kraj
-    python sreality_makleri.py --min-inzeratu 3         # jen makléři s 3+ inz.
+    python sreality_makleri.py                          # Brno (default)
+    python sreality_makleri.py --mesto praha            # jiné město
+    python sreality_makleri.py --min-inzeratu 3
+    python sreality_makleri.py --max-pages 5            # test: 5 stránek
     python sreality_makleri.py --force                  # ignoruj cache
-    python sreality_makleri.py --max-pages 5            # jen prvních 500 inz.
 
-Sreality kraje (locality_region_id):
-    10=Praha · 11=Středočeský · 12=Jihočeský · 13=Plzeňský · 14=Karlovarský
-    15=Ústecký · 16=Liberecký · 17=Královéhradecký · 18=Pardubický
-    19=Vysočina · 20=Jihomoravský · 21=Olomoucký · 22=Zlínský · 23=Moravskoslezský
-    (Pozor: ID se v sreality občas mění. Ověř v URL filtrace.)
-
-Výstupy:
-    makleri_bez_financovani.csv   — souhrn (1 řádek na makléře)
-    inzeraty_makleru.csv          — detail (1 řádek na inzerát)
-    .sreality_cache.db            — SQLite cache (mazat = full re-fetch)
+Cache: .sreality_cache.db (SQLite) — opakovaný běh nestahuje detaily znova.
+Výstupy: makleri_bez_financovani.csv + inzeraty_makleru.csv + leady.json
 """
 
 import argparse
 import csv
+import json
 import os
 import random
 import re
@@ -51,42 +43,33 @@ import requests
 
 # ─── Konfigurace ───────────────────────────────────────────────────────────────
 
-API = "https://www.sreality.cz/api/cs/v2"
-HEADERS = {"User-Agent": "Mozilla/5.0 (lead-research; kontakt: tvuj@email.cz)"}
-DELAY_MIN, DELAY_MAX = 0.35, 0.75  # náhodný jitter
-PER_PAGE = 100
+BASE = "https://www.sreality.cz"
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+DELAY_MIN, DELAY_MAX = 0.6, 1.2
 CACHE_DB = ".sreality_cache.db"
 
-# main: 1=byty 2=domy 3=pozemky 4=komerční 5=ostatní
-# type: 1=prodej 2=pronájem 3=dražba
-SEGMENTY = [
-    {"category_main_cb": 1, "category_type_cb": 1},  # byty na prodej
-    {"category_main_cb": 2, "category_type_cb": 1},  # domy na prodej
-]
+# Kategorie pro URL: /hledani/{type}/{kategorie}/{město}
+KATEGORIE = ["byty", "domy"]  # pro prodej
 
-# Zmínky financování — slovní hranice (\b) pro krátké tvary, substring jen
-# pro dlouhé, které nedělají falešné pozitivy.
-# Bez diakritiky, lowercase (po normalize()).
+# Zmínky financování — slovní hranice pro krátké tvary
 ZMINKY_REGEX = [
-    re.compile(r"\bfinancov\w*"),     # financování, financovat, profinancujeme
-    re.compile(r"\bhypot\w*"),         # hypotéka, hypotéku, hypoteční
-    re.compile(r"\buver\w*"),          # úvěr, úvěrování — \b zabrání matchnutí "uvedeno"
-    re.compile(r"\bzafinanc"),         # zafinancuji, zafinancujeme
-    re.compile(r"\bsplatk\w*"),        # splátka, splátkový (volitelné — pohlídej)
+    re.compile(r"\bfinancov\w*"),
+    re.compile(r"\bhypot\w*"),
+    re.compile(r"\buver\w*"),
+    re.compile(r"\bzafinanc"),
+    re.compile(r"\bsplatk\w*"),
 ]
 
 # ─── Helpers ────────────────────────────────────────────────────────────────────
 
-def normalize(text: str) -> str:
-    """Lowercase, bez diakritiky, bez HTML tagů, jednoduché mezery."""
+def normalize(text):
     text = re.sub(r"<[^>]+>", " ", text or "")
     text = unicodedata.normalize("NFKD", text)
     text = "".join(c for c in text if not unicodedata.combining(c))
     return re.sub(r"\s+", " ", text).lower().strip()
 
 
-def zminuje_financovani(popis: str) -> tuple[bool, str]:
-    """Vrací (True, klíčové slovo) pokud popis zmiňuje financování."""
+def zminuje_financovani(popis):
     n = normalize(popis)
     for pat in ZMINKY_REGEX:
         m = pat.search(n)
@@ -95,29 +78,40 @@ def zminuje_financovani(popis: str) -> tuple[bool, str]:
     return False, ""
 
 
-def normalize_phone(phone: str) -> str:
-    """+420 777 123 456 → 420777123456"""
+def normalize_phone(phone):
     return re.sub(r"\D", "", phone or "")
 
 
-def get_json(session, url, params=None, max_retries=4):
+def get_html(session, url, max_retries=4):
     for pokus in range(max_retries):
         try:
-            r = session.get(url, params=params, headers=HEADERS, timeout=30)
+            r = session.get(url, headers=HEADERS, timeout=30)
             if r.status_code == 200:
-                return r.json()
+                return r.text
             if r.status_code == 429:
-                wait = 5 * (pokus + 1)
-                print(f"  ⚠ 429 rate-limit, čekám {wait}s …")
+                wait = 8 * (pokus + 1)
+                print(f"  ! 429 rate-limit, cekam {wait}s ...")
                 time.sleep(wait)
                 continue
-            if r.status_code == 404:
+            if r.status_code in (404, 410):
                 return None
             r.raise_for_status()
         except requests.RequestException as e:
-            print(f"  ! HTTP chyba ({e}), opakuji za {3 * (pokus + 1)}s …")
+            print(f"  ! HTTP chyba ({e}), opakuji za {3*(pokus+1)}s ...")
             time.sleep(3 * (pokus + 1))
     return None
+
+
+def parse_next_data(html):
+    if not html:
+        return None
+    m = re.search(r'__NEXT_DATA__[^>]*>([\s\S]*?)</script>', html)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(1))
+    except json.JSONDecodeError:
+        return None
 
 
 def polite_sleep():
@@ -130,12 +124,11 @@ def init_cache():
     conn = sqlite3.connect(CACHE_DB)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS detail (
-            hash_id TEXT PRIMARY KEY,
-            seller_id TEXT,
+            id INTEGER PRIMARY KEY,
+            seller_id INTEGER,
             makler TEXT, rk TEXT, telefon TEXT, telefon_norm TEXT, email TEXT,
             titulek TEXT, cena_czk INTEGER, lokalita TEXT,
-            plocha TEXT, dispozice TEXT, stav TEXT,
-            lat REAL, lon REAL, url TEXT,
+            url TEXT,
             zminil_fin INTEGER, zminka TEXT,
             popis_raw TEXT,
             fetched_at TEXT
@@ -147,102 +140,131 @@ def init_cache():
     return conn
 
 
-def cache_has(conn, hid: str) -> bool:
-    cur = conn.execute("SELECT 1 FROM detail WHERE hash_id=?", (hid,))
+def cache_has(conn, eid):
+    cur = conn.execute("SELECT 1 FROM detail WHERE id=?", (eid,))
     return cur.fetchone() is not None
 
 
-def cache_save(conn, row: dict):
+def cache_save(conn, row):
     conn.execute("""
         INSERT OR REPLACE INTO detail
-        (hash_id, seller_id, makler, rk, telefon, telefon_norm, email,
-         titulek, cena_czk, lokalita, plocha, dispozice, stav,
-         lat, lon, url, zminil_fin, zminka, popis_raw, fetched_at)
-        VALUES (:hash_id, :seller_id, :makler, :rk, :telefon, :telefon_norm, :email,
-                :titulek, :cena_czk, :lokalita, :plocha, :dispozice, :stav,
-                :lat, :lon, :url, :zminil_fin, :zminka, :popis_raw, :fetched_at)
+        (id, seller_id, makler, rk, telefon, telefon_norm, email,
+         titulek, cena_czk, lokalita, url, zminil_fin, zminka, popis_raw, fetched_at)
+        VALUES (:id, :seller_id, :makler, :rk, :telefon, :telefon_norm, :email,
+                :titulek, :cena_czk, :lokalita, :url, :zminil_fin, :zminka, :popis_raw, :fetched_at)
     """, row)
     conn.commit()
 
 
-# ─── Sreality extraktory ────────────────────────────────────────────────────────
+# ─── Sreality Next.js extraktory ────────────────────────────────────────────────
 
-def items_to_dict(detail: dict) -> dict:
+def extract_listing_results(next_data):
+    """Z listing stránky vrátí (results, total)."""
+    try:
+        queries = next_data['props']['pageProps']['dehydratedState']['queries']
+        q = next(q for q in queries
+                 if isinstance(q.get('queryKey'), list) and q['queryKey'] and q['queryKey'][0] == 'estatesSearch')
+        data = q['state']['data']
+        return data.get('results', []), data.get('pagination', {}).get('total', 0)
+    except (KeyError, StopIteration, TypeError):
+        return [], 0
+
+
+# URL detailu se z __NEXT_DATA__ neda spolehlive sestavit (SEO slug zavisi
+# na quarter/street kombinaci, ktera neni v summary). Spolehlive je extrahovat
+# detail URLs primo z HTML listing stranky pres regex.
+DETAIL_URL_RE = re.compile(r'(/detail/[a-z]+/[a-z]+/[a-z0-9+\-/]+/(\d+))')
+
+def extract_detail_urls(html):
+    """Vrátí dict {id: full_url} pro všechny detail URLs nalezené v HTML."""
     out = {}
-    for it in detail.get("items", []) or []:
-        name = it.get("name")
-        val = it.get("value")
-        if isinstance(val, (list, dict)):
-            val = str(val)
-        if name:
-            out[name] = val
+    if not html:
+        return out
+    for path, eid in DETAIL_URL_RE.findall(html):
+        out.setdefault(int(eid), BASE + path)
     return out
 
 
-def extract_seller(detail: dict) -> dict:
-    seller = (detail.get("_embedded", {}) or {}).get("seller", {}) or {}
-    telefony = []
-    for t in seller.get("phones", []) or []:
-        cislo = (t.get("code", "") + t.get("number", "")).strip()
-        if cislo:
-            telefony.append(cislo)
-    tel_str = "; ".join(telefony)
+def extract_estate_detail(next_data):
+    try:
+        queries = next_data['props']['pageProps']['dehydratedState']['queries']
+        q = next(q for q in queries
+                 if isinstance(q.get('queryKey'), list) and q['queryKey'] and q['queryKey'][0] == 'estate')
+        return q['state']['data']
+    except (KeyError, StopIteration, TypeError):
+        return None
+
+
+def detail_url_from_summary(s):
+    """Z listing summary složí URL detailu."""
+    cat_sub_id = (s.get('categorySubCb') or {}).get('value', 0)
+    # mapping zjednoduseny: subkategorie ID -> SEO slug
+    sub_slug = {
+        1: '1+kk', 2: '1+1', 3: '2+kk', 4: '2+kk',  # fallbacks
+        5: '2+1', 6: '3+kk', 7: '3+1', 8: '4+kk',
+        9: '4+1', 10: '5+kk', 11: '5+1', 12: '6-a-vice',
+    }.get(cat_sub_id, 'jiny')
+    loc = s.get('locality', {})
+    city = loc.get('citySeoName') or 'cr'
+    quarter = loc.get('quarterSeoName') or loc.get('wardSeoName') or ''
+    street = loc.get('streetSeoName') or ''
+    slug_parts = [city]
+    if quarter and quarter not in city: slug_parts.append(quarter.replace(city+'-',''))
+    if street: slug_parts.append(street)
+    slug = '-'.join(slug_parts) if len(slug_parts) > 1 else slug_parts[0]
+    cat_type = (s.get('categoryTypeCb') or {}).get('name', 'prodej').lower()
+    cat_main = (s.get('categoryMainCb') or {}).get('name', 'byt').lower().rstrip('y')
+    if cat_main == 'doma': cat_main = 'dum'
+    # Anything works — Sreality redirects via the ID
+    return f"{BASE}/detail/{cat_type}/{cat_main}/{sub_slug}/{slug}/{s['id']}"
+
+
+def parse_seller(estate):
+    s = estate.get('seller') or {}
+    tels = []
+    for p in s.get('phones', []) or []:
+        ph = p.get('phone', '').strip()
+        if ph:
+            tels.append(ph)
+    tel_str = "; ".join(tels)
     return {
-        "makler": seller.get("user_name") or seller.get("name") or "",
-        "rk": seller.get("company_name") or seller.get("rk") or "",
+        "seller_id": s.get('id') or 0,
+        "makler": s.get('name', '') or '',
+        "email": s.get('email', '') or '',
         "telefon": tel_str,
-        "telefon_norm": normalize_phone(tel_str.split(";")[0] if tel_str else ""),
-        "email": seller.get("email", ""),
-        "seller_id": str(seller.get("user_id") or seller.get("id") or ""),
+        "telefon_norm": normalize_phone(tels[0] if tels else ''),
     }
 
 
-def extract_inzerat(detail: dict, hid: str) -> dict:
-    items = items_to_dict(detail)
-    cena = (detail.get("price_czk", {}) or {}).get("value_raw")
-    mapa = detail.get("map", {}) or {}
-    return {
-        "hash_id": hid,
-        "titulek": (detail.get("name", {}) or {}).get("value", ""),
-        "cena_czk": cena,
-        "lokalita": (detail.get("locality", {}) or {}).get("value", ""),
-        "plocha": items.get("Užitná plocha") or items.get("Plocha")
-                  or items.get("Plocha pozemku", ""),
-        "dispozice": items.get("Dispozice", ""),
-        "stav": items.get("Stav objektu", ""),
-        "lat": mapa.get("lat"),
-        "lon": mapa.get("lon"),
-        "url": f"https://www.sreality.cz/detail/x/x/x/x/{hid}",
-    }
+def parse_premise(estate):
+    p = estate.get('premise') or {}
+    return p.get('name', '') or ''
 
 
-# ─── Listing iterator ───────────────────────────────────────────────────────────
+# ─── Crawl ──────────────────────────────────────────────────────────────────────
 
-def iter_hash_ids(session, segment, max_pages=None, region_id=None):
+def iter_listings(session, mesto, kategorie, max_pages=None):
+    """Yield (summary_dict, detail_url) ze všech stránek."""
     page = 1
-    seen = set()
+    seen_total = None
     while True:
-        params = {**segment, "per_page": PER_PAGE, "page": page}
-        if region_id:
-            params["locality_region_id"] = region_id
-        data = get_json(session, f"{API}/estates", params)
-        if not data:
+        url = f"{BASE}/hledani/prodej/{kategorie}/{mesto}"
+        if page > 1:
+            url += f"?strana={page}"
+        html = get_html(session, url)
+        nd = parse_next_data(html)
+        if not nd:
             break
-        estates = data.get("_embedded", {}).get("estates", [])
-        if not estates:
+        results, total = extract_listing_results(nd)
+        if not results:
             break
-        new_count = 0
-        for e in estates:
-            hid = e.get("hash_id")
-            if hid and hid not in seen:
-                seen.add(hid)
-                new_count += 1
-                yield str(hid)
-        if new_count == 0:
-            # Stránka neobsahuje nic nového — pravděpodobně konec
-            break
-        total = data.get("result_size", 0)
-        if page * PER_PAGE >= total:
+        detail_urls = extract_detail_urls(html)  # {id: full_url}
+        if seen_total is None:
+            seen_total = total
+            print(f"  [{kategorie}] Sreality hlasi {total} inzeratu pro '{mesto}'")
+        for s in results:
+            yield s, detail_urls.get(s.get('id'))
+        if len(results) < 20:
             break
         if max_pages and page >= max_pages:
             break
@@ -250,10 +272,25 @@ def iter_hash_ids(session, segment, max_pages=None, region_id=None):
         polite_sleep()
 
 
-# ─── Klíč makléře (deduplikace) ─────────────────────────────────────────────────
+def fetch_estate_detail(session, eid, hint_url=None):
+    """Pokusi se nacist detail. Hint URL je SEO slug; jako fallback /detail/{id}."""
+    candidates = []
+    if hint_url:
+        candidates.append(hint_url)
+    candidates.append(f"{BASE}/detail/{eid}")  # holý ID jako fallback
+    for url in candidates:
+        html = get_html(session, url)
+        nd = parse_next_data(html)
+        if nd:
+            detail = extract_estate_detail(nd)
+            if detail:
+                return detail, url
+    return None, None
 
-def makler_klic(row: dict) -> tuple:
-    """Preferuj seller_id, fallback (normalizovaný telefon, jméno)."""
+
+# ─── Hlavní program ─────────────────────────────────────────────────────────────
+
+def makler_klic(row):
     if row.get("seller_id"):
         return ("sid", row["seller_id"])
     if row.get("telefon_norm"):
@@ -261,90 +298,99 @@ def makler_klic(row: dict) -> tuple:
     return ("name", row.get("makler", ""))
 
 
-# ─── Hlavní program ─────────────────────────────────────────────────────────────
-
 def run(args):
     conn = init_cache()
     session = requests.Session()
 
-    # Graceful Ctrl+C — průběžně se ukládá do cache, takže lze pokračovat.
     interrupted = {"flag": False}
     def on_sig(sig, frame):
         if interrupted["flag"]:
-            print("\n💥 Druhý Ctrl+C — okamžitý exit.")
+            print("\n💥 Druhy Ctrl+C — okamzity exit.")
             sys.exit(130)
         interrupted["flag"] = True
-        print("\n⚠ Ctrl+C — dokončím aktuální request a uložím … (znovu Ctrl+C = okamžitý exit)")
+        print("\n⚠ Ctrl+C — dokoncim aktualni request a uzavru ...")
     signal.signal(signal.SIGINT, on_sig)
 
-    # 1. Sber hash_ids (přes všechny segmenty)
-    all_hids: list[str] = []
-    for segment in SEGMENTY:
-        seg_label = "byty" if segment["category_main_cb"] == 1 else "domy"
-        print(f"== Segment: {seg_label} (prodej){'  · kraj ' + str(args.region) if args.region else ''} ==")
-        for hid in iter_hash_ids(session, segment, args.max_pages, args.region):
-            all_hids.append(hid)
-            if interrupted["flag"]:
-                break
-        if interrupted["flag"]:
-            break
-        print(f"  → posbíráno {len(all_hids)} listings ID zatím")
+    # 1. Sber summary listings + detail URLs
+    summaries = []  # [(summary_dict, detail_url)]
+    for kat in KATEGORIE:
+        if interrupted["flag"]: break
+        print(f"== Listing: {kat} v meste '{args.mesto}' ==")
+        cnt = 0
+        for s, durl in iter_listings(session, args.mesto, kat, args.max_pages):
+            summaries.append((s, durl))
+            cnt += 1
+            if interrupted["flag"]: break
+        print(f"  -> {cnt} summary listings")
 
-    all_hids = list(dict.fromkeys(all_hids))  # dedup (zachovej pořadí)
-    print(f"\nCelkem unikátních inzerátů: {len(all_hids)}")
+    # Dedup podle id
+    seen = set()
+    unique = []
+    for s, durl in summaries:
+        eid = s.get('id')
+        if eid and eid not in seen:
+            seen.add(eid)
+            unique.append((s, durl))
+    print(f"\nUnikatnich inzeratu: {len(unique)}")
 
-    # 2. Detaily (s cache)
+    # 2. Detaily
     start = time.time()
-    fetched = 0
-    cached = 0
-    for i, hid in enumerate(all_hids, 1):
-        if interrupted["flag"]:
-            break
-
-        if not args.force and cache_has(conn, hid):
+    fetched = 0; cached = 0; failed = 0
+    for i, (s, hint) in enumerate(unique, 1):
+        if interrupted["flag"]: break
+        eid = s['id']
+        if not args.force and cache_has(conn, eid):
             cached += 1
             continue
 
-        detail = get_json(session, f"{API}/estates/{hid}")
+        detail, used_url = fetch_estate_detail(session, eid, hint)
         polite_sleep()
         if not detail:
+            failed += 1
             continue
 
-        seller = extract_seller(detail)
-        inz = extract_inzerat(detail, hid)
-        popis = (detail.get("text", {}) or {}).get("value", "")
+        seller = parse_seller(detail)
+        rk = parse_premise(detail)
+        popis = detail.get('description', '') or ''
         zminil, zminka = zminuje_financovani(popis)
+        loc = detail.get('locality') or {}
+        lokalita_str = ', '.join(filter(None, [loc.get('street'), loc.get('quarter') or loc.get('cityPart'), loc.get('city')]))
 
         row = {
-            **seller, **inz,
+            "id": eid,
+            "seller_id": seller["seller_id"],
+            "makler": seller["makler"],
+            "rk": rk,
+            "telefon": seller["telefon"],
+            "telefon_norm": seller["telefon_norm"],
+            "email": seller["email"],
+            "titulek": detail.get('name', '') or '',
+            "cena_czk": detail.get('priceCzk') or 0,
+            "lokalita": lokalita_str,
+            "url": used_url or hint,
             "zminil_fin": 1 if zminil else 0,
             "zminka": zminka,
-            "popis_raw": popis[:5000],  # pro audit, max 5000 znaků
-            "fetched_at": datetime.now().isoformat(timespec="seconds"),
+            "popis_raw": popis[:3000],
+            "fetched_at": datetime.now().isoformat(timespec='seconds'),
         }
         cache_save(conn, row)
         fetched += 1
 
-        if fetched % 20 == 0:
+        if fetched % 10 == 0:
             elapsed = time.time() - start
-            speed = fetched / elapsed if elapsed > 0 else 0
-            zbyva = (len(all_hids) - i) / speed if speed > 0 else 0
-            print(f"  [{i}/{len(all_hids)}]  fetch={fetched}  cache={cached}  "
-                  f"rychlost={speed:.1f}/s  ETA={int(zbyva)}s")
+            speed = fetched / elapsed if elapsed else 0
+            eta = (len(unique) - i) / speed if speed > 0 else 0
+            print(f"  [{i}/{len(unique)}] fetch={fetched} cache={cached} fail={failed} "
+                  f"speed={speed:.1f}/s ETA={int(eta)}s")
 
-    print(f"\nFetch hotov. Nové: {fetched}, z cache: {cached}.")
+    print(f"\nFetch hotov: nove={fetched}, cache={cached}, fail={failed}.")
 
-    # 3. Agregace po makléři z DB
-    print("\nAgregace po makléři …")
-    cur = conn.execute("""
-        SELECT seller_id, telefon_norm, makler, rk, telefon, email,
-               hash_id, titulek, cena_czk, lokalita, plocha, dispozice,
-               stav, lat, lon, url, zminil_fin, zminka
-        FROM detail
-    """)
-    makleri: dict = {}
+    # 3. Agregace
+    cur = conn.execute("SELECT * FROM detail")
+    cols = [c[0] for c in cur.description]
+    makleri = {}
     for r in cur.fetchall():
-        d = dict(zip([c[0] for c in cur.description], r))
+        d = dict(zip(cols, r))
         klic = makler_klic(d)
         rec = makleri.get(klic)
         if rec is None:
@@ -357,24 +403,21 @@ def run(args):
             makleri[klic] = rec
         if d["zminil_fin"]:
             rec["zminil"] = True
-            if d["zminka"]:
-                rec["zminky"].add(d["zminka"])
+            if d["zminka"]: rec["zminky"].add(d["zminka"])
         rec["inzeraty"].append({
-            "hash_id": d["hash_id"],
-            "titulek": d["titulek"], "cena_czk": d["cena_czk"],
-            "lokalita": d["lokalita"], "plocha": d["plocha"],
-            "dispozice": d["dispozice"], "stav": d["stav"],
-            "lat": d["lat"], "lon": d["lon"], "url": d["url"],
+            "id": d["id"], "titulek": d["titulek"],
+            "cena_czk": d["cena_czk"], "lokalita": d["lokalita"],
+            "url": d["url"],
         })
 
-    # 4. Filtr — jen čistí + min počet inzerátů
     cisti = [r for r in makleri.values()
              if not r["zminil"] and len(r["inzeraty"]) >= args.min_inzeratu]
     cisti.sort(key=lambda r: len(r["inzeraty"]), reverse=True)
 
-    # 5. Export CSV
+    # 4. Export CSV
     out_souhrn = "makleri_bez_financovani.csv"
     out_detail = "inzeraty_makleru.csv"
+    out_json   = "leady.json"
 
     with open(out_souhrn, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
@@ -384,43 +427,58 @@ def run(args):
                         r["seller_id"], len(r["inzeraty"])])
 
     with open(out_detail, "w", newline="", encoding="utf-8-sig") as f:
-        cols = ["makler", "rk", "seller_id", "hash_id", "titulek", "cena_czk",
-                "lokalita", "plocha", "dispozice", "stav", "lat", "lon", "url"]
+        cols = ["makler", "rk", "seller_id", "id", "titulek",
+                "cena_czk", "lokalita", "url"]
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
         for r in cisti:
             for inz in r["inzeraty"]:
-                w.writerow({
-                    "makler": r["makler"], "rk": r["rk"],
-                    "seller_id": r["seller_id"], **inz,
-                })
+                w.writerow({"makler": r["makler"], "rk": r["rk"],
+                            "seller_id": r["seller_id"], **inz})
 
-    # 6. Souhrn
+    # JSON pro dashboard
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump({
+            "generovano": datetime.now().isoformat(timespec='seconds'),
+            "mesto": args.mesto,
+            "celkem_inzeratu": len(unique),
+            "celkem_makleru": len(makleri),
+            "zminili": sum(1 for r in makleri.values() if r["zminil"]),
+            "cisti": [
+                {
+                    "makler": r["makler"], "rk": r["rk"],
+                    "telefon": r["telefon"], "email": r["email"],
+                    "seller_id": r["seller_id"],
+                    "pocet_inzeratu": len(r["inzeraty"]),
+                    "inzeraty": r["inzeraty"][:5],  # top 5 ukázek
+                }
+                for r in cisti
+            ],
+        }, f, ensure_ascii=False, indent=2)
+
     s_total = len(makleri)
     s_zmin = sum(1 for r in makleri.values() if r["zminil"])
-    print()
-    print(f"📊 Souhrn:")
-    print(f"   Inzerátů v cache:       {len(all_hids):>6}")
-    print(f"   Unikátních makléřů:     {s_total:>6}")
-    print(f"   Zmínili financování:    {s_zmin:>6}")
-    print(f"   ČISTÍ makléři:          {s_total - s_zmin:>6}")
-    print(f"   Splňují min {args.min_inzeratu} inz.: {len(cisti):>6}")
-    print()
+    print(f"\n📊 Souhrn:")
+    print(f"   Inzeratu zpracovano: {len(unique)}")
+    print(f"   Unikatnich makleru:  {s_total}")
+    print(f"   Zminili financ.:     {s_zmin}")
+    print(f"   CISTI makleri:       {s_total - s_zmin}")
+    print(f"   Splnuji min {args.min_inzeratu} inz: {len(cisti)}")
     print(f"   → {out_souhrn}")
     print(f"   → {out_detail}")
-
+    print(f"   → {out_json}")
     session.close()
     conn.close()
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Sreality makléři bez financování")
-    p.add_argument("--region", type=int, default=None,
-                   help="locality_region_id (např. 10=Praha, 11=Středočeský …); default celá ČR")
+    p = argparse.ArgumentParser(description="Sreality makléři bez financování (v3)")
+    p.add_argument("--mesto", default="brno",
+                   help="město v URL slugu (brno / praha / ostrava / ...). Default: brno")
     p.add_argument("--max-pages", type=int, default=None,
-                   help="strop pro počet stránek listingu (každá ≈100 inz.)")
+                   help="strop pro počet stránek na kategorii (každá ~20 inz.)")
     p.add_argument("--min-inzeratu", type=int, default=1,
-                   help="exportovat jen makléře s tolika+ inzeráty (default 1)")
+                   help="exportovat jen makléře s tolika+ inzeráty")
     p.add_argument("--force", action="store_true",
                    help="ignorovat cache, znovu stáhnout všechny detaily")
     return p.parse_args()

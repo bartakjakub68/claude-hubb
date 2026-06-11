@@ -5,3 +5,9 @@ __pycache__/
 .env.*
 node_modules/
 *.zip
+
+# Sreality scrape artefakty (data se nahrávají do public/data/leady.json)
+scripts/.sreality_cache.db
+scripts/leady.json
+scripts/makleri_bez_financovani.csv
+scripts/inzeraty_makleru.csv
