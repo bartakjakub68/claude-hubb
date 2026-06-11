@@ -1,207 +1,16 @@
 {
-  "generovano": "2026-06-11T10:34:03",
+  "generovano": "2026-06-11T10:50:12",
   "mesto": "brno",
-  "celkem_inzeratu": 200,
-  "celkem_makleru": 118,
-  "zminili": 18,
+  "kraje": [
+    "Jihomoravský kraj"
+  ],
+  "okresy": [
+    "Brno-město"
+  ],
+  "celkem_inzeratu_v_cache": 80,
+  "celkem_makleru": 42,
+  "zminili": 6,
   "cisti": [
-    {
-      "makler": "",
-      "rk": "",
-      "telefon": "",
-      "email": "",
-      "seller_id": 0,
-      "pocet_inzeratu": 8,
-      "inzeraty": [
-        {
-          "id": 1170509900,
-          "titulek": "Prodej bytu 2+1 63 m²",
-          "cena_czk": 7890000,
-          "lokalita": "Cihlářská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-veveri-cihlarska/1170509900"
-        },
-        {
-          "id": 1489076300,
-          "titulek": "Prodej rodinného domu 159 m², pozemek 401 m²",
-          "cena_czk": 19700000,
-          "lokalita": "Budovcova, Brno-Královo Pole, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-kralovo-pole-budovcova/1489076300"
-        },
-        {
-          "id": 1767080012,
-          "titulek": "Prodej vily 174 m², pozemek 623 m²",
-          "cena_czk": 35990000,
-          "lokalita": "Květná, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/vila/brno-pisarky-kvetna/1767080012"
-        },
-        {
-          "id": 2216132684,
-          "titulek": "Prodej chaty 15 m², pozemek 400 m²",
-          "cena_czk": 0,
-          "lokalita": "Brno-Královo Pole, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-kralovo-pole-/2216132684"
-        },
-        {
-          "id": 2604105804,
-          "titulek": "Prodej rodinného domu 125 m², pozemek 431 m²",
-          "cena_czk": 8990000,
-          "lokalita": "Podolská, Brno-Líšeň, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lisen-podolska/2604105804"
-        }
-      ]
-    },
-    {
-      "makler": "Zuzana Raganová",
-      "rk": "PSN s.r.o.",
-      "telefon": "+420539002002",
-      "email": "brno@psn.cz",
-      "seller_id": 287036,
-      "pocet_inzeratu": 6,
-      "inzeraty": [
-        {
-          "id": 374154060,
-          "titulek": "Prodej bytu 2+kk 42 m²",
-          "cena_czk": 6793000,
-          "lokalita": "Plynárenská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-zabrdovice-plynarenska/374154060"
-        },
-        {
-          "id": 1166245964,
-          "titulek": "Prodej bytu 2+kk 43 m²",
-          "cena_czk": 7087000,
-          "lokalita": "Plynárenská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-zabrdovice-plynarenska/1166245964"
-        },
-        {
-          "id": 1521713228,
-          "titulek": "Prodej bytu 3+kk 69 m²",
-          "cena_czk": 9894000,
-          "lokalita": "Plynárenská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-zabrdovice-plynarenska/1521713228"
-        },
-        {
-          "id": 1622376524,
-          "titulek": "Prodej bytu 2+1 45 m²",
-          "cena_czk": 7150000,
-          "lokalita": "Plynárenská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-zabrdovice-plynarenska/1622376524"
-        },
-        {
-          "id": 3501424716,
-          "titulek": "Prodej bytu 1+kk 30 m²",
-          "cena_czk": 4925000,
-          "lokalita": "Plynárenská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/1+kk/brno-zabrdovice-plynarenska/3501424716"
-        }
-      ]
-    },
-    {
-      "makler": "Květa Vondráková",
-      "rk": "Reality Květa Vondráková",
-      "telefon": "+420734799449",
-      "email": "rais.partner.rk@gmail.com",
-      "seller_id": 307694,
-      "pocet_inzeratu": 4,
-      "inzeraty": [
-        {
-          "id": 272732236,
-          "titulek": "Prodej rodinného domu 111 m², pozemek 789 m²",
-          "cena_czk": 0,
-          "lokalita": "Brno-Bystrc, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-bystrc-/272732236"
-        },
-        {
-          "id": 3137830988,
-          "titulek": "Prodej bytu 2+1 57 m²",
-          "cena_czk": 6599000,
-          "lokalita": "Churého, Brno-Černovice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-cernovice-chureho/3137830988"
-        },
-        {
-          "id": 3166343244,
-          "titulek": "Prodej chaty 111 m², pozemek 789 m²",
-          "cena_czk": 0,
-          "lokalita": "Rakovecká, Brno-Bystrc, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-bystrc-rakovecka/3166343244"
-        },
-        {
-          "id": 4218585164,
-          "titulek": "Prodej bytu 2+kk 79 m²",
-          "cena_czk": 7649000,
-          "lokalita": "Svitavská, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-husovice-svitavska/4218585164"
-        }
-      ]
-    },
-    {
-      "makler": "Monika Horáková",
-      "rk": "Home4Living",
-      "telefon": "+420777305315",
-      "email": "horakova@home4living.cz",
-      "seller_id": 304387,
-      "pocet_inzeratu": 4,
-      "inzeraty": [
-        {
-          "id": 432054348,
-          "titulek": "Prodej bytu 2+kk 99 m²",
-          "cena_czk": 7950000,
-          "lokalita": "Tumaňanova, Brno-Řečkovice a Mokrá Hora, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-mokra-hora-tumananova/432054348"
-        },
-        {
-          "id": 1189584972,
-          "titulek": "Prodej bytu 5+kk 140 m²",
-          "cena_czk": 14400000,
-          "lokalita": "Tumaňanova, Brno-Řečkovice a Mokrá Hora, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/5+kk/brno-mokra-hora-tumananova/1189584972"
-        },
-        {
-          "id": 2702852940,
-          "titulek": "Prodej bytu 5+kk 230 m²",
-          "cena_czk": 33500000,
-          "lokalita": "Klatovská, Brno-Královo Pole, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/5+kk/brno-ponava-klatovska/2702852940"
-        },
-        {
-          "id": 2916982860,
-          "titulek": "Prodej vícegeneračního domu 300 m², pozemek 2878 m²",
-          "cena_czk": 0,
-          "lokalita": "Rakovecká, Brno-Bystrc, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/vicegeneracni-dum/brno-bystrc-rakovecka/2916982860"
-        }
-      ]
-    },
-    {
-      "makler": "Lenka Kalvodová",
-      "rk": "Reality Lenka Kalvodová",
-      "telefon": "+420602853362",
-      "email": "lenka@kalvodova-reality.cz",
-      "seller_id": 292988,
-      "pocet_inzeratu": 3,
-      "inzeraty": [
-        {
-          "id": 674255692,
-          "titulek": "Prodej bytu 3+1 74 m²",
-          "cena_czk": 8480000,
-          "lokalita": "Purkyňova, Brno-Královo Pole, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+1/brno-kralovo-pole-purkynova/674255692"
-        },
-        {
-          "id": 943763532,
-          "titulek": "Prodej rodinného domu 150 m², pozemek 164 m²",
-          "cena_czk": 15990000,
-          "lokalita": "Šeránkova, Brno-Žabovřesky, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zabovresky-serankova/943763532"
-        },
-        {
-          "id": 2822279244,
-          "titulek": "Prodej bytu atypický 178 m²",
-          "cena_czk": 15990000,
-          "lokalita": "Rybářská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/atypicky/brno-stare-brno-rybarska/2822279244"
-        }
-      ]
-    },
     {
       "makler": "Ing. Jan Veselý",
       "rk": "ESTAREA",
@@ -209,12 +18,21 @@
       "email": "vesely@estarea.cz",
       "seller_id": 281102,
       "pocet_inzeratu": 3,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 817374028,
           "titulek": "Prodej bytu 2+kk 58 m²",
           "cena_czk": 8344000,
           "lokalita": "Na Pískové cestě, Brno-Bohunice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-bohunice-na-piskove-ceste/817374028"
         },
         {
@@ -222,6 +40,9 @@
           "titulek": "Prodej bytu 2+kk 47 m²",
           "cena_czk": 6959000,
           "lokalita": "Na Pískové cestě, Brno-Bohunice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-bohunice-na-piskove-ceste/866657100"
         },
         {
@@ -229,110 +50,10 @@
           "titulek": "Prodej bytu 2+kk 60 m²",
           "cena_czk": 8899000,
           "lokalita": "Na Pískové cestě, Brno-Bohunice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-bohunice-na-piskove-ceste/2411209548"
-        }
-      ]
-    },
-    {
-      "makler": "Zdeněk Mikulášek",
-      "rk": "Unicareal s.r.o.",
-      "telefon": "+420541211876; +420774293326",
-      "email": "mikulasek@unicareal.cz",
-      "seller_id": 48632,
-      "pocet_inzeratu": 3,
-      "inzeraty": [
-        {
-          "id": 1461039180,
-          "titulek": "Prodej rodinného domu 558 m², pozemek 1597 m²",
-          "cena_czk": 67000000,
-          "lokalita": "Hlavní, Brno-Komín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-komin-hlavni/1461039180"
-        },
-        {
-          "id": 2759434316,
-          "titulek": "Prodej rodinného domu 199 m², pozemek 1395 m²",
-          "cena_czk": 33500000,
-          "lokalita": "Hlavní, Brno-Komín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-komin-hlavni/2759434316"
-        },
-        {
-          "id": 4169572428,
-          "titulek": "Prodej bytu 2+kk 47 m²",
-          "cena_czk": 6170000,
-          "lokalita": "Jeneweinova, Brno-jih, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-komarov-jeneweinova/4169572428"
-        }
-      ]
-    },
-    {
-      "makler": "Jitka  Horká",
-      "rk": "REALHOF",
-      "telefon": "+420774774155; +420774774155",
-      "email": "horka@realhof.cz",
-      "seller_id": 8625,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 206864460,
-          "titulek": "Prodej bytu 2+kk 59 m²",
-          "cena_czk": 8390000,
-          "lokalita": "Božetěchova, Brno-Královo Pole, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-kralovo-pole-bozetechova/206864460"
-        },
-        {
-          "id": 2709001036,
-          "titulek": "Prodej rodinného domu 193 m², pozemek 181 m²",
-          "cena_czk": 16950000,
-          "lokalita": "Terasová, Brno-Žabovřesky, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zabovresky-terasova/2709001036"
-        }
-      ]
-    },
-    {
-      "makler": "Pavla Fiurášková",
-      "rk": "Nemovision reality",
-      "telefon": "+420739207203",
-      "email": "pavla.fiuraskova@nemovision.cz",
-      "seller_id": 305602,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 527131468,
-          "titulek": "Prodej rodinného domu 184 m², pozemek 182 m²",
-          "cena_czk": 14100000,
-          "lokalita": "Kostelíček, Brno-Líšeň, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lisen-kostelicek/527131468"
-        },
-        {
-          "id": 3279057740,
-          "titulek": "Prodej bytu 4+kk 138 m²",
-          "cena_czk": 9350000,
-          "lokalita": "Nováčkova, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/4+kk/brno-husovice-novackova/3279057740"
-        }
-      ]
-    },
-    {
-      "makler": " Eva Kohoutková",
-      "rk": "AC Real",
-      "telefon": "+420730896277; +420730896277",
-      "email": "kohoutkova@acreal.cz",
-      "seller_id": 320776,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 717660236,
-          "titulek": "Prodej bytu 1+kk 24 m²",
-          "cena_czk": 4484908,
-          "lokalita": "Košuličova, Brno-jih, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/1+kk/brno-horni-herspice-kosulicova/717660236"
-        },
-        {
-          "id": 1107791948,
-          "titulek": "Prodej rodinného domu 195 m², pozemek 138 m²",
-          "cena_czk": 14500000,
-          "lokalita": "Štursova, Brno-Komín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-komin-stursova/1107791948"
         }
       ]
     },
@@ -343,12 +64,21 @@
       "email": "klimesova@avrioreal.cz",
       "seller_id": 86165,
       "pocet_inzeratu": 2,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 1087861580,
           "titulek": "Prodej bytu 3+kk 62 m²",
           "cena_czk": 10261000,
           "lokalita": "Vranovská, Brno-sever, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-husovice-vranovska/1087861580"
         },
         {
@@ -356,31 +86,82 @@
           "titulek": "Prodej bytu 1+kk 33 m²",
           "cena_czk": 5222000,
           "lokalita": "Vranovská, Brno-sever, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/1+kk/brno-husovice-vranovska/2455928908"
         }
       ]
     },
     {
-      "makler": " Irena Šneková",
-      "rk": "AC Real",
-      "telefon": "+420601120000; +420601120000",
-      "email": "snekova@acreal.cz",
-      "seller_id": 295069,
+      "makler": "",
+      "rk": "",
+      "telefon": "",
+      "email": "",
+      "seller_id": 0,
       "pocet_inzeratu": 2,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
-          "id": 1151770700,
-          "titulek": "Prodej bytu 4+kk 114 m²",
-          "cena_czk": 16990000,
-          "lokalita": "Pražákova, Brno-jih, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/4+kk/brno-horni-herspice-prazakova/1151770700"
+          "id": 1170509900,
+          "titulek": "Prodej bytu 2+1 63 m²",
+          "cena_czk": 7890000,
+          "lokalita": "Cihlářská, Brno-střed, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-veveri-cihlarska/1170509900"
         },
         {
-          "id": 1942397004,
-          "titulek": "Prodej bytu 4+kk 97 m²",
-          "cena_czk": 11490000,
-          "lokalita": "Pražákova, Brno-jih, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/4+kk/brno-horni-herspice-prazakova/1942397004"
+          "id": 2621341772,
+          "titulek": "Prodej rodinného domu 126 m², pozemek 326 m²",
+          "cena_czk": 15490000,
+          "lokalita": "Húskova, Brno-Černovice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-cernovice-huskova/2621341772"
+        }
+      ]
+    },
+    {
+      "makler": "Olga Jarošová",
+      "rk": "GEPARD REALITY/ REALITY MUZEJKA",
+      "telefon": "+420604232218",
+      "email": "olga.jarosova@gpre.cz",
+      "seller_id": 280302,
+      "pocet_inzeratu": 2,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
+      "inzeraty": [
+        {
+          "id": 1241821260,
+          "titulek": "Prodej bytu 3+1 76 m²",
+          "cena_czk": 7895000,
+          "lokalita": "Jakuba Obrovského, Brno-Bystrc, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/byt/3+1/brno-bystrc-jakuba-obrovskeho/1241821260"
+        },
+        {
+          "id": 2207879244,
+          "titulek": "Prodej bytu 2+1 51 m²",
+          "cena_czk": 6930000,
+          "lokalita": "Keřová, Brno-Žebětín, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-zebetin-kerova/2207879244"
         }
       ]
     },
@@ -391,12 +172,21 @@
       "email": "bonusbrno@century21.cz",
       "seller_id": 287759,
       "pocet_inzeratu": 2,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 1262649420,
           "titulek": "Prodej rodinného domu 84 m², pozemek 84 m²",
           "cena_czk": 10999000,
           "lokalita": "Dulánek, Brno-Židenice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zidenice-dulanek/1262649420"
         },
         {
@@ -404,6 +194,9 @@
           "titulek": "Prodej bytu 2+kk 56 m²",
           "cena_czk": 7612500,
           "lokalita": "Bratří Žůrků, Brno-jih, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-komarov-bratri-zurku/3444879436"
         }
       ]
@@ -415,12 +208,21 @@
       "email": "tomas.pohlodek@rkokno.cz",
       "seller_id": 228323,
       "pocet_inzeratu": 2,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 1293713484,
           "titulek": "Prodej chaty 300 m², pozemek 360 m²",
           "cena_czk": 13980000,
           "lokalita": "Brno-Bystrc, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-bystrc-/1293713484"
         },
         {
@@ -428,6 +230,9 @@
           "titulek": "Prodej rodinného domu 100 m², pozemek 234 m²",
           "cena_czk": 11499000,
           "lokalita": "Švédská, Brno-Tuřany, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-turany-svedska/2780078156"
         }
       ]
@@ -439,12 +244,21 @@
       "email": "sekanina@realyx.cz",
       "seller_id": 322831,
       "pocet_inzeratu": 2,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 1699971148,
           "titulek": "Prodej vícegeneračního domu 160 m², pozemek 143 m²",
           "cena_czk": 10990000,
           "lokalita": "Revoluční, Brno-Tuřany, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/vicegeneracni-dum/brno-turany-revolucni/1699971148"
         },
         {
@@ -452,31 +266,10 @@
           "titulek": "Prodej rodinného domu 160 m², pozemek 143 m²",
           "cena_czk": 10990000,
           "lokalita": "Revoluční, Brno-Tuřany, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-turany-revolucni/3696459852"
-        }
-      ]
-    },
-    {
-      "makler": "Ing. Marek Fryčka",
-      "rk": "PROPERIA GROUP",
-      "telefon": "+420774696066",
-      "email": "marek.frycka@properia.cz",
-      "seller_id": 290669,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 1966440524,
-          "titulek": "Prodej rodinného domu 130 m², pozemek 388 m²",
-          "cena_czk": 0,
-          "lokalita": "Scheinerova, Brno-Líšeň, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lisen-scheinerova/1966440524"
-        },
-        {
-          "id": 3625603916,
-          "titulek": "Prodej bytu 4+kk 95 m²",
-          "cena_czk": 11500000,
-          "lokalita": "Rolencova, Brno-Tuřany, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/4+kk/brno-brno-turany-rolencova/3625603916"
         }
       ]
     },
@@ -487,12 +280,21 @@
       "email": "petr.polach@salesplan.cz",
       "seller_id": 95620,
       "pocet_inzeratu": 2,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 2006344524,
           "titulek": "Prodej bytu 2+1 61 m²",
           "cena_czk": 6890000,
           "lokalita": "Kunštátská, Brno-Řečkovice a Mokrá Hora, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-reckovice-kunstatska/2006344524"
         },
         {
@@ -500,127 +302,10 @@
           "titulek": "Prodej bytu 2+1 57 m²",
           "cena_czk": 6600000,
           "lokalita": "Havlenova, Brno-střed, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-styrice-havlenova/2273353804"
-        }
-      ]
-    },
-    {
-      "makler": "Radek Soldán",
-      "rk": "TRIO REALITY",
-      "telefon": "+420733120088",
-      "email": "triofinance@email.cz",
-      "seller_id": 69561,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 2420027468,
-          "titulek": "Prodej vily 561 m², pozemek 1665 m²",
-          "cena_czk": 0,
-          "lokalita": "Pod Horkou, Brno-Bystrc, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/vila/brno-bystrc-pod-horkou/2420027468"
-        },
-        {
-          "id": 2609017420,
-          "titulek": "Prodej chaty 12 m², pozemek 400 m²",
-          "cena_czk": 590000,
-          "lokalita": "Brno-Jundrov, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-brno-jundrov-/2609017420"
-        }
-      ]
-    },
-    {
-      "makler": "Ing. Mike Jiskra",
-      "rk": "Frami Real",
-      "telefon": "+420725888897",
-      "email": "framireal@framireal.cz",
-      "seller_id": 71480,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 2691412044,
-          "titulek": "Prodej rodinného domu 160 m², pozemek 278 m²",
-          "cena_czk": 8990000,
-          "lokalita": "K Lázinkám, Brno-Chrlice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-chrlice-k-lazinkam/2691412044"
-        },
-        {
-          "id": 2713296972,
-          "titulek": "Prodej rodinného domu 198 m², pozemek 297 m²",
-          "cena_czk": 19900000,
-          "lokalita": "Lísky, Brno-Komín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-komin-lisky/2713296972"
-        }
-      ]
-    },
-    {
-      "makler": "Jiří Preis",
-      "rk": "HOME Hunters",
-      "telefon": "+420608950110",
-      "email": "preis@homehunters.cz",
-      "seller_id": 227850,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 2866574156,
-          "titulek": "Prodej bytu 2+kk 62 m²",
-          "cena_czk": 6990000,
-          "lokalita": "Štefánikova, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-veveri-stefanikova/2866574156"
-        },
-        {
-          "id": 3071311948,
-          "titulek": "Prodej bytu 2+kk 35 m²",
-          "cena_czk": 4499000,
-          "lokalita": "Jedovnická, Brno-Líšeň, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-lisen-jedovnicka/3071311948"
-        }
-      ]
-    },
-    {
-      "makler": "Filip Mlčoch",
-      "rk": "MLČOCH reality, partner Justo",
-      "telefon": "+420734222221; +420734222221",
-      "email": "mlcoch@justo.cz",
-      "seller_id": 154308,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 3068432460,
-          "titulek": "Prodej bytu 3+kk 102 m²",
-          "cena_czk": 12500000,
-          "lokalita": "Kosatcová, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-lesna-kosatcova/3068432460"
-        },
-        {
-          "id": 3252981836,
-          "titulek": "Prodej bytu 2+1 80 m²",
-          "cena_czk": 9990000,
-          "lokalita": "Kosatcová, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-lesna-kosatcova/3252981836"
-        }
-      ]
-    },
-    {
-      "makler": "Vladimír Král",
-      "rk": "A-KING REALITY",
-      "telefon": "+420542211114; +420736681019",
-      "email": "a-king@a-king.cz",
-      "seller_id": 9248,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 3437998156,
-          "titulek": "Prodej rodinného domu 156 m², pozemek 156 m²",
-          "cena_czk": 10900000,
-          "lokalita": "Markovičova, Brno-Líšeň, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lisen-markovicova/3437998156"
-        },
-        {
-          "id": 3540568412,
-          "titulek": "Prodej rodinného domu 152 m², pozemek 190 m²",
-          "cena_czk": 7338000,
-          "lokalita": "Na Pískové cestě, Brno-Bohunice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-bohunice-na-piskove-ceste/3540568412"
         }
       ]
     },
@@ -631,12 +316,21 @@
       "email": "info@svoboda-williams.com",
       "seller_id": 69785,
       "pocet_inzeratu": 2,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 3498479692,
           "titulek": "Prodej vily 580 m², pozemek 963 m²",
           "cena_czk": 58500000,
           "lokalita": "Azurová, Brno-Řečkovice a Mokrá Hora, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/vila/brno-reckovice-azurova/3498479692"
         },
         {
@@ -644,31 +338,10 @@
           "titulek": "Prodej rodinného domu 195 m², pozemek 504 m²",
           "cena_czk": 21900000,
           "lokalita": "Loučná, Brno-sever, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-sobesice-loucna/3924234828"
-        }
-      ]
-    },
-    {
-      "makler": "Radka Tlachová",
-      "rk": "PATREAL s.r.o.",
-      "telefon": "+420541245579; +420608645164",
-      "email": "r.tlachova@patreal.cz",
-      "seller_id": 315679,
-      "pocet_inzeratu": 2,
-      "inzeraty": [
-        {
-          "id": 3767566412,
-          "titulek": "Prodej chaty 120 m², pozemek 84 m²",
-          "cena_czk": 5500000,
-          "lokalita": "Brno-Bystrc, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-brno-bystrc-/3767566412"
-        },
-        {
-          "id": 4209410124,
-          "titulek": "Prodej chaty 60 m², pozemek 44 m²",
-          "cena_czk": 2400000,
-          "lokalita": "Bystrc, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-bystrc-/4209410124"
         }
       ]
     },
@@ -679,13 +352,48 @@
       "email": "office@reins.cz",
       "seller_id": 95980,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 200970316,
           "titulek": "Prodej bytu 2+1 58 m²",
           "cena_czk": 6930000,
           "lokalita": "Souběžná, Brno-Židenice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-zidenice-soubezna/200970316"
+        }
+      ]
+    },
+    {
+      "makler": "Jitka  Horká",
+      "rk": "REALHOF",
+      "telefon": "+420774774155; +420774774155",
+      "email": "horka@realhof.cz",
+      "seller_id": 8625,
+      "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
+      "inzeraty": [
+        {
+          "id": 206864460,
+          "titulek": "Prodej bytu 2+kk 59 m²",
+          "cena_czk": 8390000,
+          "lokalita": "Božetěchova, Brno-Královo Pole, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-kralovo-pole-bozetechova/206864460"
         }
       ]
     },
@@ -696,30 +404,22 @@
       "email": "jinereality@volny.cz",
       "seller_id": 6331,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 230985804,
           "titulek": "Prodej rodinného domu 150 m², pozemek 154 m²",
           "cena_czk": 13495000,
           "lokalita": "Malíkova, Brno-Řečkovice a Mokrá Hora, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-reckovice-malikova/230985804"
-        }
-      ]
-    },
-    {
-      "makler": "Barbora Hálková",
-      "rk": "HOME Hunters",
-      "telefon": "+420608658105",
-      "email": "halkova@homehunters.cz",
-      "seller_id": 94268,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 287146060,
-          "titulek": "Prodej bytu 2+1 66 m²",
-          "cena_czk": 8450000,
-          "lokalita": "Kamenačky, Brno-Židenice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-zidenice-kamenacky/287146060"
         }
       ]
     },
@@ -730,81 +430,22 @@
       "email": "barbara.lady@costi.cz",
       "seller_id": 280464,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 295800908,
           "titulek": "Prodej rodinného domu 120 m², pozemek 227 m²",
           "cena_czk": 10900000,
           "lokalita": "Podstránská, Brno-Slatina, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-slatina-podstranska/295800908"
-        }
-      ]
-    },
-    {
-      "makler": "Dušan Otradovec",
-      "rk": "CZECH POINT 101 s.r.o.",
-      "telefon": "+420774460994",
-      "email": "dusan@czechpoint101.com",
-      "seller_id": 281834,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 322076748,
-          "titulek": "Prodej rodinného domu 140 m², pozemek 601 m²",
-          "cena_czk": 13900000,
-          "lokalita": "Fryčajova, Brno-Maloměřice a Obřany, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-obrany-frycajova/322076748"
-        }
-      ]
-    },
-    {
-      "makler": "Bc. Monika Feilerová",
-      "rk": "PEGAS REAL & DEVELOPMENT",
-      "telefon": "+420776468341",
-      "email": "feilerova@pegasreal.cz",
-      "seller_id": 324067,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 328241228,
-          "titulek": "Prodej rodinného domu 217 m², pozemek 109 m²",
-          "cena_czk": 10490000,
-          "lokalita": "Šámalova, Brno-Židenice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zidenice-samalova/328241228"
-        }
-      ]
-    },
-    {
-      "makler": "David Kukla",
-      "rk": "G4Reality s.r.o. - realitní kancelář",
-      "telefon": "+420731001009",
-      "email": "info@g4reality.cz",
-      "seller_id": 288242,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 356810828,
-          "titulek": "Prodej bytu 3+1 73 m²",
-          "cena_czk": 8400000,
-          "lokalita": "Štouračova, Brno-Bystrc, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+1/brno-bystrc-stouracova/356810828"
-        }
-      ]
-    },
-    {
-      "makler": "Aleš Fanta",
-      "rk": "FADAK home, s.r.o.",
-      "telefon": "+420607089824",
-      "email": "alesfanta@fadak.cz",
-      "seller_id": 243613,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 388202572,
-          "titulek": "Prodej chaty 11 m², pozemek 1148 m²",
-          "cena_czk": 1590000,
-          "lokalita": "Brno-Řečkovice a Mokrá Hora, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-brno-reckovice-a-mokra-hora-/388202572"
         }
       ]
     },
@@ -815,30 +456,22 @@
       "email": "info@realitymichek.cz",
       "seller_id": 80313,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 452296780,
           "titulek": "Prodej rodinného domu 134 m², pozemek 195 m²",
           "cena_czk": 13790000,
           "lokalita": "Zeyerova, Brno-Žabovřesky, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zabovresky-zeyerova/452296780"
-        }
-      ]
-    },
-    {
-      "makler": "Ing. Renata Kostrhunová",
-      "rk": "RENČ - realitní kancelář",
-      "telefon": "+420538711784; +420603814867",
-      "email": "kostrhunova@renc.cz",
-      "seller_id": 74577,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 494510924,
-          "titulek": "Prodej rodinného domu 265 m², pozemek 334 m²",
-          "cena_czk": 22500000,
-          "lokalita": "Blatného, Brno-Žabovřesky, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zabovresky-blatneho/494510924"
         }
       ]
     },
@@ -849,47 +482,22 @@
       "email": "info@bidli.cz",
       "seller_id": 91004,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 518422604,
           "titulek": "Prodej chaty 159 m², pozemek 647 m²",
           "cena_czk": 11400000,
           "lokalita": "Brno-Bystrc, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-bystrc-/518422604"
-        }
-      ]
-    },
-    {
-      "makler": "Jana Kučerová",
-      "rk": "PEGAS REAL & DEVELOPMENT",
-      "telefon": "+420775865171",
-      "email": "kucerova@pegasreal.cz",
-      "seller_id": 39463,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 606838860,
-          "titulek": "Prodej rodinného domu 223 m², pozemek 382 m²",
-          "cena_czk": 18990000,
-          "lokalita": "Dohnalova, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-sobesice-dohnalova/606838860"
-        }
-      ]
-    },
-    {
-      "makler": "Petra Viklická",
-      "rk": "Realitní makléřka Petra Viklická",
-      "telefon": "+420737417267",
-      "email": "reality@petraviklicka.cz",
-      "seller_id": 267648,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 631341132,
-          "titulek": "Prodej rodinného domu 200 m², pozemek 241 m²",
-          "cena_czk": 14490000,
-          "lokalita": "Hálkova, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-husovice-halkova/631341132"
         }
       ]
     },
@@ -900,64 +508,22 @@
       "email": "iveta.mokrejsova@century21.cz",
       "seller_id": 308081,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 655728716,
           "titulek": "Prodej rodinného domu 346 m², pozemek 1494 m²",
           "cena_czk": 24890000,
           "lokalita": "Hostislavova, Brno-Žebětín, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zebetin-hostislavova/655728716"
-        }
-      ]
-    },
-    {
-      "makler": "Wetter Pavel",
-      "rk": "M&M Reality",
-      "telefon": "+420296399006; +420731404040",
-      "email": "info@mmreality.cz",
-      "seller_id": 120777,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 690126924,
-          "titulek": "Prodej rodinného domu 126 m², pozemek 983 m²",
-          "cena_czk": 19760000,
-          "lokalita": "Táborská, Brno-Židenice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zidenice-taborska/690126924"
-        }
-      ]
-    },
-    {
-      "makler": "Igor Doležal",
-      "rk": "Nemovision reality",
-      "telefon": "+420724621357; +420724621357",
-      "email": "igor.dolezal@nemovision.cz",
-      "seller_id": 305500,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 707281740,
-          "titulek": "Prodej bytu 3+1 72 m²",
-          "cena_czk": 8990000,
-          "lokalita": "Šrámkova, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+1/brno-lesna-sramkova/707281740"
-        }
-      ]
-    },
-    {
-      "makler": "Ing. Denisa Miklíková",
-      "rk": "CENTURY 21 Bonus Brno",
-      "telefon": "+420605207617",
-      "email": "prodej@bytykrenova.cz",
-      "seller_id": 96074,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 713392204,
-          "titulek": "Prodej bytu 2+kk 89 m²",
-          "cena_czk": 16842000,
-          "lokalita": "Křenová, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-trnita-krenova/713392204"
         }
       ]
     },
@@ -968,166 +534,48 @@
       "email": "info@realprogresbrno.cz",
       "seller_id": 35215,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 881766476,
           "titulek": "Prodej chaty 45 m², pozemek 420 m²",
           "cena_czk": 2450000,
           "lokalita": "Brno-Žebětín, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-zebetin-/881766476"
         }
       ]
     },
     {
-      "makler": "CREDITAS Real Estate",
-      "rk": "CREDITAS Real Estate",
-      "telefon": "+420702216216",
-      "email": "reality@creditasre.cz",
-      "seller_id": 86913,
+      "makler": "Lenka Kalvodová",
+      "rk": "Reality Lenka Kalvodová",
+      "telefon": "+420602853362",
+      "email": "lenka@kalvodova-reality.cz",
+      "seller_id": 292988,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
-          "id": 934634316,
-          "titulek": "Prodej bytu 2+kk 52 m²",
-          "cena_czk": 8186724,
-          "lokalita": "Starý Lískovec, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-stary-liskovec-/934634316"
-        }
-      ]
-    },
-    {
-      "makler": "Jana Bodáková",
-      "rk": "REMAX Pro",
-      "telefon": "+420736780983",
-      "email": "jana.bodakova@re-max.cz",
-      "seller_id": 92223,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 976126028,
-          "titulek": "Prodej rodinného domu 89 m², pozemek 129 m²",
-          "cena_czk": 7500000,
-          "lokalita": "Rašelinová, Brno-Líšeň, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lisen-raselinova/976126028"
-        }
-      ]
-    },
-    {
-      "makler": "Ivo Škaroupka",
-      "rk": "e-Finance Reality",
-      "telefon": "+420515555500; +420602523215",
-      "email": "skaroupka@e-finance.eu",
-      "seller_id": 218258,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1179071308,
-          "titulek": "Prodej bytu 2+kk 45 m²",
-          "cena_czk": 6765000,
-          "lokalita": "Bratislavská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-zabrdovice-bratislavska/1179071308"
-        }
-      ]
-    },
-    {
-      "makler": "Tereza Gončárová",
-      "rk": "PROPERIA GROUP",
-      "telefon": "+420603985666",
-      "email": "tereza.goncarova@properia.cz",
-      "seller_id": 308108,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1192013900,
-          "titulek": "Prodej rodinného domu 120 m², pozemek 529 m²",
-          "cena_czk": 12990000,
-          "lokalita": "Zeiberlichova, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-sobesice-zeiberlichova/1192013900"
-        }
-      ]
-    },
-    {
-      "makler": "Bc. Veronika Műllerová",
-      "rk": "PEGAS REAL & DEVELOPMENT",
-      "telefon": "+420777107659",
-      "email": "mullerova@pegasreal.cz",
-      "seller_id": 301307,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1206947916,
-          "titulek": "Prodej rodinného domu 96 m², pozemek 579 m²",
-          "cena_czk": 17500000,
-          "lokalita": "Pflegrova, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-cerna-pole-pflegrova/1206947916"
-        }
-      ]
-    },
-    {
-      "makler": "Lada Peková",
-      "rk": "REMAX Delux",
-      "telefon": "+420602417229",
-      "email": "lada.pekova@re-max.cz",
-      "seller_id": 86979,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1241940044,
-          "titulek": "Prodej chaty 26 m², pozemek 408 m²",
-          "cena_czk": 5200000,
-          "lokalita": "Chrlice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-chrlice-/1241940044"
-        }
-      ]
-    },
-    {
-      "makler": "Nicolle Handlová",
-      "rk": "Realitní agentura AF",
-      "telefon": "+420773200416",
-      "email": "info@realitniagentura-af.com",
-      "seller_id": 275583,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1274974284,
-          "titulek": "Prodej bytu 1+kk 21 m²",
-          "cena_czk": 4500000,
-          "lokalita": "Brno-Bystrc, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/1+kk/brno-brno-bystrc-/1274974284"
-        }
-      ]
-    },
-    {
-      "makler": "Jaroslav Kováč",
-      "rk": "HOME Hunters",
-      "telefon": "+420608150100",
-      "email": "kovac@homehunters.cz",
-      "seller_id": 45962,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1507893324,
-          "titulek": "Prodej bytu 3+kk 54 m²",
-          "cena_czk": 10490000,
-          "lokalita": "Mezírka, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-veveri-mezirka/1507893324"
-        }
-      ]
-    },
-    {
-      "makler": "Žaneta Humplíková",
-      "rk": "Foreigners Brno",
-      "telefon": "+420724202420; +420724202420",
-      "email": "zaneta.humplikova@foreigners.cz",
-      "seller_id": 317573,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1543995468,
-          "titulek": "Prodej chalupy 57 m², pozemek 772 m²",
-          "cena_czk": 6990000,
-          "lokalita": "Kouty, Brno-Ivanovice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chalupa/brno-ivanovice-kouty/1543995468"
+          "id": 943763532,
+          "titulek": "Prodej rodinného domu 150 m², pozemek 164 m²",
+          "cena_czk": 15990000,
+          "lokalita": "Šeránkova, Brno-Žabovřesky, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zabovresky-serankova/943763532"
         }
       ]
     },
@@ -1138,47 +586,22 @@
       "email": "vetos-real@email.cz",
       "seller_id": 96977,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 1586783052,
           "titulek": "Prodej rodinného domu 91 m², pozemek 152 m²",
           "cena_czk": 8950000,
           "lokalita": "Buzkova, Brno-Židenice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zidenice-buzkova/1586783052"
-        }
-      ]
-    },
-    {
-      "makler": "Petra Fialová",
-      "rk": "OK REAL",
-      "telefon": "+420728236986; +420606589561",
-      "email": "rkokreal@seznam.cz",
-      "seller_id": 6216,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1634107468,
-          "titulek": "Prodej rodinného domu 186 m², pozemek 337 m²",
-          "cena_czk": 0,
-          "lokalita": "Leknínová, Brno-Řečkovice a Mokrá Hora, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-reckovice-lekninova/1634107468"
-        }
-      ]
-    },
-    {
-      "makler": "Jiří Mach",
-      "rk": "Bidli reality",
-      "telefon": "+420774110007; +420774110007",
-      "email": "info@bidli.cz",
-      "seller_id": 279421,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1639813196,
-          "titulek": "Prodej rodinného domu 150 m², pozemek 233 m²",
-          "cena_czk": 0,
-          "lokalita": "ulice 1. května, Brno-Tuřany, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-turany-ulice-1-kvetna/1639813196"
         }
       ]
     },
@@ -1189,98 +612,48 @@
       "email": "info@kocianreality.cz",
       "seller_id": 3541,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 1678151756,
           "titulek": "Prodej rodinného domu 30 m², pozemek 39 m²",
           "cena_czk": 4189500,
           "lokalita": "U Viaduktu, Brno-Chrlice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-chrlice-u-viaduktu/1678151756"
         }
       ]
     },
     {
-      "makler": "Mgr. Petra Biberlová",
-      "rk": "Swiss Life Select Reality",
-      "telefon": "+420800775577",
-      "email": "info-reality@swisslifeselect.cz",
-      "seller_id": 305155,
+      "makler": "Ing. Marek Fryčka",
+      "rk": "PROPERIA GROUP",
+      "telefon": "+420774696066",
+      "email": "marek.frycka@properia.cz",
+      "seller_id": 290669,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
-          "id": 1888849996,
-          "titulek": "Prodej bytu 3+1 71 m²",
-          "cena_czk": 7490000,
-          "lokalita": "Velkopavlovická, Brno-Vinohrady, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+1/brno-zidenice-velkopavlovicka/1888849996"
-        }
-      ]
-    },
-    {
-      "makler": "Tomáš Suchomel",
-      "rk": "ROI ESTATE",
-      "telefon": "+420774415441",
-      "email": "tomas.suchomel@vitom.cz",
-      "seller_id": 7279,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1929420876,
-          "titulek": "Prodej bytu 2+kk 50 m²",
-          "cena_czk": 8750000,
-          "lokalita": "Jánská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-brno-mesto-janska/1929420876"
-        }
-      ]
-    },
-    {
-      "makler": "Petr Roubík",
-      "rk": "Bidli reality",
-      "telefon": "+420774110007; +420774110007",
-      "email": "info@bidli.cz",
-      "seller_id": 90978,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 1971159116,
-          "titulek": "Prodej rodinného domu 86 m², pozemek 149 m²",
-          "cena_czk": 5299000,
-          "lokalita": "Šoustalova, Brno-Starý Lískovec, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-stary-liskovec-soustalova/1971159116"
-        }
-      ]
-    },
-    {
-      "makler": "Petr Najman",
-      "rk": "TD REAL",
-      "telefon": "+420731619424",
-      "email": "pnajman@tdreal.cz",
-      "seller_id": 76970,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2025345868,
-          "titulek": "Prodej rodinného domu 228 m², pozemek 380 m²",
-          "cena_czk": 23900000,
-          "lokalita": "Podhorní, Brno-Líšeň, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lisen-podhorni/2025345868"
-        }
-      ]
-    },
-    {
-      "makler": "Radomír Bednář",
-      "rk": "Real Home Partners",
-      "telefon": "+420777758707",
-      "email": "r.bednar@homepartners.cz",
-      "seller_id": 82938,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2135118668,
-          "titulek": "Prodej chaty 75 m², pozemek 2296 m²",
-          "cena_czk": 5950000,
-          "lokalita": "Brno-Žebětín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-zebetin-/2135118668"
+          "id": 1966440524,
+          "titulek": "Prodej rodinného domu 130 m², pozemek 388 m²",
+          "cena_czk": 0,
+          "lokalita": "Scheinerova, Brno-Líšeň, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lisen-scheinerova/1966440524"
         }
       ]
     },
@@ -1291,12 +664,21 @@
       "email": "hajtol@iscentrum.cz",
       "seller_id": 307832,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 2160427084,
           "titulek": "Prodej rodinného domu 206 m², pozemek 905 m²",
           "cena_czk": 10900000,
           "lokalita": "Pražská, Brno-Bosonohy, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-bosonohy-prazska/2160427084"
         }
       ]
@@ -1308,30 +690,22 @@
       "email": "info@handelreality.cz",
       "seller_id": 303706,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 2164236364,
           "titulek": "Prodej vily 327 m², pozemek 871 m²",
           "cena_czk": 0,
           "lokalita": "Jana Nečase, Brno-Žabovřesky, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/vila/brno-zabovresky-jana-necase/2164236364"
-        }
-      ]
-    },
-    {
-      "makler": "Petr Sedlák",
-      "rk": "REMAX Permanentia",
-      "telefon": "+420604175762",
-      "email": "petr.sedlak@re-max.cz",
-      "seller_id": 89189,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2255951180,
-          "titulek": "Prodej rodinného domu 1263 m², pozemek 678 m²",
-          "cena_czk": 0,
-          "lokalita": "Revoluční, Brno-Tuřany, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-turany-revolucni/2255951180"
         }
       ]
     },
@@ -1342,115 +716,22 @@
       "email": "magda.krcmova@re-max.cz",
       "seller_id": 74987,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 2294124620,
           "titulek": "Prodej rodinného domu 82 m², pozemek 302 m²",
           "cena_czk": 6950000,
           "lokalita": "Liliová, Brno-sever, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lesna-liliova/2294124620"
-        }
-      ]
-    },
-    {
-      "makler": "Jan Malý, MRE",
-      "rk": "Spolehlivá realitka s.r.o.",
-      "telefon": "+420601188704",
-      "email": "info@spolehliva-realitka.cz",
-      "seller_id": 85288,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2363981900,
-          "titulek": "Prodej rodinného domu 253 m², pozemek 384 m²",
-          "cena_czk": 19340000,
-          "lokalita": "Podlesná, Brno-Líšeň, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-lisen-podlesna/2363981900"
-        }
-      ]
-    },
-    {
-      "makler": "Lukáš Homola",
-      "rk": "Commodus s.r.o.",
-      "telefon": "+420770666067",
-      "email": "commodus-info@email.cz",
-      "seller_id": 259838,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2463261516,
-          "titulek": "Prodej rodinného domu 237 m², pozemek 195 m²",
-          "cena_czk": 17200000,
-          "lokalita": "Jabloňová, Brno-Medlánky, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-medlanky-jablonova/2463261516"
-        }
-      ]
-    },
-    {
-      "makler": "YIT KALEVALA s. r. o YIT Stavo",
-      "rk": "YIT Stavo s.r.o.",
-      "telefon": "+420800200227",
-      "email": "domov@yit.cz",
-      "seller_id": 318949,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2464465740,
-          "titulek": "Prodej bytu 3+kk 72 m²",
-          "cena_czk": 10621439,
-          "lokalita": "Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-brno-/2464465740"
-        }
-      ]
-    },
-    {
-      "makler": "Adam Knotek",
-      "rk": "SDK REALITY",
-      "telefon": "+420736473705",
-      "email": "adam.knotek@sdk-reality.cz",
-      "seller_id": 291368,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2467795020,
-          "titulek": "Prodej rodinného domu 70 m², pozemek 70 m²",
-          "cena_czk": 8250000,
-          "lokalita": "Táborská, Brno-Židenice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zidenice-taborska/2467795020"
-        }
-      ]
-    },
-    {
-      "makler": "Jiří Pomkla",
-      "rk": "AMBIENTEN VIP",
-      "telefon": "+420733525123",
-      "email": "info@ambienten.cz",
-      "seller_id": 200284,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2532409420,
-          "titulek": "Prodej rodinného domu 131 m², pozemek 285 m²",
-          "cena_czk": 0,
-          "lokalita": "U Hájovny, Brno-Žebětín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zebetin-u-hajovny/2532409420"
-        }
-      ]
-    },
-    {
-      "makler": "Mgr. Judita Ledererová, MBA",
-      "rk": "RAIS",
-      "telefon": "+420776850419",
-      "email": "lederer@robertrais.cz",
-      "seller_id": 297347,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2662432844,
-          "titulek": "Prodej bytu 1+kk 29 m²",
-          "cena_czk": 4460000,
-          "lokalita": "Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/1+kk/brno-husovice-/2662432844"
         }
       ]
     },
@@ -1461,47 +742,22 @@
       "email": "jan.smerek@domamakleri.cz",
       "seller_id": 140081,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 2733998156,
           "titulek": "Prodej chaty 14 m², pozemek 725 m²",
           "cena_czk": 3000000,
           "lokalita": "Brno-Řečkovice a Mokrá Hora, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-reckovice-/2733998156"
-        }
-      ]
-    },
-    {
-      "makler": "Martin Hujňák",
-      "rk": "Akademie realit",
-      "telefon": "+420776139999",
-      "email": "martin@akademie-realit.cz",
-      "seller_id": 90500,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2756145996,
-          "titulek": "Prodej bytu 2+1 52 m²",
-          "cena_czk": 5170000,
-          "lokalita": "Úvoz, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+1/brno-stare-brno-uvoz/2756145996"
-        }
-      ]
-    },
-    {
-      "makler": "JUDr. Magda Ralevská",
-      "rk": "REAL DUO",
-      "telefon": "+420603822733",
-      "email": "info@realduo.cz",
-      "seller_id": 12618,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2861019212,
-          "titulek": "Prodej rodinného domu 250 m², pozemek 167 m²",
-          "cena_czk": 21500000,
-          "lokalita": "Vackova, Brno-Královo Pole, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-kralovo-pole-vackova/2861019212"
         }
       ]
     },
@@ -1512,81 +768,48 @@
       "email": "poptavka@pmparys.com",
       "seller_id": 254492,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 2904002636,
           "titulek": "Prodej rodinného domu 107 m², pozemek 101 m²",
           "cena_czk": 8500000,
           "lokalita": "Ruský vrch, Brno-Komín, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-komin-rusky-vrch/2904002636"
         }
       ]
     },
     {
-      "makler": "Ing. Ondřej Menšík",
-      "rk": "ESPRIT living s.r.o.",
-      "telefon": "+420737889777",
-      "email": "mensik@espritliving.cz",
-      "seller_id": 138486,
+      "makler": "Monika Horáková",
+      "rk": "Home4Living",
+      "telefon": "+420777305315",
+      "email": "horakova@home4living.cz",
+      "seller_id": 304387,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
-          "id": 2917900364,
-          "titulek": "Prodej vily 235 m², pozemek 1430 m²",
-          "cena_czk": 34800000,
-          "lokalita": "Nad Lískami, Brno-Komín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/vila/brno-komin-nad-liskami/2917900364"
-        }
-      ]
-    },
-    {
-      "makler": "Kateřina  Dufková",
-      "rk": "AC Real",
-      "telefon": "+420774142780; +420774142780",
-      "email": "dufkova@aid.cz",
-      "seller_id": 309690,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2939719756,
-          "titulek": "Prodej bytu 2+kk 38 m²",
-          "cena_czk": 6370938,
-          "lokalita": "Charbulova, Brno-Černovice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-cernovice-charbulova/2939719756"
-        }
-      ]
-    },
-    {
-      "makler": "Štefaniková Eliška",
-      "rk": "NMV Reality",
-      "telefon": "+420776748981",
-      "email": "stefanikova@nmvreality.cz",
-      "seller_id": 285041,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 2968817740,
-          "titulek": "Prodej vily 351 m², pozemek 985 m²",
+          "id": 2916982860,
+          "titulek": "Prodej vícegeneračního domu 300 m², pozemek 2878 m²",
           "cena_czk": 0,
-          "lokalita": "Jana Nečase, Brno-Žabovřesky, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/vila/brno-zabovresky-jana-necase/2968817740"
-        }
-      ]
-    },
-    {
-      "makler": "Zbyšek Slováček",
-      "rk": "COMFORT 4 YOU",
-      "telefon": "+420739612823",
-      "email": "zbysek.slovacek@comfort4you.cz",
-      "seller_id": 321784,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3003994956,
-          "titulek": "Prodej rodinného domu 145 m², pozemek 1047 m²",
-          "cena_czk": 14999000,
-          "lokalita": "U Vránova mlýna, Brno-Řečkovice a Mokrá Hora, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-mokra-hora-u-vranova-mlyna/3003994956"
+          "lokalita": "Rakovecká, Brno-Bystrc, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/dum/vicegeneracni-dum/brno-bystrc-rakovecka/2916982860"
         }
       ]
     },
@@ -1597,149 +820,22 @@
       "email": "compact.brno@seznam.cz",
       "seller_id": 48862,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 3041427532,
           "titulek": "Prodej rodinného domu 370 m², pozemek 994 m²",
           "cena_czk": 0,
           "lokalita": "Lesnická, Brno-sever, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-cerna-pole-lesnicka/3041427532"
-        }
-      ]
-    },
-    {
-      "makler": "Jakub Pospíšil",
-      "rk": "Jochmann reality",
-      "telefon": "+420602863101",
-      "email": "pospisil@jochmann.cz",
-      "seller_id": 86272,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3052441676,
-          "titulek": "Prodej bytu 3+kk 72 m²",
-          "cena_czk": 8897000,
-          "lokalita": "Keřová, Brno-Žebětín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-zebetin-kerova/3052441676"
-        }
-      ]
-    },
-    {
-      "makler": "Pavel Vejrosta",
-      "rk": "Ing. Pavel Vejrosta",
-      "telefon": "+420775925645",
-      "email": "pavelvejrosta@seznam.cz",
-      "seller_id": 287417,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3063976012,
-          "titulek": "Prodej bytu 2+kk 60 m²",
-          "cena_czk": 6870000,
-          "lokalita": "Štefánikova, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-veveri-stefanikova/3063976012"
-        }
-      ]
-    },
-    {
-      "makler": "Darina Kakáčová",
-      "rk": "SMS reality",
-      "telefon": "+420775153302",
-      "email": "darina.kakacova@smsreality.cz",
-      "seller_id": 300089,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3075637324,
-          "titulek": "Prodej vily 533 m², pozemek 1048 m²",
-          "cena_czk": 32490000,
-          "lokalita": "Šikmá, Brno-Ořešín, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/vila/brno-oresin-sikma/3075637324"
-        }
-      ]
-    },
-    {
-      "makler": "Patrick Havlíček",
-      "rk": "Flatigo",
-      "telefon": "+420728865799",
-      "email": "patrick.havlicek@flatigo.cz",
-      "seller_id": 272873,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3082125388,
-          "titulek": "Prodej bytu 2+kk 46 m²",
-          "cena_czk": 6699000,
-          "lokalita": "Zvěřinova, Brno-Černovice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-cernovice-zverinova/3082125388"
-        }
-      ]
-    },
-    {
-      "makler": "Bc. Iveta Rozporková",
-      "rk": "Reality Rosice",
-      "telefon": "+420608560876",
-      "email": "iveta.rozporkova@realityrosice.cz",
-      "seller_id": 5413,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3237773388,
-          "titulek": "Prodej rodinného domu 145 m², pozemek 381 m²",
-          "cena_czk": 11990000,
-          "lokalita": "Práčata, Brno-Bosonohy, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-bosonohy-pracata/3237773388"
-        }
-      ]
-    },
-    {
-      "makler": "Ing. Petra Němcová",
-      "rk": "PEGAS REAL & DEVELOPMENT",
-      "telefon": "+420731149586",
-      "email": "nemcova@pegasreal.cz",
-      "seller_id": 185017,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3310518348,
-          "titulek": "Prodej rodinného domu 217 m², pozemek 842 m²",
-          "cena_czk": 9990000,
-          "lokalita": "Glocova, Brno-Tuřany, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-brnenske-ivanovice-glocova/3310518348"
-        }
-      ]
-    },
-    {
-      "makler": "Ing. Marek Vokřál",
-      "rk": "Graflunds",
-      "telefon": "+420608484462",
-      "email": "graflunds@seznam.cz",
-      "seller_id": 3667,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3330401100,
-          "titulek": "Prodej vícegeneračního domu 242 m², pozemek 2576 m²",
-          "cena_czk": 0,
-          "lokalita": "Drobného, Brno-sever, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/vicegeneracni-dum/brno-cerna-pole-drobneho/3330401100"
-        }
-      ]
-    },
-    {
-      "makler": "Lukáš Rychnovský",
-      "rk": "NEXT REALITY DYNAMIC",
-      "telefon": "+420725173088",
-      "email": "info@nextreality.cz",
-      "seller_id": 279646,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3345915980,
-          "titulek": "Prodej rodinného domu 314 m², pozemek 482 m²",
-          "cena_czk": 21550000,
-          "lokalita": "Slatinská, Brno-Židenice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zidenice-slatinska/3345915980"
         }
       ]
     },
@@ -1750,12 +846,21 @@
       "email": "jiri.hrdina@aaabyty.cz",
       "seller_id": 50736,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 3556868172,
           "titulek": "Prodej rodinného domu 102 m², pozemek 176 m²",
           "cena_czk": 8900000,
           "lokalita": "Vaníčkova, Brno-Židenice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zabrdovice-vanickova/3556868172"
         }
       ]
@@ -1767,12 +872,21 @@
       "email": "abcreal@abcreal.cz",
       "seller_id": 2373,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 3567981388,
           "titulek": "Prodej vily 350 m², pozemek 601 m²",
           "cena_czk": 0,
           "lokalita": "Stránice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/vila/brno-stranice-/3567981388"
         }
       ]
@@ -1784,30 +898,22 @@
       "email": "abrahamek@avrioreal.cz",
       "seller_id": 86857,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 3631760204,
           "titulek": "Prodej rodinného domu 255 m², pozemek 671 m²",
           "cena_czk": 26390000,
           "lokalita": "Žebětín, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-zebetin-/3631760204"
-        }
-      ]
-    },
-    {
-      "makler": "Ing. Věra Almasany",
-      "rk": "Unicareal s.r.o.",
-      "telefon": "+420541211876; +420774740347",
-      "email": "almasany@unicareal.cz",
-      "seller_id": 6970,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3646182220,
-          "titulek": "Prodej chaty 46 m², pozemek 178 m²",
-          "cena_czk": 2900000,
-          "lokalita": "Brno-Kníničky, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-kninicky-/3646182220"
         }
       ]
     },
@@ -1818,12 +924,21 @@
       "email": "celnar@gaute.cz",
       "seller_id": 280946,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 3651174476,
           "titulek": "Prodej bytu 2+kk 54 m²",
           "cena_czk": 8999000,
           "lokalita": "Koliště, Brno-střed, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/byt/2+kk/brno-cerna-pole-koliste/3651174476"
         }
       ]
@@ -1835,81 +950,22 @@
       "email": "jana.smrkalova@seznam.cz",
       "seller_id": 51302,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 3854733388,
           "titulek": "Prodej chaty 49 m², pozemek 749 m²",
           "cena_czk": 3800000,
           "lokalita": "Brno-Medlánky, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-medlanky-/3854733388"
-        }
-      ]
-    },
-    {
-      "makler": "Bc. Radek Kučera, MSc.",
-      "rk": "ZFP Reality",
-      "telefon": "+420605212153",
-      "email": "r.kucera@zfpakademie.cz",
-      "seller_id": 96725,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3942678604,
-          "titulek": "Prodej rodinného domu 417 m², pozemek 210 m²",
-          "cena_czk": 0,
-          "lokalita": "Břeclavská, Brno-jih, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-prizrenice-breclavska/3942678604"
-        }
-      ]
-    },
-    {
-      "makler": "Nikola Verčíková",
-      "rk": "Profesionální realitní makléřka Nikola Verčíková",
-      "telefon": "+420731069962",
-      "email": "poptavky@nikolavercikova.cz",
-      "seller_id": 263196,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 3993600076,
-          "titulek": "Prodej bytu 3+kk 66 m²",
-          "cena_czk": 10500000,
-          "lokalita": "Hrnčířská, Brno-střed, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-veveri-hrncirska/3993600076"
-        }
-      ]
-    },
-    {
-      "makler": "Lucie Pavlíčková",
-      "rk": "Lucie Pavlíčková",
-      "telefon": "+420776123887",
-      "email": "pavlickova@portaspes.cz",
-      "seller_id": 91634,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 4080906316,
-          "titulek": "Prodej bytu 3+kk 70 m²",
-          "cena_czk": 8990000,
-          "lokalita": "Bubeníčkova, Brno-Židenice, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-zidenice-bubenickova/4080906316"
-        }
-      ]
-    },
-    {
-      "makler": "Petr Svoboda",
-      "rk": "NEXT REALITY DYNAMIC",
-      "telefon": "+420800700099; +420725173088",
-      "email": "info@nextreality.cz",
-      "seller_id": 91548,
-      "pocet_inzeratu": 1,
-      "inzeraty": [
-        {
-          "id": 4124356684,
-          "titulek": "Prodej chaty 61 m², pozemek 1404 m²",
-          "cena_czk": 4990000,
-          "lokalita": "Brno-Maloměřice a Obřany, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-malomerice-/4124356684"
         }
       ]
     },
@@ -1920,30 +976,48 @@
       "email": "kusak@home4living.cz",
       "seller_id": 50377,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 4140651340,
           "titulek": "Prodej rodinného domu 200 m², pozemek 273 m²",
           "cena_czk": 8950000,
           "lokalita": "U Památníku, Brno-Kníničky, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-kninicky-u-pamatniku/4140651340"
         }
       ]
     },
     {
-      "makler": "Nikola Verčíková",
-      "rk": "Impera styl",
-      "telefon": "+420733746913",
-      "email": "prodej@rezidencekoniklec.cz",
-      "seller_id": 302731,
+      "makler": "Radka Tlachová",
+      "rk": "PATREAL s.r.o.",
+      "telefon": "+420541245579; +420608645164",
+      "email": "r.tlachova@patreal.cz",
+      "seller_id": 315679,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
-          "id": 4282679372,
-          "titulek": "Prodej bytu 3+kk 74 m²",
-          "cena_czk": 11070000,
-          "lokalita": "Rybnická, Brno",
-          "url": "https://www.sreality.cz/detail/prodej/byt/3+kk/brno-brno-rybnicka/4282679372"
+          "id": 4209410124,
+          "titulek": "Prodej chaty 60 m², pozemek 44 m²",
+          "cena_czk": 2400000,
+          "lokalita": "Bystrc, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
+          "url": "https://www.sreality.cz/detail/prodej/dum/chata/brno-bystrc-/4209410124"
         }
       ]
     },
@@ -1954,12 +1028,21 @@
       "email": "dtyl@servio.cz",
       "seller_id": 61582,
       "pocet_inzeratu": 1,
+      "primarni_okres": "Brno-město",
+      "primarni_kraj": "Jihomoravský kraj",
+      "primarni_mesto": "Brno",
+      "okresy_makl": [
+        "Brno-město"
+      ],
       "inzeraty": [
         {
           "id": 4294279244,
           "titulek": "Prodej rodinného domu 277 m², pozemek 867 m²",
           "cena_czk": 14583000,
           "lokalita": "Brno-Ivanovice, Brno",
+          "kraj": "Jihomoravský kraj",
+          "okres": "Brno-město",
+          "mesto": "Brno",
           "url": "https://www.sreality.cz/detail/prodej/dum/rodinny/brno-ivanovice-/4294279244"
         }
       ]

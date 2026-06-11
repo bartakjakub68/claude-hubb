@@ -128,14 +128,22 @@ def init_cache():
             seller_id INTEGER,
             makler TEXT, rk TEXT, telefon TEXT, telefon_norm TEXT, email TEXT,
             titulek TEXT, cena_czk INTEGER, lokalita TEXT,
+            kraj TEXT, okres TEXT, mesto TEXT,
             url TEXT,
             zminil_fin INTEGER, zminka TEXT,
             popis_raw TEXT,
             fetched_at TEXT
         )
     """)
+    # Migrace: pokud uz tabulka existuje bez novych sloupcu, doplnit.
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(detail)").fetchall()}
+    for new in ('kraj', 'okres', 'mesto'):
+        if new not in cols:
+            conn.execute(f"ALTER TABLE detail ADD COLUMN {new} TEXT")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_seller ON detail(seller_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_telef ON detail(telefon_norm)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_okres ON detail(okres)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_kraj ON detail(kraj)")
     conn.commit()
     return conn
 
@@ -149,9 +157,11 @@ def cache_save(conn, row):
     conn.execute("""
         INSERT OR REPLACE INTO detail
         (id, seller_id, makler, rk, telefon, telefon_norm, email,
-         titulek, cena_czk, lokalita, url, zminil_fin, zminka, popis_raw, fetched_at)
+         titulek, cena_czk, lokalita, kraj, okres, mesto,
+         url, zminil_fin, zminka, popis_raw, fetched_at)
         VALUES (:id, :seller_id, :makler, :rk, :telefon, :telefon_norm, :email,
-                :titulek, :cena_czk, :lokalita, :url, :zminil_fin, :zminka, :popis_raw, :fetched_at)
+                :titulek, :cena_czk, :lokalita, :kraj, :okres, :mesto,
+                :url, :zminil_fin, :zminka, :popis_raw, :fetched_at)
     """, row)
     conn.commit()
 
@@ -311,17 +321,22 @@ def run(args):
         print("\n⚠ Ctrl+C — dokoncim aktualni request a uzavru ...")
     signal.signal(signal.SIGINT, on_sig)
 
+    # Lokality muzou byt comma-separated: "brno,blansko,breclav"
+    lokality = [m.strip() for m in args.mesto.split(',') if m.strip()]
+
     # 1. Sber summary listings + detail URLs
     summaries = []  # [(summary_dict, detail_url)]
-    for kat in KATEGORIE:
+    for lokalita in lokality:
         if interrupted["flag"]: break
-        print(f"== Listing: {kat} v meste '{args.mesto}' ==")
-        cnt = 0
-        for s, durl in iter_listings(session, args.mesto, kat, args.max_pages):
-            summaries.append((s, durl))
-            cnt += 1
+        for kat in KATEGORIE:
             if interrupted["flag"]: break
-        print(f"  -> {cnt} summary listings")
+            print(f"== Listing: {kat} v '{lokalita}' ==")
+            cnt = 0
+            for s, durl in iter_listings(session, lokalita, kat, args.max_pages):
+                summaries.append((s, durl))
+                cnt += 1
+                if interrupted["flag"]: break
+            print(f"  -> {cnt} summary listings")
 
     # Dedup podle id
     seen = set()
@@ -367,6 +382,9 @@ def run(args):
             "titulek": detail.get('name', '') or '',
             "cena_czk": detail.get('priceCzk') or 0,
             "lokalita": lokalita_str,
+            "kraj": loc.get('region') or '',
+            "okres": loc.get('district') or '',
+            "mesto": loc.get('city') or '',
             "url": used_url or hint,
             "zminil_fin": 1 if zminil else 0,
             "zminka": zminka,
@@ -407,6 +425,9 @@ def run(args):
         rec["inzeraty"].append({
             "id": d["id"], "titulek": d["titulek"],
             "cena_czk": d["cena_czk"], "lokalita": d["lokalita"],
+            "kraj": d.get("kraj") or '',
+            "okres": d.get("okres") or '',
+            "mesto": d.get("mesto") or '',
             "url": d["url"],
         })
 
@@ -428,31 +449,78 @@ def run(args):
 
     with open(out_detail, "w", newline="", encoding="utf-8-sig") as f:
         cols = ["makler", "rk", "seller_id", "id", "titulek",
-                "cena_czk", "lokalita", "url"]
-        w = csv.DictWriter(f, fieldnames=cols)
+                "cena_czk", "lokalita", "kraj", "okres", "mesto", "url"]
+        w = csv.DictWriter(f, fieldnames=cols, extrasaction='ignore')
         w.writeheader()
         for r in cisti:
             for inz in r["inzeraty"]:
                 w.writerow({"makler": r["makler"], "rk": r["rk"],
                             "seller_id": r["seller_id"], **inz})
 
+    # Pro každého makléře zjistit primární okres + kraj (nejčastější)
+    from collections import Counter
+    def primary_loc(rec, field):
+        c = Counter((inz.get(field) or '') for inz in rec["inzeraty"])
+        c.pop('', None)
+        return c.most_common(1)[0][0] if c else ''
+
+    # Agregace pro JSON: celá DB, ne jen aktuální běh — uživatel chce vidět
+    # vše napříč všemi krajskými runy, ne jen poslední batch.
+    cur_all = conn.execute("SELECT * FROM detail")
+    cols_all = [c[0] for c in cur_all.description]
+    makleri_all = {}
+    for r in cur_all.fetchall():
+        d = dict(zip(cols_all, r))
+        klic = makler_klic(d)
+        rec = makleri_all.get(klic)
+        if rec is None:
+            rec = {
+                "makler": d["makler"], "rk": d["rk"],
+                "telefon": d["telefon"], "email": d["email"],
+                "seller_id": d["seller_id"],
+                "inzeraty": [], "zminil": False,
+            }
+            makleri_all[klic] = rec
+        if d["zminil_fin"]:
+            rec["zminil"] = True
+        rec["inzeraty"].append({
+            "id": d["id"], "titulek": d["titulek"],
+            "cena_czk": d["cena_czk"], "lokalita": d["lokalita"],
+            "kraj": d.get("kraj") or '', "okres": d.get("okres") or '',
+            "mesto": d.get("mesto") or '',
+            "url": d["url"],
+        })
+    cisti_all = [r for r in makleri_all.values()
+                 if not r["zminil"] and len(r["inzeraty"]) >= args.min_inzeratu]
+    cisti_all.sort(key=lambda r: len(r["inzeraty"]), reverse=True)
+
+    # Sezna krajů a okresů pro UI filtry
+    kraje = sorted({inz.get('kraj','') for r in makleri_all.values() for inz in r["inzeraty"] if inz.get('kraj')})
+    okresy = sorted({inz.get('okres','') for r in makleri_all.values() for inz in r["inzeraty"] if inz.get('okres')})
+
     # JSON pro dashboard
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump({
             "generovano": datetime.now().isoformat(timespec='seconds'),
-            "mesto": args.mesto,
-            "celkem_inzeratu": len(unique),
-            "celkem_makleru": len(makleri),
-            "zminili": sum(1 for r in makleri.values() if r["zminil"]),
+            "mesto": args.mesto,  # aktualni batch label
+            "kraje": kraje,
+            "okresy": okresy,
+            "celkem_inzeratu_v_cache": sum(len(r["inzeraty"]) for r in makleri_all.values()),
+            "celkem_makleru": len(makleri_all),
+            "zminili": sum(1 for r in makleri_all.values() if r["zminil"]),
             "cisti": [
                 {
                     "makler": r["makler"], "rk": r["rk"],
                     "telefon": r["telefon"], "email": r["email"],
                     "seller_id": r["seller_id"],
                     "pocet_inzeratu": len(r["inzeraty"]),
-                    "inzeraty": r["inzeraty"][:5],  # top 5 ukázek
+                    "primarni_okres": primary_loc(r, 'okres'),
+                    "primarni_kraj": primary_loc(r, 'kraj'),
+                    "primarni_mesto": primary_loc(r, 'mesto'),
+                    "okresy_makl": sorted({inz.get('okres','') for inz in r["inzeraty"] if inz.get('okres')}),
+                    "inzeraty": r["inzeraty"][:8],  # top 8 ukázek
                 }
-                for r in cisti
+                for r in cisti_all
             ],
         }, f, ensure_ascii=False, indent=2)
 

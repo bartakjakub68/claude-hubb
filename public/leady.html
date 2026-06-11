@@ -108,11 +108,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
 
   <div class="filters">
     <input type="search" class="grow" id="searchInp" placeholder="🔍 Hledat (jméno, RK, telefon)…">
-    <label>Min. inzerátů:
+    <label>Kraj:
+      <select id="krajSel"><option value="">— vše —</option></select>
+    </label>
+    <label>Okres:
+      <select id="okresSel"><option value="">— vše —</option></select>
+    </label>
+    <label>Min. inz.:
       <select id="minInzSel">
         <option value="1">1+</option>
-        <option value="2">2+</option>
-        <option value="3" selected>3+</option>
+        <option value="2" selected>2+</option>
+        <option value="3">3+</option>
         <option value="5">5+</option>
       </select>
     </label>
@@ -129,6 +135,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
           <th class="sort" data-sort="pocet" data-dir="desc">Inz.</th>
           <th class="sort" data-sort="makler">Makléř</th>
           <th class="sort" data-sort="rk">Realitní kancelář</th>
+          <th class="sort" data-sort="okres">Okres</th>
           <th>Telefon</th>
           <th>E-mail</th>
         </tr>
@@ -164,34 +171,72 @@ async function load(){
 
 function renderStats(){
   const cisti = LEADS.cisti || [];
-  const top3 = cisti.filter(c => c.pocet_inzeratu >= 3).length;
+  const inzCelkem = LEADS.celkem_inzeratu_v_cache ?? LEADS.celkem_inzeratu ?? 0;
   document.getElementById('stats').innerHTML = `
-    <div class="stat"><div class="stat-val">${LEADS.celkem_inzeratu}</div><div class="stat-lbl">Inz. zpracováno</div></div>
+    <div class="stat"><div class="stat-val">${inzCelkem}</div><div class="stat-lbl">Inz. v databázi</div></div>
     <div class="stat"><div class="stat-val">${LEADS.celkem_makleru}</div><div class="stat-lbl">Unikátních makléřů</div></div>
     <div class="stat"><div class="stat-val">${LEADS.zminili}</div><div class="stat-lbl">Zmínili financování</div></div>
     <div class="stat accent"><div class="stat-val">${cisti.length}</div><div class="stat-lbl">Čistí makléři (leady)</div></div>
   `;
   document.getElementById('generovano').textContent =
-    new Date(LEADS.generovano).toLocaleString('cs-CZ') + ' · město ' + LEADS.mesto;
+    new Date(LEADS.generovano).toLocaleString('cs-CZ') + ' · poslední batch: ' + LEADS.mesto;
+
+  // Naplnit dropdowny krajů a okresů
+  const krajSel = document.getElementById('krajSel');
+  const okresSel = document.getElementById('okresSel');
+  for(const k of (LEADS.kraje || [])){
+    const o = document.createElement('option'); o.value = k; o.textContent = k;
+    krajSel.appendChild(o);
+  }
+  refreshOkresOptions();
+}
+
+function refreshOkresOptions(){
+  const kraj = document.getElementById('krajSel').value;
+  const okresSel = document.getElementById('okresSel');
+  const prev = okresSel.value;
+  // pokud je vybraný kraj, ukaž jen okresy z toho kraje
+  let okresy = LEADS.okresy || [];
+  if(kraj){
+    okresy = [...new Set(
+      (LEADS.cisti || [])
+        .filter(c => c.primarni_kraj === kraj)
+        .flatMap(c => c.okresy_makl || [])
+    )].sort();
+  }
+  okresSel.innerHTML = '<option value="">— vše —</option>' +
+    okresy.map(o => `<option value="${o}">${o}</option>`).join('');
+  if(okresy.includes(prev)) okresSel.value = prev;
 }
 
 function fK(n){ return n ? Math.round(n/1000).toLocaleString('cs-CZ') + ' tis. Kč' : '—'; }
 
-function render(){
+function filteredRows(){
   const q = document.getElementById('searchInp').value.trim().toLowerCase();
   const minInz = parseInt(document.getElementById('minInzSel').value);
   const hideNoName = document.getElementById('hideNoName').checked;
-  let rows = (LEADS.cisti || []).filter(r => {
+  const kraj = document.getElementById('krajSel').value;
+  const okres = document.getElementById('okresSel').value;
+  return (LEADS.cisti || []).filter(r => {
     if(r.pocet_inzeratu < minInz) return false;
     if(hideNoName && !(r.makler && r.makler.trim())) return false;
+    if(kraj && r.primarni_kraj !== kraj) return false;
+    if(okres && !(r.okresy_makl || []).includes(okres)) return false;
     if(!q) return true;
-    return [r.makler, r.rk, r.telefon, r.email].some(s => (s||'').toLowerCase().includes(q));
+    return [r.makler, r.rk, r.telefon, r.email, r.primarni_okres, r.primarni_mesto]
+      .some(s => (s||'').toLowerCase().includes(q));
   });
+}
+
+function render(){
+  let rows = filteredRows();
   rows.sort((a,b) => {
-    const va = a[sortKey] || ''; const vb = b[sortKey] || '';
     if(sortKey === 'pocet'){
       return sortDir==='asc' ? a.pocet_inzeratu - b.pocet_inzeratu : b.pocet_inzeratu - a.pocet_inzeratu;
     }
+    const keyMap = {okres: 'primarni_okres', makler: 'makler', rk: 'rk'};
+    const k = keyMap[sortKey] || sortKey;
+    const va = a[k] || ''; const vb = b[k] || '';
     return sortDir==='asc'
       ? String(va).localeCompare(String(vb), 'cs')
       : String(vb).localeCompare(String(va), 'cs');
@@ -199,7 +244,7 @@ function render(){
 
   const tbody = document.getElementById('tbody');
   if(rows.length === 0){
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Žádné výsledky</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Žádné výsledky</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((r, i) => {
@@ -211,6 +256,9 @@ function render(){
         <span class="cena">${fK(x.cena_czk)}</span>
       </a>`
     ).join('');
+    const okresStr = r.primarni_okres || '—';
+    const moreOkres = (r.okresy_makl || []).filter(o => o !== r.primarni_okres);
+    const okresMore = moreOkres.length ? ` <small style="color:var(--ink4)">+${moreOkres.length}</small>` : '';
     return `
       <tr>
         <td class="right"><span class="badge">${r.pocet_inzeratu}×</span></td>
@@ -219,12 +267,13 @@ function render(){
           <span class="detail-toggle" onclick="toggleDetail(${i})">▾ Ukázat inzeráty</span>
         </td>
         <td><div class="rk">${r.rk || '—'}</div></td>
+        <td><div class="rk">${okresStr}${okresMore}</div></td>
         <td class="tel">${telLink}</td>
         <td class="tel">${r.email ? `<a href="mailto:${r.email}">${r.email}</a>` : '<span style="color:var(--ink4)">—</span>'}</td>
       </tr>
       <tr class="detail-row" id="detail-${i}">
         <td></td>
-        <td colspan="4"><div class="detail-list">${inz || '<em style="color:var(--ink4)">Žádné inzeráty</em>'}</div></td>
+        <td colspan="5"><div class="detail-list">${inz || '<em style="color:var(--ink4)">Žádné inzeráty</em>'}</div></td>
       </tr>
     `;
   }).join('');
@@ -240,22 +289,20 @@ function toggleDetail(i){
 }
 
 function exportCsv(){
-  const q = document.getElementById('searchInp').value.trim().toLowerCase();
-  const minInz = parseInt(document.getElementById('minInzSel').value);
-  const hideNoName = document.getElementById('hideNoName').checked;
-  let rows = (LEADS.cisti || []).filter(r => {
-    if(r.pocet_inzeratu < minInz) return false;
-    if(hideNoName && !(r.makler && r.makler.trim())) return false;
-    if(!q) return true;
-    return [r.makler, r.rk, r.telefon, r.email].some(s => (s||'').toLowerCase().includes(q));
-  });
+  const rows = filteredRows();
   const escape = v => `"${String(v||'').replace(/"/g,'""')}"`;
-  const lines = ['makler,rk,telefon,email,pocet_inzeratu'];
-  rows.forEach(r => lines.push([r.makler, r.rk, r.telefon, r.email, r.pocet_inzeratu].map(escape).join(',')));
+  const lines = ['makler,rk,okres,kraj,mesto,telefon,email,pocet_inzeratu'];
+  rows.forEach(r => lines.push([
+    r.makler, r.rk, r.primarni_okres, r.primarni_kraj, r.primarni_mesto,
+    r.telefon, r.email, r.pocet_inzeratu
+  ].map(escape).join(',')));
   const blob = new Blob(['﻿' + lines.join('\n')], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `leady-makleri-${LEADS.mesto}-${LEADS.generovano.split('T')[0]}.csv`;
+  const okres = document.getElementById('okresSel').value || 'vse';
+  const kraj  = document.getElementById('krajSel').value || '';
+  const label = (kraj || okres).replace(/\s+/g,'-').toLowerCase() || 'leady';
+  a.href = url; a.download = `leady-${label}-${LEADS.generovano.split('T')[0]}.csv`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
@@ -264,6 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('searchInp').addEventListener('input', render);
   document.getElementById('minInzSel').addEventListener('change', render);
   document.getElementById('hideNoName').addEventListener('change', render);
+  document.getElementById('krajSel').addEventListener('change', () => {
+    refreshOkresOptions(); render();
+  });
+  document.getElementById('okresSel').addEventListener('change', render);
   document.querySelectorAll('.tbl th.sort').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.sort;
