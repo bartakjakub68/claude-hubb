@@ -316,11 +316,9 @@ try {
         </div>
         <div class="select-group">
           <label>Typ úvěru</label>
-          <select id="u-typ" onchange="onUverTypChange()">
-            <option value="hypo">Hypoteční úvěr (4,89 %)</option>
-            <option value="spotreb_ar1">Spotřebitelský úvěr AR1 RC1 — nad 1 mil. (4,39 %)</option>
-            <option value="pujcka_bydleni">Půjčka na bydlení (5,59 / 5,29 %)</option>
-            <option value="americka">Americká hypotéka (5,15 %)</option>
+          <select id="u-typ">
+            <option value="hypo">Hypoteční úvěr</option>
+            <option value="spotreb">Spotřebitelský úvěr</option>
             <option value="auto">Úvěr na auto</option>
           </select>
         </div>
@@ -337,8 +335,8 @@ try {
       <div class="field">
         <div class="field-label"><span>Výše úvěru</span><strong id="u-vyse-lbl">3 000 000 Kč</strong></div>
         <div class="slider-wrap">
-          <input type="range" min="100000" max="20000000" step="100000" value="3000000" id="u-vyse-sl" oninput="syncK('u-vyse-sl','u-vyse-ni','u-vyse-lbl'); onUverVyseChange()">
-          <input type="text" class="num-input" id="u-vyse-ni" value="3 000 000" onchange="syncKi('u-vyse-ni','u-vyse-sl','u-vyse-lbl',100000,20000000); onUverVyseChange()" onkeydown="if(event.key==='Enter')this.blur()">
+          <input type="range" min="100000" max="20000000" step="100000" value="3000000" id="u-vyse-sl" oninput="syncK('u-vyse-sl','u-vyse-ni','u-vyse-lbl')">
+          <input type="text" class="num-input" id="u-vyse-ni" value="3 000 000" onchange="syncKi('u-vyse-ni','u-vyse-sl','u-vyse-lbl',100000,20000000)" onkeydown="if(event.key==='Enter')this.blur()">
         </div>
       </div>
       <div class="layout-2">
@@ -350,10 +348,10 @@ try {
           </div>
         </div>
         <div class="field">
-          <div class="field-label"><span>Aktuální úroková sazba</span><strong id="u-saz-lbl">4,89 %</strong></div>
+          <div class="field-label"><span>Aktuální úroková sazba</span><strong id="u-saz-lbl">4,90 %</strong></div>
           <div class="slider-wrap">
-            <input type="range" min="0.5" max="12" step="0.01" value="4.89" id="u-saz-sl" oninput="syncPct('u-saz-sl','u-saz-lbl','u-saz-ni')">
-            <input type="text" inputmode="decimal" class="num-input sm" id="u-saz-ni" value="4,89" style="width:64px" onchange="syncPctI('u-saz-ni','u-saz-sl','u-saz-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
+            <input type="range" min="0.5" max="12" step="0.01" value="4.9" id="u-saz-sl" oninput="syncPct('u-saz-sl','u-saz-lbl','u-saz-ni')">
+            <input type="text" inputmode="decimal" class="num-input sm" id="u-saz-ni" value="4,90" style="width:64px" onchange="syncPctI('u-saz-ni','u-saz-sl','u-saz-lbl',0.5,12)" onkeydown="if(event.key==='Enter')this.blur()">
           </div>
         </div>
       </div>
@@ -816,46 +814,6 @@ function syncPctI(niId, slId, lblId, mn, mx){
   document.getElementById(lblId).textContent = fPct(v);
 }
 
-// ─── Sazby KB produktů (auto-rate dle typu + výše úvěru) ─────────────────────
-// Aktuální nabídka KB k 06/2026. Když uživatel přepne typ úvěru nebo změní
-// výši, sazba se nastaví na default; lze ji ručně přepsat sliderem/inputem.
-const KB_SAZBY = {
-  hypo:           (_vyse) => 4.89,
-  spotreb_ar1:    (_vyse) => 4.39,   // produkt AR1 RC1 — určen pro úvěry nad 1 mil.
-  pujcka_bydleni: (vyse)  => vyse >= 1_000_000 ? 5.29 : 5.59,
-  americka:       (_vyse) => 5.15,
-  auto:           (_vyse) => 6.50,   // ponecháno jako bylo (default)
-};
-
-function setUverSazba(val){
-  // Synchronně updatne slider + input + label, aby všechno odpovídalo.
-  const sl  = document.getElementById('u-saz-sl');
-  const ni  = document.getElementById('u-saz-ni');
-  const lbl = document.getElementById('u-saz-lbl');
-  if(!sl || !ni || !lbl) return;
-  const v = Math.max(0.5, Math.min(12, val));
-  sl.value = v;
-  ni.value = v.toFixed(2).replace('.', ',');
-  lbl.textContent = fPct(v);
-}
-
-function onUverTypChange(){
-  const typ = document.getElementById('u-typ').value;
-  const vyse = parseK(document.getElementById('u-vyse-ni').value);
-  const fn = KB_SAZBY[typ];
-  if(fn) setUverSazba(fn(vyse));
-}
-
-function onUverVyseChange(){
-  // Při změně výše přenastavit sazbu jen pokud je typ závislý na výši
-  // (půjčka na bydlení mění sazbu při překročení 1 mil.) — u ostatních se
-  // sazba nemění, abychom uživateli nepřemazávali jeho ruční úpravu.
-  const typ = document.getElementById('u-typ').value;
-  if(typ !== 'pujcka_bydleni') return;
-  const vyse = parseK(document.getElementById('u-vyse-ni').value);
-  setUverSazba(KB_SAZBY.pujcka_bydleni(vyse));
-}
-
 function switchModule(id, el){
   document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.module-content').forEach(m => m.classList.remove('active'));
@@ -1243,14 +1201,7 @@ function calcUver(){
 
   uState = {jmeno, typ, fixace, vyse, doba, saz, sOpt, sReal, sPes, splatka, preplaceni, zustatek, dobaZb, splOpt, splReal, splPes};
 
-  const typLabel = ({
-    hypo: 'Hypoteční úvěr',
-    spotreb_ar1: 'Spotřebitelský úvěr AR1 RC1',
-    pujcka_bydleni: 'Půjčka na bydlení',
-    americka: 'Americká hypotéka',
-    auto: 'Úvěr na auto',
-    spotreb: 'Spotřebitelský úvěr',  // legacy fallback pro staré stavy
-  })[typ] || 'Úvěr';
+  const typLabel = typ==='hypo'?'Hypoteční úvěr': typ==='spotreb'?'Spotřebitelský úvěr':'Úvěr na auto';
 
   document.getElementById('u-res-jmeno').textContent = jmeno;
   document.getElementById('u-results').classList.add('show');
