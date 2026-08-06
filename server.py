@@ -2793,8 +2793,8 @@ def ioldp_extract():
 # není žádné UI pro reassign (design rozhodnutí).
 LEAD_OWNER_BY_EMAIL = {
     'bartakjakub68@gmail.com': 'bartak',
-    'pavel.bydzovsky@kb.cz':   'bydzovsky',
-    'patrik.knesl@kb.cz':      'knesl',
+    'bydzovskyp2@gmail.com':   'bydzovsky',
+    'patrik.knesl@gmail.com':  'knesl',
 }
 LEAD_STATUSY_ENUM = ('novy', 'kontaktovan', 'schuzka', 'spoluprace', 'nema_zajem', 'ma_jineho')
 
