@@ -156,6 +156,32 @@ let LEADS = null;
 let sortKey = 'pocet';
 let sortDir = 'desc';
 
+// ─── Vlastnictví leadů ─────────────────────────────────────────────────────
+// Mapa emailu → owner slug (jak je uložený v leady.json). Admin vidí vše.
+// Když email uživatele není v mapě a role není admin → zobrazí se prázdno.
+// Editace této mapy zůstává úkolem administrátora (BE úprava, ne UI zde).
+const OWNER_BY_EMAIL = {
+  'bartakjakub68@gmail.com': 'bartak',
+  'pavel.bydzovsky@kb.cz':   'bydzovsky',
+  'patrik.knesl@kb.cz':      'knesl',
+};
+
+function currentUserOwner(){
+  const email = (typeof AuthUser !== 'undefined' && AuthUser.email || '').toLowerCase();
+  return OWNER_BY_EMAIL[email] || null;
+}
+function isAdmin(){
+  return typeof AuthUser !== 'undefined' && AuthUser.role === 'admin';
+}
+// Filtrace podle vlastnictví — voláno před UI filtry (kraj/okres/min inz atd.)
+function visibleLeadRows(){
+  const all = LEADS?.cisti || [];
+  if(isAdmin()) return all;
+  const own = currentUserOwner();
+  if(!own) return [];
+  return all.filter(r => r.owner === own);
+}
+
 async function load(){
   try{
     const r = await fetch('/data/leady.json', {cache:'no-cache'});
@@ -170,21 +196,31 @@ async function load(){
 }
 
 function renderStats(){
-  const cisti = LEADS.cisti || [];
+  const visible = visibleLeadRows();
   const inzCelkem = LEADS.celkem_inzeratu_v_cache ?? LEADS.celkem_inzeratu ?? 0;
+  const own = currentUserOwner();
+  const admin = isAdmin();
+  const meta = LEADS.owners_meta || {};
+  const myName = admin
+    ? 'Admin — všichni'
+    : (own && meta[own] ? meta[own].jmeno : (AuthUser?.jmeno || 'Nepřiřazeno'));
+  const myInz = visible.reduce((s,r) => s + (r.pocet_inzeratu||0), 0);
+
   document.getElementById('stats').innerHTML = `
-    <div class="stat"><div class="stat-val">${inzCelkem}</div><div class="stat-lbl">Inz. v databázi</div></div>
-    <div class="stat"><div class="stat-val">${LEADS.celkem_makleru}</div><div class="stat-lbl">Unikátních makléřů</div></div>
-    <div class="stat"><div class="stat-val">${LEADS.zminili}</div><div class="stat-lbl">Zmínili financování</div></div>
-    <div class="stat accent"><div class="stat-val">${cisti.length}</div><div class="stat-lbl">Čistí makléři (leady)</div></div>
+    <div class="stat"><div class="stat-val">${admin ? inzCelkem : myInz}</div><div class="stat-lbl">${admin ? 'Inz. v databázi' : 'Inz. mých leadů'}</div></div>
+    <div class="stat"><div class="stat-val">${admin ? LEADS.celkem_makleru : (LEADS.cisti||[]).length}</div><div class="stat-lbl">${admin ? 'Unikátních makléřů' : 'Všech čistých leadů'}</div></div>
+    <div class="stat"><div class="stat-val">${visible.length}</div><div class="stat-lbl">${admin ? 'Čistí makléři (celkem)' : 'Přiřazeno mně'}</div></div>
+    <div class="stat accent"><div class="stat-val" style="font-size:14px;line-height:1.3">${myName}</div><div class="stat-lbl">Vlastník</div></div>
   `;
   document.getElementById('generovano').textContent =
     new Date(LEADS.generovano).toLocaleString('cs-CZ') + ' · poslední batch: ' + LEADS.mesto;
 
-  // Naplnit dropdowny krajů a okresů
+  // Naplnit dropdowny krajů a okresů (jen z viditelných řádků)
   const krajSel = document.getElementById('krajSel');
   const okresSel = document.getElementById('okresSel');
-  for(const k of (LEADS.kraje || [])){
+  const myKraje = [...new Set(visible.map(r => r.primarni_kraj).filter(Boolean))].sort();
+  krajSel.innerHTML = '<option value="">— vše —</option>';
+  for(const k of myKraje){
     const o = document.createElement('option'); o.value = k; o.textContent = k;
     krajSel.appendChild(o);
   }
@@ -195,15 +231,10 @@ function refreshOkresOptions(){
   const kraj = document.getElementById('krajSel').value;
   const okresSel = document.getElementById('okresSel');
   const prev = okresSel.value;
-  // pokud je vybraný kraj, ukaž jen okresy z toho kraje
-  let okresy = LEADS.okresy || [];
-  if(kraj){
-    okresy = [...new Set(
-      (LEADS.cisti || [])
-        .filter(c => c.primarni_kraj === kraj)
-        .flatMap(c => c.okresy_makl || [])
-    )].sort();
-  }
+  // Nabídne pouze okresy z leadů, které uživatel skutečně vidí (po ownership filtru).
+  const scope = visibleLeadRows();
+  const filtered = kraj ? scope.filter(c => c.primarni_kraj === kraj) : scope;
+  const okresy = [...new Set(filtered.flatMap(c => c.okresy_makl || []))].sort();
   okresSel.innerHTML = '<option value="">— vše —</option>' +
     okresy.map(o => `<option value="${o}">${o}</option>`).join('');
   if(okresy.includes(prev)) okresSel.value = prev;
@@ -217,7 +248,8 @@ function filteredRows(){
   const hideNoName = document.getElementById('hideNoName').checked;
   const kraj = document.getElementById('krajSel').value;
   const okres = document.getElementById('okresSel').value;
-  return (LEADS.cisti || []).filter(r => {
+  // Základ = jen leady vlastněné aktuálním uživatelem (admin vidí vše).
+  return visibleLeadRows().filter(r => {
     if(r.pocet_inzeratu < minInz) return false;
     if(hideNoName && !(r.makler && r.makler.trim())) return false;
     if(kraj && r.primarni_kraj !== kraj) return false;
