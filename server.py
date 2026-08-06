@@ -334,6 +334,19 @@ def init_db():
         );
         CREATE INDEX IF NOT EXISTS idx_lead_status_user ON lead_statusy(user_id);
         CREATE INDEX IF NOT EXISTS idx_lead_status_seller ON lead_statusy(seller_id);
+
+        CREATE TABLE IF NOT EXISTS nzu_statusy (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            poradce_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'novy'
+                CHECK(status IN ('novy','kontaktovan','schuzka','spoluprace','nema_zajem','ma_jineho')),
+            poznamka TEXT DEFAULT '',
+            updated_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(user_id, poradce_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_nzu_status_user ON nzu_statusy(user_id);
+        CREATE INDEX IF NOT EXISTS idx_nzu_status_poradce ON nzu_statusy(poradce_id);
     ''')
 
     # Migrace: doc_type sloupec do met_documents
@@ -2913,15 +2926,99 @@ def leady_status_put():
     return jsonify({'ok': True, 'seller_id': seller_id, 'status': status})
 
 
-# ─── NZÚ energetičtí poradci (jen admin) ─────────────────────────────────────
-@app.route('/api/nzu-poradci', methods=['GET'])
-@require_auth(['admin'])
-def nzu_poradci_get():
+# ─── NZÚ energetičtí poradci (ownership filter + statusy) ────────────────────
+# Sdílíme LEAD_OWNER_BY_EMAIL mapu — stejní 3 lidé mají leady i NZÚ poradce.
+
+def _load_nzu_json():
     try:
         with open('data/nzu_poradci.json', encoding='utf-8') as f:
-            return jsonify(_json.load(f))
+            return _json.load(f)
     except FileNotFoundError:
-        return jsonify({'poradci': [], 'celkem': 0, 'okresy': [], 'generovano': None})
+        return {'poradci': [], 'celkem': 0, 'okresy': [], 'kraje_seznam': [], 'generovano': None}
+
+
+@app.route('/api/nzu-poradci', methods=['GET'])
+@require_auth()
+def nzu_poradci_get():
+    data = _load_nzu_json()
+    role = request.user.get('role')
+    email = (request.user.get('email') or '').lower()
+    if role == 'admin':
+        return jsonify(data)
+    own = LEAD_OWNER_BY_EMAIL.get(email)
+    if not own:
+        return jsonify({
+            'poradci': [], 'celkem': 0, 'okresy': [], 'kraje_seznam': [],
+            'generovano': data.get('generovano'),
+            'owners_meta': data.get('owners_meta', {}),
+        })
+    mine = [p for p in (data.get('poradci') or []) if p.get('owner') == own]
+    return jsonify({
+        'poradci': mine,
+        'celkem': len(mine),
+        'okresy': sorted({o for p in mine for o in (p.get('okresy_list') or []) if o}),
+        'kraje_seznam': sorted({p.get('primarni_kraj') for p in mine if p.get('primarni_kraj')}),
+        's_emailem': sum(1 for p in mine if p.get('email')),
+        's_telefonem': sum(1 for p in mine if p.get('telefon')),
+        's_renovacnim_pasem': sum(1 for p in mine if p.get('renovacni_pas')),
+        'generovano': data.get('generovano'),
+        'owners_meta': data.get('owners_meta', {}),
+        'moj_owner': own,
+    })
+
+
+@app.route('/api/nzu-poradci/statusy', methods=['GET'])
+@require_auth()
+def nzu_statusy_get():
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT poradce_id, status, poznamka, updated_at FROM nzu_statusy WHERE user_id=?",
+        (request.user['id'],)
+    ).fetchall()
+    conn.close()
+    return jsonify({
+        r['poradce_id']: {
+            'status': r['status'],
+            'poznamka': r['poznamka'] or '',
+            'updated_at': r['updated_at'],
+        } for r in rows
+    })
+
+
+@app.route('/api/nzu-poradci/status', methods=['PUT'])
+@require_auth()
+def nzu_status_put():
+    d = request.get_json(silent=True) or {}
+    poradce_id = str(d.get('poradce_id') or '').strip()
+    status = str(d.get('status') or '').strip()
+    poznamka = str(d.get('poznamka') or '').strip()[:2000]
+    if not poradce_id:
+        return jsonify({'error': 'poradce_id chybi'}), 400
+    if status not in LEAD_STATUSY_ENUM:
+        return jsonify({'error': f'neplatny status; povoleno: {LEAD_STATUSY_ENUM}'}), 400
+    # Autorizace: user může editovat jen svého poradce (admin cokoli)
+    role = request.user.get('role')
+    email = (request.user.get('email') or '').lower()
+    if role != 'admin':
+        own = LEAD_OWNER_BY_EMAIL.get(email)
+        if not own:
+            return jsonify({'error': 'Nemáte přiřazené žádné leady'}), 403
+        data = _load_nzu_json()
+        p = next((x for x in (data.get('poradci') or []) if str(x.get('id')) == poradce_id), None)
+        if not p or p.get('owner') != own:
+            return jsonify({'error': 'Tento poradce vám nepatří'}), 403
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO nzu_statusy (user_id, poradce_id, status, poznamka, updated_at)
+        VALUES (?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(user_id, poradce_id) DO UPDATE SET
+            status = excluded.status,
+            poznamka = excluded.poznamka,
+            updated_at = datetime('now')
+    """, (request.user['id'], poradce_id, status, poznamka))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'poradce_id': poradce_id, 'status': status})
 
 
 @app.route('/<path:path>')

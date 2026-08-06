@@ -15,8 +15,8 @@
   --gold:#047857;--gold-pale:#ECFDF5;--gold-border:rgba(4,120,87,0.2);
   --border:#DCDEDF;--border2:#B8BCC1;
   --red:#BE185D;--red-pale:#FCE7F3;
-  --blue:#1E5A8A;--blue-pale:#EFF6FF;
-  --warn:#92400E;--warn-pale:#FEF3C7;
+  --blue:#1E5A8A;--blue-pale:#EFF6FF;--blue-border:#BFDBFE;
+  --warn:#92400E;--warn-pale:#FEF3C7;--warn-border:#FCD34D;
   --sh-sm:0 1px 2px rgba(15,20,25,.04);
   --r:8px;--rs:6px;--rx:5px;
 }
@@ -49,9 +49,9 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
 .filters input,.filters select{background:var(--cream);border:1.5px solid var(--border);border-radius:var(--rx);padding:7px 11px;font-family:inherit;font-size:13px;color:var(--ink);outline:none}
 .filters input:focus,.filters select:focus{border-color:var(--gold);background:var(--white)}
 .filters label{font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
-.filters .grow{flex:1;min-width:220px}
+.filters .grow{flex:1;min-width:200px}
 
-.tbl-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:auto;box-shadow:var(--sh-sm)}
+.tbl-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh-sm)}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{background:var(--ink);color:var(--white);padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:left;cursor:pointer;user-select:none}
 .tbl th:hover{background:var(--ink2)}
@@ -65,12 +65,20 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
 .tbl .tel{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2)}
 .tbl .tel a{color:var(--gold);text-decoration:none;font-weight:600}
 .tbl .tel a:hover{text-decoration:underline}
-.tbl .regiony{font-size:11px;color:var(--ink3);line-height:1.4;max-width:340px}
-.tbl .badge{display:inline-block;padding:2px 8px;background:var(--gold-pale);color:var(--gold);border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.tbl .kraj{font-size:12px;color:var(--ink2);font-weight:600}
+.tbl .okres{font-size:11px;color:var(--ink3);line-height:1.4}
+.tbl .badge{display:inline-block;padding:2px 8px;background:var(--gold-pale);color:var(--gold);border-radius:12px;font-size:10px;font-weight:700}
+
+.detail-toggle{font-size:11px;color:var(--gold);cursor:pointer;font-weight:600;margin-top:4px;display:inline-block}
+.detail-toggle:hover{text-decoration:underline}
+.detail-row{display:none;background:var(--cream)}
+.detail-row.open{display:table-row}
+.detail-row td{padding:14px 18px}
+.detail-subject{background:var(--white);border:1px solid var(--border);border-radius:var(--rx);padding:8px 12px;font-size:12px;color:var(--ink2);margin-top:10px;line-height:1.5}
 
 .empty-state{padding:40px;text-align:center;color:var(--ink4)}
-.info{margin-top:14px;padding:11px 14px;background:var(--blue-pale);border:1px solid #BFDBFE;border-radius:var(--rs);font-size:12px;color:#1E3A8A;line-height:1.6}
-.info code{background:var(--white);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:11px}
+.refresh-info{margin-top:14px;padding:11px 14px;background:var(--blue-pale);border:1px solid var(--blue-border);border-radius:var(--rs);font-size:12px;color:#1E3A8A;line-height:1.6}
+.refresh-info code{background:var(--white);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:11px}
 </style>
 </head>
 <body>
@@ -88,22 +96,37 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
 <div class="main">
   <div class="page-hdr">
     <h1>Energetičtí poradci NZÚ</h1>
-    <p>Poradci zapojení do programu Nová zelená úsporám — potenciální partneři pro financování rekonstrukcí.
-    Zdroj: <a href="https://novazelenausporam.cz/energeticke-poradenstvi/" target="_blank" style="color:var(--gold)">novazelenausporam.cz</a></p>
+    <p>Poradci zapojení do programu Nová zelená úsporám. JMK rozděleno mezi 3 manažery, Knesl navíc celý Zlínský kraj. Zbytek ČR spravuje admin.</p>
   </div>
 
   <div class="stats" id="stats"></div>
+  <div id="statusPills" style="display:flex;flex-wrap:wrap;gap:8px;margin:-8px 0 20px 0;align-items:center"></div>
 
   <div class="filters">
-    <input type="search" class="grow" id="searchInp" placeholder="🔍 Hledat (jméno, telefon, email, region)…">
+    <input type="search" class="grow" id="searchInp" placeholder="🔍 Hledat (jméno, telefon, email, region, poznámka)…">
+    <label>Kraj:
+      <select id="krajSel"><option value="">— vše —</option></select>
+    </label>
     <label>Okres:
       <select id="okresSel"><option value="">— vše —</option></select>
     </label>
-    <label>Renovační pas:
+    <label>Ren. pas:
       <select id="pasSel">
         <option value="">— vše —</option>
-        <option value="1">Ano (autorizace pro RP)</option>
+        <option value="1">Ano</option>
         <option value="0">Ne</option>
+      </select>
+    </label>
+    <label>Status:
+      <select id="statusSel">
+        <option value="">— vše —</option>
+        <option value="novy">Nový (nekontaktováno)</option>
+        <option value="kontaktovan">Kontaktován</option>
+        <option value="schuzka">Schůzka</option>
+        <option value="spoluprace">Spolupráce</option>
+        <option value="nema_zajem">Nemá zájem</option>
+        <option value="ma_jineho">Má jinde</option>
+        <option value="__aktivni">📌 Aktivní (bez nezájmu)</option>
       </select>
     </label>
     <button onclick="exportCsv()" style="background:var(--ink);color:#fff;border:none;padding:8px 16px;border-radius:var(--rx);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">📥 Export CSV</button>
@@ -114,16 +137,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
       <thead>
         <tr>
           <th class="sort" data-sort="jmeno">Jméno</th>
-          <th>Telefon / Email</th>
-          <th>Regiony působnosti</th>
-          <th style="width:80px">Ren. pas</th>
+          <th>Kontakt</th>
+          <th class="sort" data-sort="kraj">Kraj / okresy</th>
+          <th style="width:70px">Ren. pas</th>
+          <th class="sort" data-sort="status" style="width:180px">Status</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
 
-  <div class="info">
+  <div class="refresh-info">
     <strong>Jak obnovit data:</strong> lokálně <code>python scripts/nzu_poradci.py</code> →
     přesun <code>nzu_poradci.json</code> do <code>data/</code> → commit + push.
     Aktuální data: <span id="generovano">…</span>
@@ -132,93 +156,229 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
 
 <script>
 let DATA = null;
+let STATUSY = {};
 let sortKey = 'jmeno';
 let sortDir = 'asc';
 
+const STATUS_META = {
+  novy:        {label:'Nový',                color:'#6B7178', bg:'#F0EFED'},
+  kontaktovan: {label:'Kontaktován',         color:'#1E5A8A', bg:'#EFF6FF'},
+  schuzka:     {label:'Schůzka',             color:'#92400E', bg:'#FEF3C7'},
+  spoluprace:  {label:'Spolupráce',          color:'#047857', bg:'#ECFDF5'},
+  nema_zajem:  {label:'Nemá zájem',          color:'#BE185D', bg:'#FCE7F3'},
+  ma_jineho:   {label:'Má spolupráci jinde', color:'#BE185D', bg:'#FCE7F3'},
+};
+const STATUS_ORDER = ['novy','kontaktovan','schuzka','spoluprace','nema_zajem','ma_jineho'];
+
+function isAdmin(){ return typeof AuthUser !== 'undefined' && AuthUser.role === 'admin'; }
+function getStatus(id){ return STATUSY[String(id)] || {status:'novy', poznamka:'', updated_at:null}; }
+
 async function load(){
-  const token = localStorage.getItem('auth_token');
-  try {
-    const r = await fetch('/api/nzu-poradci', {
-      cache:'no-cache',
-      headers: token ? {'Authorization': 'Bearer ' + token} : {},
-    });
-    if(r.status === 403){
-      document.getElementById('tbody').innerHTML =
-        `<tr><td colspan="4" class="empty-state">🔒 Pouze admin má přístup k tomuto seznamu.</td></tr>`;
-      return;
-    }
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    DATA = await r.json();
+  try{
+    const token = localStorage.getItem('auth_token');
+    const headers = token ? {'Authorization': 'Bearer ' + token} : {};
+    const [rP, rS] = await Promise.all([
+      fetch('/api/nzu-poradci',        {cache:'no-cache', headers}),
+      fetch('/api/nzu-poradci/statusy',{cache:'no-cache', headers}),
+    ]);
+    if(!rP.ok) throw new Error('/api/nzu-poradci → HTTP ' + rP.status);
+    DATA = await rP.json();
+    STATUSY = rS.ok ? await rS.json() : {};
     renderStats();
     render();
   } catch(e){
     document.getElementById('tbody').innerHTML =
-      `<tr><td colspan="4" class="empty-state">Chyba načítání: ${e.message}</td></tr>`;
+      `<tr><td colspan="5" class="empty-state">Chyba načítání: ${e.message}</td></tr>`;
   }
 }
 
-function renderStats(){
-  document.getElementById('stats').innerHTML = `
-    <div class="stat"><div class="stat-val">${DATA.celkem||0}</div><div class="stat-lbl">Poradců v seznamu</div></div>
-    <div class="stat"><div class="stat-val">${DATA.s_telefonem||0}</div><div class="stat-lbl">S telefonem</div></div>
-    <div class="stat"><div class="stat-val">${DATA.s_emailem||0}</div><div class="stat-lbl">S emailem</div></div>
-    <div class="stat accent"><div class="stat-val">${DATA.s_renovacnim_pasem||0}</div><div class="stat-lbl">🏷️ Renovační pas</div></div>
-  `;
-  document.getElementById('generovano').textContent =
-    DATA.generovano ? new Date(DATA.generovano).toLocaleString('cs-CZ') : '—';
+async function updateStatus(id, status, poznamka){
+  const token = localStorage.getItem('auth_token');
+  const res = await fetch('/api/nzu-poradci/status', {
+    method:'PUT',
+    headers:{'Content-Type':'application/json', ...(token?{'Authorization':'Bearer '+token}:{})},
+    body: JSON.stringify({poradce_id: String(id), status, poznamka: poznamka || ''}),
+  });
+  if(!res.ok){
+    const err = await res.json().catch(()=>({error:'HTTP '+res.status}));
+    alert('Uložení statusu selhalo: ' + (err.error || res.status));
+    return false;
+  }
+  STATUSY[String(id)] = {status, poznamka: poznamka || '', updated_at: new Date().toISOString()};
+  renderStats(); render();
+  return true;
+}
 
+function renderStats(){
+  const all = DATA?.poradci || [];
+  const meta = DATA?.owners_meta || {};
+  const own = DATA?.moj_owner || null;
+  const admin = isAdmin();
+  const myName = admin
+    ? 'Admin — všichni'
+    : (own && meta[own] ? meta[own].jmeno : (typeof AuthUser !== 'undefined' && AuthUser.jmeno) || 'Nepřiřazeno');
+
+  const bucket = Object.fromEntries(STATUS_ORDER.map(s => [s, 0]));
+  for(const p of all){
+    const st = getStatus(p.id).status;
+    if(bucket[st] !== undefined) bucket[st]++;
+  }
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${all.length}</div><div class="stat-lbl">${admin ? 'Poradců (vše)' : 'Přiřazeno mně'}</div></div>
+    <div class="stat"><div class="stat-val">${bucket.spoluprace}</div><div class="stat-lbl" style="color:#047857">🤝 Spolupráce</div></div>
+    <div class="stat"><div class="stat-val">${bucket.novy}</div><div class="stat-lbl">Ještě neoslovených</div></div>
+    <div class="stat accent"><div class="stat-val" style="font-size:14px;line-height:1.3">${myName}</div><div class="stat-lbl">Vlastník</div></div>
+  `;
+
+  const pillsBar = document.getElementById('statusPills');
+  const pillsHtml = STATUS_ORDER.map(s => {
+    const m = STATUS_META[s];
+    return `<button class="status-pill" data-st="${s}"
+      style="border:1px solid ${m.color};background:${m.bg};color:${m.color};
+             padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;
+             cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px"
+      onclick="document.getElementById('statusSel').value='${s}';render();">
+      ${m.label} <strong style="font-size:12px">${bucket[s]}</strong>
+    </button>`;
+  }).join('');
+  pillsBar.innerHTML = pillsHtml +
+    `<button onclick="document.getElementById('statusSel').value='';render();"
+      style="border:1px solid var(--border);background:var(--white);color:var(--ink3);
+             padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;
+             cursor:pointer;font-family:inherit;margin-left:6px">↺ Reset filtru</button>`;
+
+  document.getElementById('generovano').textContent =
+    DATA?.generovano ? new Date(DATA.generovano).toLocaleString('cs-CZ') : '—';
+
+  const krajSel = document.getElementById('krajSel');
+  const kraje = DATA?.kraje_seznam || [];
+  krajSel.innerHTML = '<option value="">— vše —</option>' +
+    kraje.map(k => `<option value="${k}">${k}</option>`).join('');
+  refreshOkresOptions();
+}
+
+function refreshOkresOptions(){
+  const kraj = document.getElementById('krajSel').value;
+  const prev = document.getElementById('okresSel').value;
+  const all = DATA?.poradci || [];
+  const scope = kraj ? all.filter(p => p.primarni_kraj === kraj) : all;
+  const okresy = [...new Set(scope.flatMap(p => p.okresy_list || []))].sort();
   const sel = document.getElementById('okresSel');
   sel.innerHTML = '<option value="">— vše —</option>' +
-    (DATA.okresy||[]).map(o => `<option value="${o}">${o}</option>`).join('');
+    okresy.map(o => `<option value="${o}">${o}</option>`).join('');
+  if(okresy.includes(prev)) sel.value = prev;
 }
 
 function filteredRows(){
   const q = document.getElementById('searchInp').value.trim().toLowerCase();
+  const kraj = document.getElementById('krajSel').value;
   const okres = document.getElementById('okresSel').value;
   const pas = document.getElementById('pasSel').value;
-  return (DATA.poradci||[]).filter(p => {
-    if(okres && !(p.regiony||'').toLowerCase().includes(okres.toLowerCase())) return false;
+  const st = document.getElementById('statusSel').value;
+  return (DATA?.poradci || []).filter(p => {
+    if(kraj && p.primarni_kraj !== kraj) return false;
+    if(okres && !(p.okresy_list || []).includes(okres)) return false;
     if(pas === '1' && !p.renovacni_pas) return false;
     if(pas === '0' && p.renovacni_pas) return false;
+    if(st){
+      const cur = getStatus(p.id).status;
+      if(st === '__aktivni'){
+        if(cur === 'nema_zajem' || cur === 'ma_jineho') return false;
+      } else if(cur !== st) return false;
+    }
     if(!q) return true;
-    return [p.jmeno, p.telefon, p.email, p.regiony].some(s => (s||'').toLowerCase().includes(q));
+    return [p.jmeno, p.telefon, p.email, p.regiony, p.subject, getStatus(p.id).poznamka]
+      .some(s => (s||'').toLowerCase().includes(q));
   });
+}
+
+function fmtTel(t){
+  if(!t) return '';
+  const digits = t.replace(/^\+?420/,'').replace(/\D/g,'');
+  if(digits.length !== 9) return t;
+  return '+420 ' + digits.replace(/(.{3})(.{3})(.{3})/,'$1 $2 $3');
 }
 
 function render(){
   let rows = filteredRows();
   rows.sort((a,b) => {
-    const va = (a[sortKey]||'').toString();
-    const vb = (b[sortKey]||'').toString();
+    if(sortKey === 'status'){
+      const ai = STATUS_ORDER.indexOf(getStatus(a.id).status);
+      const bi = STATUS_ORDER.indexOf(getStatus(b.id).status);
+      return sortDir==='asc' ? ai - bi : bi - ai;
+    }
+    const keyMap = {kraj:'primarni_kraj', jmeno:'jmeno'};
+    const k = keyMap[sortKey] || sortKey;
+    const va = (a[k]||'').toString(); const vb = (b[k]||'').toString();
     return sortDir==='asc'
-      ? va.localeCompare(vb, 'cs')
-      : vb.localeCompare(va, 'cs');
+      ? va.localeCompare(vb,'cs')
+      : vb.localeCompare(va,'cs');
   });
 
   const tbody = document.getElementById('tbody');
   if(rows.length === 0){
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Žádné výsledky</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Žádné výsledky</td></tr>';
     return;
   }
-  tbody.innerHTML = rows.map(p => {
-    const telFmt = p.telefon
-      ? `+420${p.telefon.replace(/^\+?420/, '').replace(/[^\d]/g,'')}`.replace(/(.{4})(.{3})(.{3})(.{3})/,'$1 $2 $3 $4')
+  tbody.innerHTML = rows.map((p, i) => {
+    const telFmt = fmtTel(p.telefon);
+    const telLink = p.telefon ? `<a href="tel:${p.telefon}">${telFmt}</a>` : '<span style="color:var(--ink4)">—</span>';
+    const emailLink = p.email ? `<a href="mailto:${p.email}" style="display:block;margin-top:2px;font-size:11px">${p.email}</a>` : '';
+
+    const st = getStatus(p.id);
+    const stMeta = STATUS_META[st.status] || STATUS_META.novy;
+    const statusOpts = STATUS_ORDER.map(s =>
+      `<option value="${s}"${s===st.status?' selected':''}>${STATUS_META[s].label}</option>`
+    ).join('');
+    const upd = st.updated_at
+      ? `<small style="color:var(--ink4);font-size:10px;display:block;margin-top:2px">Aktualizováno ${new Date(st.updated_at).toLocaleDateString('cs-CZ')}</small>`
       : '';
-    const telLink = p.telefon
-      ? `<a href="tel:${p.telefon}">${telFmt}</a>`
-      : '<span style="color:var(--ink4)">—</span>';
-    const emailLink = p.email
-      ? `<a href="mailto:${p.email}" style="font-size:11px;display:block;margin-top:2px">${p.email}</a>`
+    const poznEsc = (st.poznamka || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    const poznPreview = st.poznamka
+      ? `<div style="margin-top:4px;font-size:11px;color:var(--ink3);font-style:italic;line-height:1.35">💬 ${st.poznamka.substring(0,60)}${st.poznamka.length>60?'…':''}</div>`
       : '';
-    const pasBadge = p.renovacni_pas
+
+    const okresy = (p.okresy_list || []).join(', ');
+    const pas = p.renovacni_pas
       ? `<span class="badge">✓ Ano</span>`
       : `<span style="color:var(--ink4);font-size:11px">—</span>`;
+
     return `
       <tr>
-        <td><div class="jmeno">${p.jmeno || '(bez jména)'}</div></td>
+        <td>
+          <div class="jmeno">${p.jmeno || '(bez jména)'}</div>
+          <span class="detail-toggle" onclick="toggleDetail(${i})">▾ Detail & poznámka</span>
+          ${poznPreview}
+        </td>
         <td class="tel">${telLink}${emailLink}</td>
-        <td><div class="regiony">${p.regiony || '—'}</div></td>
-        <td>${pasBadge}</td>
+        <td>
+          <div class="kraj">${p.primarni_kraj || '—'}</div>
+          <div class="okres">${okresy}</div>
+        </td>
+        <td>${pas}</td>
+        <td>
+          <select class="status-select" data-id="${p.id}"
+                  onchange="onStatusChange(this)"
+                  style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--rx);
+                         font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
+                         background:${stMeta.bg};color:${stMeta.color};outline:none">
+            ${statusOpts}
+          </select>
+          ${upd}
+        </td>
+      </tr>
+      <tr class="detail-row" id="detail-${i}">
+        <td></td>
+        <td colspan="4">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Poznámka</label>
+            <textarea data-id="${p.id}" onblur="onPoznamkaBlur(this)" placeholder="Kontext, další kroky, cokoli si potřebuješ pamatovat…"
+              style="width:100%;min-height:60px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--rx);font-family:inherit;font-size:12px;color:var(--ink);background:var(--white);outline:none;resize:vertical">${poznEsc}</textarea>
+            <div style="font-size:10px;color:var(--ink4);margin-top:3px">Uloží se automaticky po kliknutí mimo pole.</div>
+          </div>
+          ${p.subject ? `<div class="detail-subject"><strong>Kontext / činnost:</strong><br>${p.subject.replace(/</g,'&lt;')}</div>` : ''}
+        </td>
       </tr>
     `;
   }).join('');
@@ -229,24 +389,54 @@ function render(){
   });
 }
 
+function toggleDetail(i){
+  document.getElementById('detail-' + i).classList.toggle('open');
+}
+
+function onStatusChange(sel){
+  const id = sel.dataset.id;
+  const existing = STATUSY[String(id)] || {};
+  updateStatus(id, sel.value, existing.poznamka || '');
+}
+
+function onPoznamkaBlur(ta){
+  const id = ta.dataset.id;
+  const existing = STATUSY[String(id)] || {status:'novy'};
+  if((existing.poznamka || '') === ta.value) return;
+  updateStatus(id, existing.status || 'novy', ta.value);
+}
+
 function exportCsv(){
   const rows = filteredRows();
   const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
-  const lines = ['jmeno,telefon,email,regiony,renovacni_pas'];
-  rows.forEach(p => lines.push([p.jmeno, p.telefon, p.email, p.regiony, p.renovacni_pas ? 'ano' : 'ne'].map(esc).join(',')));
+  const lines = ['jmeno,telefon,email,primarni_kraj,okresy,renovacni_pas,status,poznamka,aktualizovano'];
+  rows.forEach(p => {
+    const st = getStatus(p.id);
+    const stLabel = (STATUS_META[st.status] || {}).label || st.status;
+    lines.push([
+      p.jmeno, p.telefon, p.email, p.primarni_kraj,
+      (p.okresy_list || []).join(' | '),
+      p.renovacni_pas ? 'ano' : 'ne',
+      stLabel, st.poznamka, st.updated_at || ''
+    ].map(esc).join(','));
+  });
   const blob = new Blob(['﻿' + lines.join('\n')], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
+  const kraj = document.getElementById('krajSel').value || '';
   const date = new Date().toISOString().split('T')[0];
-  a.href = url; a.download = `nzu-poradci-${date}.csv`;
+  const label = kraj.replace(/\s+/g,'-').toLowerCase() || 'nzu-poradci';
+  a.href = url; a.download = `${label}-${date}.csv`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('searchInp').addEventListener('input', render);
+  document.getElementById('krajSel').addEventListener('change', () => { refreshOkresOptions(); render(); });
   document.getElementById('okresSel').addEventListener('change', render);
   document.getElementById('pasSel').addEventListener('change', render);
+  document.getElementById('statusSel').addEventListener('change', render);
   document.querySelectorAll('.tbl th.sort').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.sort;
