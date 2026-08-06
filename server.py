@@ -452,6 +452,14 @@ def init_db():
             ('Leady — makléři', '/leady.html', '🎯', 'Realitní makléři bez hypotečního servisu (Brno)', 10)
         )
 
+    # NZÚ Energetičtí poradci (jen admin)
+    nzu_exists = c.execute("SELECT id FROM apps WHERE nazev='NZÚ Energetičtí poradci'").fetchone()
+    if not nzu_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('NZÚ Energetičtí poradci', '/nzu-poradci.html', '🌱', 'Poradci Nové Zelené Úsporám (~900 v ČR, jen admin)', 11)
+        )
+
     # Výchozí admin účet (pouze pokud žádný admin neexistuje)
     existing = c.execute("SELECT id FROM users WHERE role='admin'").fetchone()
     if not existing:
@@ -2903,6 +2911,17 @@ def leady_status_put():
     conn.commit()
     conn.close()
     return jsonify({'ok': True, 'seller_id': seller_id, 'status': status})
+
+
+# ─── NZÚ energetičtí poradci (jen admin) ─────────────────────────────────────
+@app.route('/api/nzu-poradci', methods=['GET'])
+@require_auth(['admin'])
+def nzu_poradci_get():
+    try:
+        with open('data/nzu_poradci.json', encoding='utf-8') as f:
+            return jsonify(_json.load(f))
+    except FileNotFoundError:
+        return jsonify({'poradci': [], 'celkem': 0, 'okresy': [], 'generovano': None})
 
 
 @app.route('/<path:path>')
