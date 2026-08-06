@@ -321,6 +321,19 @@ def init_db():
             klic TEXT PRIMARY KEY,
             hodnota TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS lead_statusy (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            seller_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'novy'
+                CHECK(status IN ('novy','kontaktovan','schuzka','spoluprace','nema_zajem','ma_jineho')),
+            poznamka TEXT DEFAULT '',
+            updated_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(user_id, seller_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_lead_status_user ON lead_statusy(user_id);
+        CREATE INDEX IF NOT EXISTS idx_lead_status_seller ON lead_statusy(seller_id);
     ''')
 
     # Migrace: doc_type sloupec do met_documents
@@ -2771,6 +2784,126 @@ def ioldp_extract():
         }), 502
     except Exception as e:
         return jsonify({'error': f'Chyba AI volání: {type(e).__name__}: {e}'}), 502
+
+# ─── Leady — makléři bez financování (private data + per-user filtr) ─────────
+#
+# Mapa email → owner slug (musí sedět s owners v data/leady.json).
+# Kdokoli mimo tuto mapu — a není admin — dostane prázdnou strukturu.
+# Změna vlastnictví se řeší úpravou téhle mapy + regenerací leady.json,
+# není žádné UI pro reassign (design rozhodnutí).
+LEAD_OWNER_BY_EMAIL = {
+    'bartakjakub68@gmail.com': 'bartak',
+    'pavel.bydzovsky@kb.cz':   'bydzovsky',
+    'patrik.knesl@kb.cz':      'knesl',
+}
+LEAD_STATUSY_ENUM = ('novy', 'kontaktovan', 'schuzka', 'spoluprace', 'nema_zajem', 'ma_jineho')
+
+
+def _load_leady_json():
+    try:
+        with open('data/leady.json', encoding='utf-8') as f:
+            return _json.load(f)
+    except FileNotFoundError:
+        return {'cisti': [], 'kraje': [], 'okresy': [], 'celkem_makleru': 0, 'zminili': 0,
+                'celkem_inzeratu_v_cache': 0, 'generovano': '', 'mesto': ''}
+
+
+@app.route('/api/leady', methods=['GET'])
+@require_auth()
+def leady_get():
+    """Vrátí kompletní JSON pro admina, jinak jen leady patřící uživateli."""
+    data = _load_leady_json()
+    role = request.user.get('role')
+    email = (request.user.get('email') or '').lower()
+    if role == 'admin':
+        return jsonify(data)
+    own = LEAD_OWNER_BY_EMAIL.get(email)
+    if not own:
+        # Uživatel nemá přiřazené žádné leady — vrátíme prázdný objekt
+        return jsonify({
+            'cisti': [],
+            'kraje': [], 'okresy': [],
+            'celkem_makleru': 0, 'zminili': 0,
+            'celkem_inzeratu_v_cache': 0,
+            'generovano': data.get('generovano', ''),
+            'mesto': data.get('mesto', ''),
+            'owners_meta': data.get('owners_meta', {}),
+        })
+    my_cisti = [r for r in (data.get('cisti') or []) if r.get('owner') == own]
+    my_kraje = sorted({r.get('primarni_kraj', '') for r in my_cisti if r.get('primarni_kraj')})
+    my_okresy = sorted({
+        o for r in my_cisti for o in (r.get('okresy_makl') or []) if o
+    })
+    return jsonify({
+        'cisti': my_cisti,
+        'kraje': my_kraje, 'okresy': my_okresy,
+        'celkem_makleru': len(my_cisti),
+        'zminili': 0,  # neni relevantni pro subset
+        'celkem_inzeratu_v_cache': sum((r.get('pocet_inzeratu') or 0) for r in my_cisti),
+        'generovano': data.get('generovano', ''),
+        'mesto': data.get('mesto', ''),
+        'owners_meta': data.get('owners_meta', {}),
+        'moj_owner': own,
+    })
+
+
+@app.route('/api/leady/statusy', methods=['GET'])
+@require_auth()
+def leady_statusy_get():
+    """Vrátí {seller_id: {status, poznamka, updated_at}} pro aktuálního uživatele."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT seller_id, status, poznamka, updated_at FROM lead_statusy WHERE user_id=?",
+        (request.user['id'],)
+    ).fetchall()
+    conn.close()
+    return jsonify({
+        r['seller_id']: {
+            'status': r['status'],
+            'poznamka': r['poznamka'] or '',
+            'updated_at': r['updated_at'],
+        } for r in rows
+    })
+
+
+@app.route('/api/leady/status', methods=['PUT'])
+@require_auth()
+def leady_status_put():
+    """Uloží / aktualizuje status pro (user_id, seller_id).
+    Body: {"seller_id": "12345", "status": "kontaktovan", "poznamka": "..."}
+    """
+    d = request.get_json(silent=True) or {}
+    seller_id = str(d.get('seller_id') or '').strip()
+    status = str(d.get('status') or '').strip()
+    poznamka = str(d.get('poznamka') or '').strip()[:2000]
+    if not seller_id:
+        return jsonify({'error': 'seller_id chybi'}), 400
+    if status not in LEAD_STATUSY_ENUM:
+        return jsonify({'error': f'neplatny status; povoleno: {LEAD_STATUSY_ENUM}'}), 400
+    # Autorizace: uživatel může editovat jen leady, které vlastní (nebo admin cokoli).
+    role = request.user.get('role')
+    email = (request.user.get('email') or '').lower()
+    if role != 'admin':
+        own = LEAD_OWNER_BY_EMAIL.get(email)
+        if not own:
+            return jsonify({'error': 'Nemáte přiřazené žádné leady'}), 403
+        data = _load_leady_json()
+        lead = next((r for r in (data.get('cisti') or []) if str(r.get('seller_id')) == seller_id), None)
+        if not lead or lead.get('owner') != own:
+            return jsonify({'error': 'Tento lead vám nepatří'}), 403
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO lead_statusy (user_id, seller_id, status, poznamka, updated_at)
+        VALUES (?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(user_id, seller_id) DO UPDATE SET
+            status = excluded.status,
+            poznamka = excluded.poznamka,
+            updated_at = datetime('now')
+    """, (request.user['id'], seller_id, status, poznamka))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'seller_id': seller_id, 'status': status})
+
 
 @app.route('/<path:path>')
 def static_files(path):

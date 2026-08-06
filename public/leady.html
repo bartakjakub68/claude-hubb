@@ -105,6 +105,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
   </div>
 
   <div class="stats" id="stats"></div>
+  <div id="statusPills" style="display:flex;flex-wrap:wrap;gap:8px;margin:-8px 0 20px 0;align-items:center"></div>
 
   <div class="filters">
     <input type="search" class="grow" id="searchInp" placeholder="🔍 Hledat (jméno, RK, telefon)…">
@@ -122,6 +123,18 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
         <option value="5">5+</option>
       </select>
     </label>
+    <label>Status:
+      <select id="statusSel">
+        <option value="">— vše —</option>
+        <option value="novy">Nový (nekontaktováno)</option>
+        <option value="kontaktovan">Kontaktován</option>
+        <option value="schuzka">Schůzka</option>
+        <option value="spoluprace">Spolupráce</option>
+        <option value="nema_zajem">Nemá zájem</option>
+        <option value="ma_jineho">Má jinde</option>
+        <option value="__aktivni">📌 Aktivní (bez nezájmu)</option>
+      </select>
+    </label>
     <label>Skrýt bez jména:
       <input type="checkbox" id="hideNoName" checked>
     </label>
@@ -136,8 +149,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
           <th class="sort" data-sort="makler">Makléř</th>
           <th class="sort" data-sort="rk">Realitní kancelář</th>
           <th class="sort" data-sort="okres">Okres</th>
-          <th>Telefon</th>
-          <th>E-mail</th>
+          <th>Kontakt</th>
+          <th class="sort" data-sort="status" style="width:180px">Status</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -153,65 +166,121 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--cream);color:var(
 
 <script>
 let LEADS = null;
+let STATUSY = {};              // {seller_id: {status, poznamka, updated_at}}
 let sortKey = 'pocet';
 let sortDir = 'desc';
 
-// ─── Vlastnictví leadů ─────────────────────────────────────────────────────
-// Mapa emailu → owner slug (jak je uložený v leady.json). Admin vidí vše.
-// Když email uživatele není v mapě a role není admin → zobrazí se prázdno.
-// Editace této mapy zůstává úkolem administrátora (BE úprava, ne UI zde).
-const OWNER_BY_EMAIL = {
-  'bartakjakub68@gmail.com': 'bartak',
-  'pavel.bydzovsky@kb.cz':   'bydzovsky',
-  'patrik.knesl@kb.cz':      'knesl',
+// Přehled statusů (kontroluj s LEAD_STATUSY_ENUM v server.py)
+const STATUS_META = {
+  novy:        {label: 'Nový',                   color: '#6B7178', bg: '#F0EFED'},
+  kontaktovan: {label: 'Kontaktován',            color: '#1E5A8A', bg: '#EFF6FF'},
+  schuzka:     {label: 'Schůzka',                color: '#92400E', bg: '#FEF3C7'},
+  spoluprace:  {label: 'Spolupráce',             color: '#047857', bg: '#ECFDF5'},
+  nema_zajem:  {label: 'Nemá zájem',             color: '#BE185D', bg: '#FCE7F3'},
+  ma_jineho:   {label: 'Má spolupráci jinde',    color: '#BE185D', bg: '#FCE7F3'},
 };
+const STATUS_ORDER = ['novy','kontaktovan','schuzka','spoluprace','nema_zajem','ma_jineho'];
 
-function currentUserOwner(){
-  const email = (typeof AuthUser !== 'undefined' && AuthUser.email || '').toLowerCase();
-  return OWNER_BY_EMAIL[email] || null;
-}
 function isAdmin(){
   return typeof AuthUser !== 'undefined' && AuthUser.role === 'admin';
 }
-// Filtrace podle vlastnictví — voláno před UI filtry (kraj/okres/min inz atd.)
+
+// Backend už filtruje podle vlastnictví; frontend jen zobrazuje, co dostal.
 function visibleLeadRows(){
-  const all = LEADS?.cisti || [];
-  if(isAdmin()) return all;
-  const own = currentUserOwner();
-  if(!own) return [];
-  return all.filter(r => r.owner === own);
+  return LEADS?.cisti || [];
+}
+
+function getStatus(sellerId){
+  return STATUSY[String(sellerId)] || {status:'novy', poznamka:'', updated_at:null};
 }
 
 async function load(){
   try{
-    const r = await fetch('/data/leady.json', {cache:'no-cache'});
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    LEADS = await r.json();
+    const token = localStorage.getItem('auth_token');
+    const headers = token ? {'Authorization': 'Bearer ' + token} : {};
+    // Paralelní fetch — leady + moje statusy
+    const [rLeady, rStat] = await Promise.all([
+      fetch('/api/leady', {cache:'no-cache', headers}),
+      fetch('/api/leady/statusy', {cache:'no-cache', headers}),
+    ]);
+    if(!rLeady.ok) throw new Error('/api/leady → HTTP ' + rLeady.status);
+    LEADS = await rLeady.json();
+    STATUSY = rStat.ok ? await rStat.json() : {};
     renderStats();
     render();
   } catch(e){
     document.getElementById('tbody').innerHTML =
-      `<tr><td colspan="5" class="empty-state">Chyba načítání: ${e.message}</td></tr>`;
+      `<tr><td colspan="6" class="empty-state">Chyba načítání: ${e.message}</td></tr>`;
   }
+}
+
+async function updateStatus(sellerId, status, poznamka){
+  const token = localStorage.getItem('auth_token');
+  const res = await fetch('/api/leady/status', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? {'Authorization': 'Bearer ' + token} : {}),
+    },
+    body: JSON.stringify({seller_id: String(sellerId), status, poznamka: poznamka || ''}),
+  });
+  if(!res.ok){
+    const err = await res.json().catch(()=>({error:'HTTP '+res.status}));
+    alert('Uložení statusu selhalo: ' + (err.error || res.status));
+    return false;
+  }
+  // Optimistic update lokálního stavu
+  STATUSY[String(sellerId)] = {status, poznamka: poznamka || '', updated_at: new Date().toISOString()};
+  renderStats();
+  render();
+  return true;
 }
 
 function renderStats(){
   const visible = visibleLeadRows();
-  const inzCelkem = LEADS.celkem_inzeratu_v_cache ?? LEADS.celkem_inzeratu ?? 0;
-  const own = currentUserOwner();
   const admin = isAdmin();
   const meta = LEADS.owners_meta || {};
+  const own = LEADS.moj_owner || null;
   const myName = admin
     ? 'Admin — všichni'
     : (own && meta[own] ? meta[own].jmeno : (AuthUser?.jmeno || 'Nepřiřazeno'));
-  const myInz = visible.reduce((s,r) => s + (r.pocet_inzeratu||0), 0);
+
+  // Breakdown podle statusu (pouze pro mé viditelné leady)
+  const bucket = Object.fromEntries(STATUS_ORDER.map(s => [s, 0]));
+  for(const r of visible){
+    const st = getStatus(r.seller_id).status;
+    if(bucket[st] !== undefined) bucket[st]++;
+  }
+  const pillsHtml = STATUS_ORDER.map(s => {
+    const m = STATUS_META[s];
+    return `<button class="status-pill" data-st="${s}"
+      style="border:1px solid ${m.color};background:${m.bg};color:${m.color};
+             padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;
+             cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px"
+      title="Kliknutím vyfiltrovat"
+      onclick="document.getElementById('statusSel').value='${s}';render();">
+      ${m.label} <strong style="font-size:12px">${bucket[s]}</strong>
+    </button>`;
+  }).join('');
 
   document.getElementById('stats').innerHTML = `
-    <div class="stat"><div class="stat-val">${admin ? inzCelkem : myInz}</div><div class="stat-lbl">${admin ? 'Inz. v databázi' : 'Inz. mých leadů'}</div></div>
-    <div class="stat"><div class="stat-val">${admin ? LEADS.celkem_makleru : (LEADS.cisti||[]).length}</div><div class="stat-lbl">${admin ? 'Unikátních makléřů' : 'Všech čistých leadů'}</div></div>
-    <div class="stat"><div class="stat-val">${visible.length}</div><div class="stat-lbl">${admin ? 'Čistí makléři (celkem)' : 'Přiřazeno mně'}</div></div>
+    <div class="stat"><div class="stat-val">${visible.length}</div><div class="stat-lbl">${admin ? 'Čistí makléři (vše)' : 'Přiřazeno mně'}</div></div>
+    <div class="stat"><div class="stat-val">${bucket.spoluprace}</div><div class="stat-lbl" style="color:#047857">🤝 Spolupráce</div></div>
+    <div class="stat"><div class="stat-val">${bucket.novy}</div><div class="stat-lbl">Ještě neoslovených</div></div>
     <div class="stat accent"><div class="stat-val" style="font-size:14px;line-height:1.3">${myName}</div><div class="stat-lbl">Vlastník</div></div>
   `;
+
+  // Pill row pod statistikami — celý pipeline s klikatelným filtrem
+  const pillsBar = document.getElementById('statusPills');
+  if(pillsBar){
+    pillsBar.innerHTML = pillsHtml +
+      `<button class="status-pill" onclick="document.getElementById('statusSel').value='';render();"
+        style="border:1px solid var(--border);background:var(--white);color:var(--ink3);
+               padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;
+               cursor:pointer;font-family:inherit;margin-left:6px">
+        ↺ Reset filtru
+      </button>`;
+  }
   document.getElementById('generovano').textContent =
     new Date(LEADS.generovano).toLocaleString('cs-CZ') + ' · poslední batch: ' + LEADS.mesto;
 
@@ -248,14 +317,22 @@ function filteredRows(){
   const hideNoName = document.getElementById('hideNoName').checked;
   const kraj = document.getElementById('krajSel').value;
   const okres = document.getElementById('okresSel').value;
+  const statusFilter = document.getElementById('statusSel').value;
   // Základ = jen leady vlastněné aktuálním uživatelem (admin vidí vše).
   return visibleLeadRows().filter(r => {
     if(r.pocet_inzeratu < minInz) return false;
     if(hideNoName && !(r.makler && r.makler.trim())) return false;
     if(kraj && r.primarni_kraj !== kraj) return false;
     if(okres && !(r.okresy_makl || []).includes(okres)) return false;
+    if(statusFilter){
+      const st = getStatus(r.seller_id).status;
+      if(statusFilter === '__aktivni'){
+        if(st === 'nema_zajem' || st === 'ma_jineho') return false;
+      } else if(st !== statusFilter) return false;
+    }
     if(!q) return true;
-    return [r.makler, r.rk, r.telefon, r.email, r.primarni_okres, r.primarni_mesto]
+    return [r.makler, r.rk, r.telefon, r.email, r.primarni_okres, r.primarni_mesto,
+            getStatus(r.seller_id).poznamka]
       .some(s => (s||'').toLowerCase().includes(q));
   });
 }
@@ -265,6 +342,11 @@ function render(){
   rows.sort((a,b) => {
     if(sortKey === 'pocet'){
       return sortDir==='asc' ? a.pocet_inzeratu - b.pocet_inzeratu : b.pocet_inzeratu - a.pocet_inzeratu;
+    }
+    if(sortKey === 'status'){
+      const ai = STATUS_ORDER.indexOf(getStatus(a.seller_id).status);
+      const bi = STATUS_ORDER.indexOf(getStatus(b.seller_id).status);
+      return sortDir==='asc' ? ai - bi : bi - ai;
     }
     const keyMap = {okres: 'primarni_okres', makler: 'makler', rk: 'rk'};
     const k = keyMap[sortKey] || sortKey;
@@ -281,7 +363,12 @@ function render(){
   }
   tbody.innerHTML = rows.map((r, i) => {
     const tel = (r.telefon || '').split(';')[0].trim();
-    const telLink = tel ? `<a href="tel:${tel.replace(/\s/g,'')}">${tel}</a>` : '<span style="color:var(--ink4)">—</span>';
+    const telLink = tel
+      ? `<a href="tel:${tel.replace(/\s/g,'')}">${tel}</a>`
+      : '<span style="color:var(--ink4)">—</span>';
+    const email = r.email
+      ? `<a href="mailto:${r.email}" style="display:block;margin-top:2px;font-size:11px">${r.email}</a>`
+      : '';
     const inz = (r.inzeraty || []).map(x =>
       `<a href="${x.url}" target="_blank">
         <span>${x.titulek || x.id}<br><small style="color:var(--ink4)">${x.lokalita || ''}</small></span>
@@ -291,21 +378,56 @@ function render(){
     const okresStr = r.primarni_okres || '—';
     const moreOkres = (r.okresy_makl || []).filter(o => o !== r.primarni_okres);
     const okresMore = moreOkres.length ? ` <small style="color:var(--ink4)">+${moreOkres.length}</small>` : '';
+
+    const st = getStatus(r.seller_id);
+    const stMeta = STATUS_META[st.status] || STATUS_META.novy;
+    const sid = String(r.seller_id);
+    const statusOpts = STATUS_ORDER.map(s =>
+      `<option value="${s}"${s===st.status?' selected':''}>${STATUS_META[s].label}</option>`
+    ).join('');
+    const upd = st.updated_at
+      ? `<small style="color:var(--ink4);font-size:10px;display:block;margin-top:2px">Aktualizováno ${new Date(st.updated_at).toLocaleDateString('cs-CZ')}</small>`
+      : '';
+    const poznEsc = (st.poznamka || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    const poznPreview = st.poznamka
+      ? `<div style="margin-top:4px;font-size:11px;color:var(--ink3);font-style:italic;line-height:1.35">💬 ${st.poznamka.substring(0,60)}${st.poznamka.length>60?'…':''}</div>`
+      : '';
+
     return `
-      <tr>
+      <tr data-status="${st.status}">
         <td class="right"><span class="badge">${r.pocet_inzeratu}×</span></td>
         <td>
           <div class="makler${!r.makler ? ' empty-name' : ''}">${r.makler || '(bez jména)'}</div>
-          <span class="detail-toggle" onclick="toggleDetail(${i})">▾ Ukázat inzeráty</span>
+          <span class="detail-toggle" onclick="toggleDetail(${i})">▾ Inzeráty & poznámka</span>
+          ${poznPreview}
         </td>
         <td><div class="rk">${r.rk || '—'}</div></td>
         <td><div class="rk">${okresStr}${okresMore}</div></td>
-        <td class="tel">${telLink}</td>
-        <td class="tel">${r.email ? `<a href="mailto:${r.email}">${r.email}</a>` : '<span style="color:var(--ink4)">—</span>'}</td>
+        <td class="tel">${telLink}${email}</td>
+        <td>
+          <select class="status-select" data-sid="${sid}"
+                  onchange="onStatusChange(this)"
+                  style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--rx);
+                         font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
+                         background:${stMeta.bg};color:${stMeta.color};outline:none">
+            ${statusOpts}
+          </select>
+          ${upd}
+        </td>
       </tr>
       <tr class="detail-row" id="detail-${i}">
         <td></td>
-        <td colspan="5"><div class="detail-list">${inz || '<em style="color:var(--ink4)">Žádné inzeráty</em>'}</div></td>
+        <td colspan="5">
+          <div style="margin-bottom:10px">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">
+              Poznámka k lead
+            </label>
+            <textarea data-sid="${sid}" onblur="onPoznamkaBlur(this)" placeholder="Kontext hovoru, další kroky, cokoli co si potřebuješ pamatovat…"
+              style="width:100%;min-height:60px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--rx);font-family:inherit;font-size:12px;color:var(--ink);background:var(--white);outline:none;resize:vertical">${poznEsc}</textarea>
+            <div style="font-size:10px;color:var(--ink4);margin-top:3px">Uloží se automaticky po kliknutí mimo pole.</div>
+          </div>
+          <div class="detail-list">${inz || '<em style="color:var(--ink4)">Žádné inzeráty</em>'}</div>
+        </td>
       </tr>
     `;
   }).join('');
@@ -320,14 +442,36 @@ function toggleDetail(i){
   document.getElementById('detail-' + i).classList.toggle('open');
 }
 
+// ─── Status a poznámka handlery ────────────────────────────────────────────
+function onStatusChange(sel){
+  const sid = sel.dataset.sid;
+  const status = sel.value;
+  const existing = STATUSY[String(sid)] || {};
+  updateStatus(sid, status, existing.poznamka || '');
+}
+
+function onPoznamkaBlur(ta){
+  const sid = ta.dataset.sid;
+  const poznamka = ta.value;
+  const existing = STATUSY[String(sid)] || {status:'novy'};
+  // Neposílat pokud se nic nezměnilo
+  if((existing.poznamka || '') === poznamka) return;
+  updateStatus(sid, existing.status || 'novy', poznamka);
+}
+
 function exportCsv(){
   const rows = filteredRows();
   const escape = v => `"${String(v||'').replace(/"/g,'""')}"`;
-  const lines = ['makler,rk,okres,kraj,mesto,telefon,email,pocet_inzeratu'];
-  rows.forEach(r => lines.push([
-    r.makler, r.rk, r.primarni_okres, r.primarni_kraj, r.primarni_mesto,
-    r.telefon, r.email, r.pocet_inzeratu
-  ].map(escape).join(',')));
+  const lines = ['makler,rk,okres,kraj,mesto,telefon,email,pocet_inzeratu,status,poznamka,aktualizovano'];
+  rows.forEach(r => {
+    const st = getStatus(r.seller_id);
+    const stLabel = (STATUS_META[st.status] || {}).label || st.status;
+    lines.push([
+      r.makler, r.rk, r.primarni_okres, r.primarni_kraj, r.primarni_mesto,
+      r.telefon, r.email, r.pocet_inzeratu,
+      stLabel, st.poznamka, st.updated_at || ''
+    ].map(escape).join(','));
+  });
   const blob = new Blob(['﻿' + lines.join('\n')], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -347,6 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshOkresOptions(); render();
   });
   document.getElementById('okresSel').addEventListener('change', render);
+  document.getElementById('statusSel').addEventListener('change', render);
   document.querySelectorAll('.tbl th.sort').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.sort;
