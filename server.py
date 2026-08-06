@@ -473,6 +473,14 @@ def init_db():
             ('NZÚ Energetičtí poradci', '/nzu-poradci.html', '🌱', 'Poradci Nové Zelené Úsporám (~900 v ČR, jen admin)', 11)
         )
 
+    # Investice do nemovitosti
+    inv_exists = c.execute("SELECT id FROM apps WHERE nazev='Investice do nemovitosti'").fetchone()
+    if not inv_exists:
+        c.execute(
+            "INSERT INTO apps (nazev, url, ikona, popis, poradi) VALUES (?, ?, ?, ?, ?)",
+            ('Investice do nemovitosti', '/investice-nemovitost.html', '🏘️', 'Simulace koupě bytu na investici — hypotéka vs. spoření', 12)
+        )
+
     # Výchozí admin účet (pouze pokud žádný admin neexistuje)
     existing = c.execute("SELECT id FROM users WHERE role='admin'").fetchone()
     if not existing:
