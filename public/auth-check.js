@@ -56,4 +56,21 @@
     authHeader: () => ({ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' })
   };
 
+  // Beacon: zaloguj načtení této stránky (fire-and-forget).
+  // Manažeři pak vidí v dashboardu, s čím jejich poradci pracují.
+  try {
+    var p = location.pathname;
+    if (p && p !== '/' && !/login/i.test(p)) {
+      fetch('/api/log-app-visit', {
+        method: 'POST',
+        keepalive: true,  // dokončí request i při navigaci pryč
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ path: p, title: document.title || '' })
+      }).catch(function(){ /* silent */ });
+    }
+  } catch(e){ /* silent */ }
+
 })();

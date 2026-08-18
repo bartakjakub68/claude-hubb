@@ -347,6 +347,18 @@ def init_db():
         );
         CREATE INDEX IF NOT EXISTS idx_nzu_status_user ON nzu_statusy(user_id);
         CREATE INDEX IF NOT EXISTS idx_nzu_status_poradce ON nzu_statusy(poradce_id);
+
+        CREATE TABLE IF NOT EXISTS app_activity (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            app_key TEXT NOT NULL,
+            path TEXT NOT NULL,
+            title TEXT DEFAULT '',
+            opened_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_appact_user ON app_activity(user_id);
+        CREATE INDEX IF NOT EXISTS idx_appact_key ON app_activity(app_key);
+        CREATE INDEX IF NOT EXISTS idx_appact_opened ON app_activity(opened_at);
     ''')
 
     # Migrace: doc_type sloupec do met_documents
@@ -3027,6 +3039,168 @@ def nzu_status_put():
     conn.commit()
     conn.close()
     return jsonify({'ok': True, 'poradce_id': poradce_id, 'status': status})
+
+
+# ─── Aktivita poradců (per-manažer sledování používání aplikací) ─────────────
+# Beacon z auth-check.js loguje visit každé stránky. Manažer pak vidí, jak
+# jeho poradci s aplikacemi pracují (last-visit, počet visitů za období).
+
+# Mapa cesta → app_key + čitelný název. Cesty, které nejsou v mapě, dostanou
+# app_key = 'other' (např. login, dashboard, /assets/).
+APP_KEY_MAP = {
+    '/dashboard.html':               ('dashboard',   'Dashboard'),
+    '/pojistna-kalkulacka.html':     ('pojistna',    'Pojistná kalkulačka'),
+    '/duchod-kalkulator-v3.html':    ('duchod',      'Kalkulačka důchodů'),
+    '/ioldp-kalkulacka.html':        ('ioldp',       'Výpočet z IOLDP'),
+    '/kalkulacka-4.html':            ('uvery',       'Kalkulačka úvěrů'),
+    '/kalkulator-A-sporeni.html':    ('sporeni',     'Spoření (test)'),
+    '/kalkulator-B-uvery.html':      ('uvery-test',  'Úvěry (test)'),
+    '/leady.html':                   ('leady',       'Leady — makléři'),
+    '/nzu-poradci.html':             ('nzu',         'NZÚ Energetičtí poradci'),
+    '/investice-nemovitost.html':    ('investice',   'Investice do nemovitosti'),
+    '/novinky/':                     ('novinky',     'Novinky'),
+    '/kontakthub/':                  ('kontakthub',  'KontaktHub'),
+    '/metodika/':                    ('metodika',    'Metodika'),
+    '/advisor-training/':            ('at',          'Advisor Training'),
+}
+
+
+def _app_key_from_path(path):
+    """Vrátí (app_key, nazev) — přesná shoda nebo prefix pro sub-appky."""
+    if path in APP_KEY_MAP:
+        return APP_KEY_MAP[path]
+    # Prefixy pro React SPA (jejich vnitřní routing)
+    for p, meta in APP_KEY_MAP.items():
+        if p.endswith('/') and path.startswith(p):
+            return meta
+    return ('other', path)
+
+
+@app.route('/api/log-app-visit', methods=['POST'])
+@limiter.limit("120 per hour", key_func=_user_or_ip_key)
+@require_auth()
+def log_app_visit():
+    d = request.get_json(silent=True) or {}
+    path = (d.get('path') or '').strip()[:200]
+    title = (d.get('title') or '').strip()[:200]
+    if not path:
+        return jsonify({'ok': True, 'skipped': 'empty path'})
+    app_key, app_nazev = _app_key_from_path(path)
+    # Ignoruj login/root — nezajímají nás
+    if app_key == 'other' and (path == '/' or 'login' in path.lower()):
+        return jsonify({'ok': True, 'skipped': 'login/root'})
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO app_activity (user_id, app_key, path, title) VALUES (?,?,?,?)",
+        (request.user['id'], app_key, path, title or app_nazev)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'app_key': app_key})
+
+
+@app.route('/api/manager/team-activity', methods=['GET'])
+@require_auth(['admin', 'manazer'])
+def team_activity():
+    """Vrátí přehled aktivity poradců pro aktuálního manažera (nebo admin=vše).
+    Query params:
+      days: kolik dní zpět (default 30, max 365)
+    """
+    try:
+        days = int(request.args.get('days', 30))
+    except (TypeError, ValueError):
+        days = 30
+    days = max(1, min(days, 365))
+
+    conn = get_db()
+    role = request.user.get('role')
+    my_id = request.user.get('id')
+
+    # Kdo jsou "moji" poradci?
+    if role == 'admin':
+        # Admin vidí všechny non-admin uživatele
+        users = conn.execute(
+            "SELECT id, jmeno, email, role FROM users WHERE aktivni=1 ORDER BY jmeno"
+        ).fetchall()
+    else:
+        # Manažer: vezme své poradce z user_managers + sebe (pro srovnání)
+        users = conn.execute("""
+            SELECT DISTINCT u.id, u.jmeno, u.email, u.role
+            FROM users u
+            JOIN user_managers um ON um.poradce_id = u.id
+            WHERE um.manazer_id = ? AND u.aktivni = 1
+            ORDER BY u.jmeno
+        """, (my_id,)).fetchall()
+
+    user_ids = [u['id'] for u in users]
+    if not user_ids:
+        conn.close()
+        return jsonify({'users': [], 'days': days, 'since': None, 'apps': []})
+
+    # Aktivita ve zvoleném období (per user × per app)
+    placeholders = ','.join(['?'] * len(user_ids))
+    rows = conn.execute(f"""
+        SELECT user_id, app_key,
+               COUNT(*) AS pocet,
+               MAX(opened_at) AS naposledy,
+               MIN(opened_at) AS poprve
+        FROM app_activity
+        WHERE user_id IN ({placeholders})
+          AND opened_at >= datetime('now', '-' || ? || ' days')
+        GROUP BY user_id, app_key
+    """, (*user_ids, days)).fetchall()
+
+    # Last-visit vůbec (any time) pro každého usera
+    last_ever = {r['user_id']: r['naposledy'] for r in conn.execute(f"""
+        SELECT user_id, MAX(opened_at) AS naposledy
+        FROM app_activity WHERE user_id IN ({placeholders})
+        GROUP BY user_id
+    """, user_ids).fetchall()}
+
+    conn.close()
+
+    # Sesbírat unikátní app_keys (pro sloupce tabulky)
+    all_apps = sorted({r['app_key'] for r in rows}) if rows else []
+    app_meta = {ak: {'nazev': APP_KEY_MAP.get(p, (ak, ak))[1]
+                     for p in APP_KEY_MAP if APP_KEY_MAP[p][0] == ak}
+                for ak in all_apps}
+    # zjednodušit — vezmi první nazev pro každý key
+    app_nazvy = {}
+    for p, (ak, nz) in APP_KEY_MAP.items():
+        app_nazvy.setdefault(ak, nz)
+    for ak in all_apps:
+        if ak not in app_nazvy:
+            app_nazvy[ak] = ak
+
+    # Sestavit strukturu {user: {aplikace: {pocet, naposledy}}}
+    from collections import defaultdict
+    per_user = defaultdict(dict)
+    for r in rows:
+        per_user[r['user_id']][r['app_key']] = {
+            'pocet': r['pocet'],
+            'naposledy': r['naposledy'],
+        }
+
+    users_out = []
+    for u in users:
+        aktivita_user = per_user.get(u['id'], {})
+        pocet_total = sum(a['pocet'] for a in aktivita_user.values())
+        users_out.append({
+            'id': u['id'],
+            'jmeno': u['jmeno'],
+            'email': u['email'],
+            'role': u['role'],
+            'naposledy_kdykoliv': last_ever.get(u['id']),
+            'pocet_celkem': pocet_total,
+            'aplikace': aktivita_user,
+        })
+
+    return jsonify({
+        'days': days,
+        'since': f"before {days} days",
+        'apps': [{'key': ak, 'nazev': app_nazvy[ak]} for ak in all_apps],
+        'users': users_out,
+    })
 
 
 @app.route('/<path:path>')

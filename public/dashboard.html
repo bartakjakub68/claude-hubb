@@ -117,6 +117,7 @@
       <button class="page-tab visible active" onclick="showTab('apps',this)">Aplikace</button>
       <button class="page-tab visible" id="ptab-users" onclick="showTab('users',this)">Uživatelé</button>
       <button class="page-tab" id="ptab-costs" onclick="showTab('costs',this);refreshCosts()">Náklady API</button>
+      <button class="page-tab" id="ptab-activity" onclick="showTab('activity',this);loadActivity()">Aktivita poradců</button>
       <button class="page-tab" id="ptab-billing" onclick="showTab('billing',this);loadBilling()">Fakturace</button>
       <button class="page-tab" id="ptab-appmanage" onclick="showTab('appmanage',this)">Správa aplikací</button>
     </div>
@@ -293,6 +294,41 @@
         Zatím žádná API volání.
       </div>
       <div id="costs-loading" style="padding:48px;text-align:center;color:var(--muted)">Načítám…</div>
+    </div>
+
+    <!-- ── TAB: Aktivita poradců ──────────────────────── -->
+    <div class="tab-section" id="section-activity">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Aktivita poradců</div>
+          <div class="section-sub">Kdy naposledy pracovali s jakou aplikací a jak často</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="font-size:0.75rem;color:var(--muted)">Období:</label>
+          <select id="activity-days" onchange="loadActivity()"
+                  style="padding:6px 10px;border:1.5px solid var(--border);border-radius:5px;font-family:inherit;font-size:0.8125rem">
+            <option value="7">Posledních 7 dní</option>
+            <option value="30" selected>Posledních 30 dní</option>
+            <option value="90">Posledních 90 dní</option>
+            <option value="365">Poslední rok</option>
+          </select>
+        </div>
+      </div>
+      <div id="activity-info" class="info-block" style="display:none;margin-bottom:16px;padding:11px 14px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;font-size:12px;color:#1E3A8A;line-height:1.55">
+        <strong>ℹ️ Poznámka:</strong> Zpětná data k dispozici pouze od nasazení této funkce.
+        Aktivita v aplikacích, které se nepočítají jako AI (kalkulačky, leady, přehledy),
+        se dříve nelogovala.
+      </div>
+      <div id="activity-loading" style="padding:48px;text-align:center;color:var(--muted)">Načítám…</div>
+      <div id="activity-empty" style="display:none;padding:48px;text-align:center;color:var(--muted);font-style:italic">
+        Žádná aktivita — buď zvol delší období, nebo počkej, až se poradcům začnou aktivity zaznamenávat.
+      </div>
+      <div id="activity-table-wrap" style="display:none;overflow:auto;background:var(--white);border:1px solid var(--border);border-radius:8px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead id="activity-thead"></thead>
+          <tbody id="activity-tbody"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ── TAB: Fakturace ───────────────────────────────── -->
@@ -623,6 +659,7 @@ if (role !== 'poradce') {
   document.getElementById('page-tabs').style.display = 'flex';
   document.getElementById('ptab-users').classList.add('visible');
   document.getElementById('ptab-costs').classList.add('visible');
+  document.getElementById('ptab-activity').classList.add('visible');
   if (role === 'admin') {
     document.getElementById('ptab-appmanage').classList.add('visible');
     document.getElementById('ptab-billing').classList.add('visible');
@@ -1309,6 +1346,100 @@ async function loadBilling() {
     }
   }
   document.getElementById('billing-tbody').innerHTML = html;
+}
+
+// ── Aktivita poradců ──────────────────────────────────────────────────────
+async function loadActivity(){
+  const days = parseInt(document.getElementById('activity-days').value) || 30;
+  const loading = document.getElementById('activity-loading');
+  const empty   = document.getElementById('activity-empty');
+  const wrap    = document.getElementById('activity-table-wrap');
+  const info    = document.getElementById('activity-info');
+  loading.style.display = 'block';
+  loading.textContent = 'Načítám…';
+  empty.style.display = 'none';
+  wrap.style.display = 'none';
+  info.style.display = 'none';
+
+  let data;
+  try {
+    const res = await apiFetch(`/api/manager/team-activity?days=${days}`, { headers });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    data = await res.json();
+  } catch(e) {
+    loading.textContent = 'Chyba: ' + e.message;
+    return;
+  }
+
+  loading.style.display = 'none';
+  info.style.display = 'block';
+
+  const users = data.users || [];
+  const apps  = data.apps  || [];
+
+  if(users.length === 0){
+    empty.style.display = 'block';
+    empty.textContent = role === 'manazer'
+      ? 'Nemáte přiřazené žádné poradce. Přiřaď je v tabu „Uživatelé".'
+      : 'Žádní aktivní uživatelé.';
+    return;
+  }
+
+  // Hlavičky sloupců pro každou aplikaci
+  const thBase = 'background:var(--ink);color:#fff;padding:11px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em';
+  const thApps = apps.map(a =>
+    `<th style="${thBase};text-align:right;white-space:nowrap">${escHtml(a.nazev)}</th>`
+  ).join('');
+  document.getElementById('activity-thead').innerHTML = `<tr>
+    <th style="${thBase};text-align:left;position:sticky;left:0;z-index:2">Poradce</th>
+    <th style="${thBase};text-align:right">Celkem visitů</th>
+    <th style="${thBase};text-align:right">Naposledy</th>
+    ${thApps}
+  </tr>`;
+
+  // Řádky — jeden na poradce
+  const fmtDate = iso => {
+    if(!iso) return '<span style="color:var(--muted)">—</span>';
+    const d = new Date(iso.replace(' ','T') + 'Z');
+    const now = Date.now();
+    const diffH = (now - d.getTime()) / 3600000;
+    if(diffH < 1)  return `<span style="color:#047857">před ${Math.round(diffH*60)} min</span>`;
+    if(diffH < 24) return `<span style="color:#047857">před ${Math.round(diffH)} h</span>`;
+    if(diffH < 168) return `<span style="color:#1E5A8A">před ${Math.round(diffH/24)} d</span>`;
+    return `<span style="color:var(--muted)">${d.toLocaleDateString('cs-CZ')}</span>`;
+  };
+
+  const tbody = document.getElementById('activity-tbody');
+  tbody.innerHTML = users.map(u => {
+    const roleBadge = u.role === 'manazer'
+      ? '<span style="display:inline-block;padding:1px 6px;background:#EFF6FF;color:#1E5A8A;border-radius:10px;font-size:10px;font-weight:600;margin-left:6px">Manažer</span>'
+      : u.role === 'admin'
+        ? '<span style="display:inline-block;padding:1px 6px;background:#FCE7F3;color:#BE185D;border-radius:10px;font-size:10px;font-weight:600;margin-left:6px">Admin</span>'
+        : '';
+    const cellsApps = apps.map(a => {
+      const cell = u.aplikace[a.key];
+      if(!cell) return `<td style="padding:9px 10px;text-align:right;color:var(--muted);border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px">—</td>`;
+      return `<td style="padding:9px 10px;text-align:right;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px">
+        <strong style="color:var(--ink)">${cell.pocet}×</strong>
+        <div style="font-size:9.5px;color:var(--muted);font-family:'Inter',sans-serif;margin-top:1px">${fmtDate(cell.naposledy)}</div>
+      </td>`;
+    }).join('');
+    return `<tr>
+      <td style="padding:9px 14px;border-bottom:1px solid var(--border);position:sticky;left:0;background:var(--white);z-index:1">
+        <strong>${escHtml(u.jmeno)}</strong>${roleBadge}
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">${escHtml(u.email)}</div>
+      </td>
+      <td style="padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700">
+        ${u.pocet_celkem}
+      </td>
+      <td style="padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:11px">
+        ${fmtDate(u.naposledy_kdykoliv)}
+      </td>
+      ${cellsApps}
+    </tr>`;
+  }).join('');
+
+  wrap.style.display = 'block';
 }
 
 function openCloseMonth() {
